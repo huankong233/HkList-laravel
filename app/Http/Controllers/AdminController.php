@@ -243,7 +243,7 @@ class AdminController extends Controller
         }
 
         $account = BdUser::query()->find($request['account_id']);
-        
+
         if ($account == null) {
             return ResponseController::response(400, "账号不存在");
         }
@@ -277,7 +277,7 @@ class AdminController extends Controller
 
     public function getAccounts(Request $request)
     {
-        $size  = $request['size'] ?? 15;
+        $size  = $request['size'] ?? 10;
         $users = BdUser::query()->paginate($size);
         return ResponseController::response(200, 'success', $users);
     }

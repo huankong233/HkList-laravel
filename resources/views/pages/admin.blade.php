@@ -175,6 +175,12 @@
                         </template>
                     </el-table-column>
                 </el-table>
+                <el-pagination
+                    v-model:current-page="currentPage"
+                    v-model:page-size="pageSize"
+                    v-bind:total="accountList?.total"
+                    @current-change="getAccounts"
+                ></el-pagination>
             </el-tab-pane>
             <el-tab-pane label="开源说明" name="openSourceNotice">
                 <el-card class="illustrate">
@@ -359,14 +365,15 @@
                     }
                 }
 
-                const accountPage = ref(1)
+                const currentPage = ref(1)
+                const pageSize = ref(10)
                 const accountList = ref([])
                 const accountLoading = ref(false)
 
                 const getAccounts = async () => {
                     accountLoading.value = true
-                    const response = await axios.post("{{route('admin.getAccounts')}}", {
-                        page: accountPage.value
+                    const response = await axios.post(`{{route('admin.getAccounts')}}?page=${currentPage.value}`, {
+                        size: pageSize.value
                     }).catch(error => {
                         const {response: {data: {message}, status}} = error
                         ElMessage.error(status === 400 ? message : '服务器错误')
@@ -377,8 +384,6 @@
                     if (response !== 'failed') {
                         const {data: {data}} = response
                         accountList.value = data
-
-                        console.log(data)
                     }
                 }
 
@@ -436,6 +441,8 @@
 
                     accountList,
                     accountLoading,
+                    pageSize,
+                    currentPage,
                     getAccounts,
                     switchAccount,
                     deleteAccount
