@@ -179,6 +179,7 @@
                     v-model:current-page="currentPage"
                     v-model:page-size="pageSize"
                     v-bind:total="accountList?.total"
+                    hide-on-single-page
                     @current-change="getAccounts"
                 ></el-pagination>
             </el-tab-pane>
