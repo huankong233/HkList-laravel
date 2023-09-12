@@ -20,7 +20,6 @@ Route::middleware("installCheck:notInstall")->group(function () {
 
 
 Route::middleware(['installCheck:haveInstall', 'web'])->group(function () {
-    // admin
     Route::prefix(config("94list.prefix"))->name("admin.")->group(function () {
         Route::post("/login", [\App\Http\Controllers\AdminController::class, 'login'])->name("login");
         Route::post('/register', [\App\Http\Controllers\AdminController::class, 'register'])->name("register");
@@ -40,17 +39,14 @@ Route::middleware(['installCheck:haveInstall', 'web'])->group(function () {
                      ->name("getAccounts");
             });
 
-            Route::post(" / changeUserInfo", [\App\Http\Controllers\AdminController::class, 'changeUserInfo'])
+            Route::post("/changeUserInfo", [\App\Http\Controllers\AdminController::class, 'changeUserInfo'])
                  ->name("changeUserInfo");
-            Route::post(" / logout", [\App\Http\Controllers\AdminController::class, 'logout'])->name("logout");
+            Route::post("/logout", [\App\Http\Controllers\AdminController::class, 'logout'])->name("logout");
         });
     });
 
-    Route::prefix(" / user")->group(function () {
-
+    Route::prefix("/user")->name("user.")->group(function () {
+        Route::post("/getFileList", [\App\Http\Controllers\UserController::class, 'getFileList'])->name("getFileList");
+        Route::post("/getSign", [\App\Http\Controllers\UserController::class, 'getSign'])->name("getSign");
     });
-});
-
-Route::get('/test', function () {
-    return route("admin . addAccount");
 });

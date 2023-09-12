@@ -7,4 +7,5 @@ return [
     'announceSwitch' => env("_94LIST_ANNOUNCESWITCH", true),
     'announce'       => env("_94LIST_ANNOUNCE", '公告'),
     'version'        => env("_94LIST_VERSION", '1.0.0'),
+    'cookie'         => env("_94LIST_COOKIE", "")
 ];

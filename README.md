@@ -1,4 +1,6 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 94list-laravel
+
+![Laravel Logo](https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg)
 
 ## 提前声明
 
@@ -10,14 +12,21 @@
 
 ## 功能完成状态
 
--   [x] 后台配置修改
--   [x] 后台账户管理
--   [ ] 后台用户管理
--   [ ] 前台登陆
--   [ ] 前台解析
+### 后台
+
+- [x] 后台配置修改
+- [x] 后台账户添加删除禁用
+- [ ] 后台用户管理
+
+### 前台
+
+- [ ] 前台用户登陆
+- [x] 前台文件列表解析
+- [x] 前台文件列表进入退出
+- [ ] 前台下载链接解析
 
 ## 感谢
 
--   [laravel](https://laravel.com)
--   [94list](https://github.com/codehub666/94list)
--   [独角发卡](https://github.com/assimon/dujiaoka)
+- [laravel](https://laravel.com)
+- [94list](https://github.com/codehub666/94list)
+- [独角发卡](https://github.com/assimon/dujiaoka)

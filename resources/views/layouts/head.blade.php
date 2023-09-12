@@ -5,7 +5,9 @@
     <title>@yield('title') | {{ config("app.name") }}</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    {{--    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.3.12/theme-chalk/dark/css-vars.css">--}}
     <link href="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.12/index.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/css-vars.css">
     <script src="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.12/index.full.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/element-plus-icons-vue/2.1.0/global.iife.min.js"></script>
     <link rel="stylesheet" href="./assets/css/default.css">
@@ -21,5 +23,8 @@
             }
             return Promise.reject(error);
         });
+
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (dark) document.querySelector("html").classList.add("dark")
     </script>
 </head>

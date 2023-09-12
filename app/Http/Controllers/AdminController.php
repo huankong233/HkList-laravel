@@ -65,7 +65,7 @@ class AdminController extends Controller
         $user = User::find(Auth::user()->id);
 
         // 如果没有传入默认为当前用户名
-        $request['newUsername'] = $request['newUsername'] ?: $user['username'];
+        $request['newUsername'] = $request['newUsername'] ?? $user['username'];
 
         if ($validator->fails() && $user['username'] !== $request['newUsername']) {
             return ResponseController::response(400, "用户名已存在");
@@ -124,8 +124,9 @@ class AdminController extends Controller
         $this->modifyEnv([
             "_94LIST_TITLE"          => $request['title'],
             "_94LIST_UA"             => $request['user_agent'],
-            "_94LIST_ANNOUNCESWITCH" => $request['announceSwitch'],
-            "_94LIST_ANNOUNCE"       => $request['announce'] ?: ''
+            "_94LIST_ANNOUNCESWITCH" => $request['announceSwitch'] ? 1 : 0,
+            "_94LIST_ANNOUNCE"       => $request['announce'] ?? '',
+            "_94LIST_COOKIE"         => '"' . $request['cookie'] . '"' ?? '""'
         ]);
 
         return ResponseController::response(200, "success");

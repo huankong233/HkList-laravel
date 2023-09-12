@@ -70,6 +70,9 @@
                     <el-form-item label="公告内容" prop="announce">
                         <el-input type="textarea" v-model="changeConfigForm.announce"></el-input>
                     </el-form-item>
+                    <el-form-item label="获取列表时的 Cookie" prop="cookie">
+                        <el-input type="textarea" v-model="changeConfigForm.cookie" rows="5"></el-input>
+                    </el-form-item>
                     <el-form-item>
                         <el-button type="primary"
                                    v-on:click="changeConfig(changeConfigFormRef)"
@@ -122,37 +125,42 @@
                 >
                     <el-table-column
                         prop="id"
-                        label="编号"
-                        width="100">
+                        label="编号">
                     </el-table-column>
                     <el-table-column
                         prop="baidu_name"
-                        label="百度用户名"
-                        width="100">
+                        label="百度用户名">
                     </el-table-column>
                     <el-table-column
                         prop="netdisk_name"
-                        label="网盘用户名"
-                        width="100">
+                        label="网盘用户名">
                     </el-table-column>
                     <el-table-column
                         prop="state"
-                        label="状态"
-                        width="80">
+                        label="状态">
                     </el-table-column>
                     <el-table-column
                         prop="add_time"
-                        label="添加时间"
-                        width="150">
+                        label="添加时间">
                     </el-table-column>
                     <el-table-column
                         prop="use"
-                        label="最后一次有效时间"
-                        width="150">
+                        label="最后一次有效时间">
+                    </el-table-column>
+                    <el-table-column
+                        prop="vip_type"
+                        label="会员类型">
                     </el-table-column>
                     <el-table-column
                         prop="cookie"
                         label="cookie值">
+                    </el-table-column>
+                    <el-table-column
+                        prop="switch"
+                        label="是否启用">
+                        <template #default="scope">
+                            @{{ scope.row.switch === 0 ? '禁用' : '启用'}}
+                        </template>
                     </el-table-column>
                     <el-table-column
                         label="操作"
@@ -163,7 +171,7 @@
                                 v-bind:type="scope.row.switch === 0 ? 'success' : 'info'"
                                 @click="switchAccount(scope.row.id,scope.row.switch)"
                             >
-                                @{{ scope.row.switch === 0 ? '开启' : '关闭'}}
+                                @{{ scope.row.switch === 0 ? '启用' : '禁用'}}
                             </el-button>
                             <el-button
                                 size="small"
@@ -229,21 +237,21 @@
                         }
 
                         changeUserInfoForm.value.pending = true
-                        const response =
-                            await axios.post("{{route('admin.changeUserInfo')}}", {
-                                nowPassword: changeUserInfoForm.value.nowPassword,
-                                newPassword: changeUserInfoForm.value.newPassword,
-                                confirmPassword: changeUserInfoForm.value.confirmPassword,
-                                newUsername: changeUserInfoForm.value.newUsername ?? ""
-                            })
-                                .catch(error => {
-                                    const {response: {data: {message}, status}} = error
-                                    ElMessage.error(status === 400 ? message : '服务器错误')
-                                }) ?? 'failed'
+                        const response = await axios.post("{{route('admin.changeUserInfo')}}", {
+                            nowPassword: changeUserInfoForm.value.nowPassword,
+                            newPassword: changeUserInfoForm.value.newPassword,
+                            confirmPassword: changeUserInfoForm.value.confirmPassword,
+                            newUsername: changeUserInfoForm.value.newUsername ?? ""
+                        })
+                            .catch(error => {
+                                const {response: {data: {message}, status}} = error
+                                ElMessage.error(status === 400 ? message : '服务器错误')
+                            }) ?? 'failed'
                         changeUserInfoForm.value.pending = false
 
                         if (response !== 'failed') {
-                            location.reload()
+                            ElMessage.message("修改成功")
+                            setTimeout(() => location.reload(), 1000)
                         }
                     }
                 }
@@ -253,6 +261,7 @@
                     user_agent: "{{config("94list.user_agent")}}",
                     announceSwitch: {{config("94list.announceSwitch")}} === 1,
                     announce: "{{config("94list.announce")}}",
+                    cookie: "{{config("94list.cookie")}}",
                     pending: false
                 })
 
@@ -261,7 +270,8 @@
                 const changeConfigFormRule = {
                     title: [{required: true, message: '请输入站点标题', trigger: 'blur'}],
                     user_agent: [{required: true, message: '请输入User_Agent', trigger: 'blur'}],
-                    announceSwitch: [{required: true, message: '请确认开关状态', trigger: 'blur'}]
+                    announceSwitch: [{required: true, message: '请确认开关状态', trigger: 'blur'}],
+                    cookie: [{required: true, message: '请输入获取列表时的 Cookie', trigger: 'blur'}]
                 }
 
                 const changeConfig = async (formEl) => {
@@ -270,17 +280,22 @@
                     })) {
                         changeConfigForm.value.pending = true
 
-                        await axios.post("{{route('admin.changeConfig')}}", {
+                        const response = await axios.post("{{route('admin.changeConfig')}}", {
                             title: changeConfigForm.value.title,
                             user_agent: changeConfigForm.value.user_agent,
                             announceSwitch: changeConfigForm.value.announceSwitch,
-                            announce: changeConfigForm.value.announce ?? ""
+                            announce: changeConfigForm.value.announce ?? "",
+                            cookie: changeConfigForm.value.cookie
                         }).catch(error => {
                             const {response: {data: {message}, status}} = error
                             ElMessage.error(status === 400 ? message : '服务器错误')
-                        })
+                        }) ?? "failed"
 
                         changeConfigForm.value.pending = false
+
+                        if (response !== 'failed') {
+                            ElMessage.success('修改成功')
+                        }
                     }
                 }
 
@@ -354,6 +369,9 @@
                         }).catch(error => {
                             const {response: {data: {message}, status}} = error
                             ElMessage.error(status === 400 ? message : '服务器错误')
+                            checkedInfo.value = false
+                            addAccountForm.value.username = ""
+                            addAccountForm.value.vipType = ""
                         }) ?? 'failed'
 
                         addAccountForm.value.addPending = false
@@ -420,10 +438,12 @@
 
                 return {
                     activeName,
+
                     changeConfig,
                     changeConfigForm,
                     changeConfigFormRef,
                     changeConfigFormRule,
+
                     changeUserInfo,
                     changeUserInfoForm,
                     changeUserInfoFormRef,
