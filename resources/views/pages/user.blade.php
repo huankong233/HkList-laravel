@@ -4,52 +4,60 @@
 
 @section('template')
     <el-dialog
-        v-model="Announce.switch"
-        title="公告"
-        width="90%"
+            v-model="Announce.switch"
+            title="公告"
+            width="90%"
     >
         <span>@{{Announce.message}}</span>
     </el-dialog>
 
-    {{--    <el-dialog v-model="DownDialog" title="解析任务列表" width="80%">--}}
-    {{--        <el-space wrap> 当前的UA :--}}
-    {{--            <el-link type="danger" @click="copy(user_agent,'已复制UA')">{{ user_agent }}</el-link>--}}
-    {{--        </el-space>--}}
-    {{--        <br><br>--}}
-    {{--        <el-table :data="rw_list" show-overflow-tooltip>--}}
-    {{--            <el-table-column property="name" label="文件名" width="180" fixed></el-table-column>--}}
-    {{--            <el-table-column label="下载链接" width="480">--}}
-    {{--                <template #default="scope">--}}
-    {{--                    {{ scope.row.dlink }}--}}
-    {{--                </template>--}}
-    {{--            </el-table-column>--}}
-    {{--            <el-table-column label="操作" width="280">--}}
-    {{--                <template #default="scope">--}}
-    {{--                    <template v-if="scope.row.DownState=='0'">--}}
-    {{--                        <el-button @click="copy(scope.row.dlink,'已将链接复制到粘贴板内')" type="text" size="small">--}}
-    {{--                            复制链接--}}
-    {{--                        </el-button>--}}
-    {{--                        <el-button type="text" size="small" @click="senddown(scope.row.dlink,scope.row.name,'6800')">--}}
-    {{--                            发送Aria2--}}
-    {{--                        </el-button>--}}
-    {{--                        <el-button type="text" size="small" @click="senddown(scope.row.dlink,scope.row.name,'16800')">--}}
-    {{--                            发送Motrix--}}
-    {{--                        </el-button>--}}
-    {{--                    </template>--}}
-    {{--                    <template v-if="scope.row.DownState=='1'">--}}
-    {{--                    </template>--}}
-    {{--                </template>--}}
-    {{--            </el-table-column>--}}
-    {{--        </el-table>--}}
-    {{--    </el-dialog>--}}
+    <el-dialog v-model="downloadDialogVisible" title="解析任务列表" width="80%">
+        <el-space wrap> 当前的UA :
+            <el-link type="danger" @click="copy(user_agent,'已复制UA')">@{{ user_agent }}</el-link>
+        </el-space>
+        <el-space wrap>
+            <el-button type="primary" @click="sendDownloadFiles">批量下载</el-button>
+            <el-button type="primary" @click="openDownloadListDialog">下载配置</el-button>
+        </el-space>
+        <el-table
+                border
+                show-overflow-tooltip
+                class="table"
+                :data="dlinkList"
+                @selection-change="sendDownloadFiles">
+            <el-table-column type="selection" width="40"></el-table-column>
+            <el-table-column prop="filename" label="文件名"></el-table-column>
+            <el-table-column prop="dlink" label="下载链接"></el-table-column>
+            <el-table-column label="操作" width="280">
+                <template #default="scope">
+                    <el-button
+                            type="primary"
+                            size="small"
+                            @click="copy(scope.row.dlink,'已将链接复制到粘贴板内')"
+                    >
+                        复制链接
+                    </el-button>
+                    <el-button
+                            type="primary"
+                            size="small"
+                            @click="sendDown(scope.row.dlink,scope.row.filename)"
+                    >
+                        发送Aria2
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </el-dialog>
 
-    <el-card>
+    <el-card
+            v-loading="getFileListForm.pending"
+    >
         <h2>前台解析中心 | {{ config("app.name") }}</h2>
         <el-form
-            ref="getFileListFormRef"
-            v-bind:model="getFileListForm"
-            v-bind:rules="getFileListFormRule"
-            label-width="100"
+                ref="getFileListFormRef"
+                v-bind:model="getFileListForm"
+                v-bind:rules="getFileListFormRule"
+                label-width="100"
         >
             <el-form-item label="链接" prop="url">
                 <el-input v-model="getFileListForm.url" @blur="checkLink"></el-input>
@@ -63,15 +71,11 @@
             <el-form-item>
                 <el-button type="primary"
                            v-on:click="getFileListClickEvent(getFileListFormRef)"
-                           v-bind:disabled="getFileListForm.pending"
-                           v-bind:loading="getFileListForm.pending"
                 >
                     解析链接
                 </el-button>
                 <el-button type="primary"
                            v-on:click="freshFileList"
-                           v-bind:disabled="getFileListForm.pending"
-                           v-bind:loading="getFileListForm.pending"
                 >
                     重新获取当前路径文件
                 </el-button>
@@ -85,20 +89,22 @@
         </el-form>
     </el-card>
 
-    <el-card class="card">
-        <el-table stripe
+    <el-card class="card"
+             v-loading="getFileListForm.pending"
+    >
+        <el-table border
+                  stripe
                   ref="fileListTableRef"
                   v-bind:data="list"
-                  v-loading="getFileListForm.pending"
                   @row-dblclick="clickRow"
                   @selection-change="clickSelection">
-            <el-table-column type="selection" width="55"></el-table-column>
-            <el-table-column label="文件名" width="280">
+            <el-table-column type="selection" width="40"></el-table-column>
+            <el-table-column label="文件名">
                 <template #default="scope">
                     <el-space wrap>
                         <img
-                            :src="scope.row.isdir == '1' ? '/assets/images/folder.png' : '/assets/images/unknownfile.png'"
-                            style="width: 20px; height: 20px;"
+                                :src="scope.row.isdir == '1' ? '/assets/images/folder.png' : '/assets/images/unknownfile.png'"
+                                style="width: 20px; height: 20px;"
                         />
                         @{{ scope.row.server_filename }}
                     </el-space>
@@ -134,8 +140,8 @@
                     setTimeout(() => Announce.value.switch = {{config("94list.announceSwitch")}} === 1, 300)
 
                     const getFileListForm = ref({
-                        url: "https://pan.baidu.com/s/1mvGM7nXznzMiNbAMKpHE4w",
-                        password: "kwn8",
+                        url: "https://pan.baidu.com/s/1AHSE9K1EpL2ga1ldU88C5A",
+                        password: "j94h",
                         pending: false
                     })
 
@@ -209,7 +215,7 @@
                         return newPath === '' ? "/" : newPath
                     }
 
-                    const getFileList = async (server_mtime, refresh = false) => {
+                    const getFileList = async (server_mtime = 0, refresh = false) => {
                         const fileList = await axios.post("{{route('user.getFileList')}}", {
                             url: getFileListForm.value.url,
                             password: getFileListForm.value.password,
@@ -223,8 +229,6 @@
 
                         let {data: {message, data}} = fileList
                         ElMessage.success(message)
-
-                        console.log(data)
 
                         uk.value = data.uk
                         shareid.value = data.shareid
@@ -251,6 +255,10 @@
                     }
 
                     const checkLink = () => {
+                        list.value = []
+                        dir.value = '/'
+                        selectedRows.value = []
+
                         const data = getUrlId(getFileListForm.value.url)
                         if (data.type === 'full') {
                             if (data.id) getFileListForm.value.url = `https://pan.baidu.com/s/${data.id}`
@@ -262,7 +270,7 @@
                     }
 
                     const getFileSign = async () => {
-                        const getSign = await axios.post("{{route('user.getSign')}}", {
+                        const response = await axios.post("{{route('user.getSign')}}", {
                             uk: uk.value,
                             shareid: shareid.value
                         }).catch(error => {
@@ -270,9 +278,9 @@
                             ElMessage.error(status === 400 ? message : '服务器错误')
                         }) ?? "failed"
 
-                        if (getSign === 'failed') return
+                        if (response === 'failed') return
 
-                        const {data: {message, data}} = getSign
+                        const {data: {message, data}} = response
                         ElMessage.success(message)
 
                         sign.value = data.sign
@@ -298,20 +306,49 @@
                     }
 
                     const downloadFile = async (fs_id, server_filename) => {
-                        console.log(fs_id, server_filename)
+                        const response = await axios.post("{{route('user.downloadFile')}}", {
+                            fs_id,
+                            server_filename,
+                            timestamp: timestamp.value,
+                            uk: uk.value,
+                            sign: sign.value,
+                            randsk: randsk.value,
+                            shareid: shareid.value
+                        }).catch(async error => {
+                            const {response: {data: {message}, status}} = error
+                            if (message.includes("当前签名已过期")) {
+                                ElMessage.error(message)
+                                ElMessage.success("自动重新获取中...")
+                                await getFileSign()
+                            } else {
+                                ElMessage.error(status === 400 ? message : '服务器错误')
+                            }
+                        }) ?? "failed"
+
+                        if (response === 'failed') return
+
+                        const {data: {message, data}} = response
+                        ElMessage.success("解析成功")
+                        dlinkList.value = data
+                        downloadDialogVisible.value = true
                     }
 
                     const downloadFiles = () => {
-                        console.log(selectedRows.value.filter(item => item.is_dir === '1' || item.is_dir === 1))
+                        let bad = false
                         selectedRows.value = selectedRows.value.filter(item => {
-                            const bool = item.is_dir === '1' || item.is_dir === 1
-                            if (!bool) {
+                            if (bad) return false
+                            const bool = item.isdir === '1' || item.isdir === 1
+                            if (bool) {
+                                bad = true
                                 ElMessage.error("请勿勾选文件夹")
                                 fileListTableRef.value?.clearSelection()
                             }
-                            return bool
+                            return !bool
                         })
-                        console.log(selectedRows.value)
+
+                        if (selectedRows.value.length > 0) {
+                            console.log(selectedRows.value)
+                        }
                     }
 
                     const getDir = async (path, server_mtime) => {
@@ -332,10 +369,71 @@
                     const fileListTableRef = ref(null)
                     const selectedRows = ref([])
 
-                    const clickSelection = (row) => {
-                        selectedRows.value = row
+                    const clickSelection = (row) => selectedRows.value = row
+
+                    const downloadDialogVisible = ref(false)
+
+                    const dlinkList = ref([])
+
+                    const user_agent = "{{config("94list.user_agent")}}"
+
+                    const copy = (text, message) => {
+                        const textarea = document.createElement("textarea");
+                        textarea.value = text;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(textarea);
+
+                        if (message) {
+                            ElMessage({
+                                message: message,
+                                type: 'success'
+                            });
+                        }
                     }
 
+                    const sendDownloadFile = async (dlink, filename) => {
+                        const response = await axios.post(`http://${configDownload.value.host}:${configDownload.value.port}/jsonrpc`, {
+                            jsonrpc: '2.0',
+                            id: "{{config("app.name")}}",
+                            method: 'aria2.addUri',
+                            params: [
+                                configDownload.value.secret,
+                                [dlink],
+                                {
+                                    'out': filename,
+                                    'header': ['User-Agent:' + user_agent.value]
+                                }
+                            ]
+                        }).catch(error => {
+                            ElMessage.error('发送失败，可能相对应的下载器没有启动')
+                        }) ?? 'failed'
+
+                        if (response !== 'failed') {
+                            ElMessage.success('已把 ' + filename + ' 任务发送给下载器')
+                        }
+                    }
+
+                    const selectDownloadFiles = ref([])
+                    const downloadListClick = () => {
+                        console.log(selectDownloadFiles.value)
+                    }
+
+                    const sendDownloadFiles = (row) => selectDownloadFiles.value = row
+
+                    const configDownload = ref({
+                        visible: false,
+                        host: "localhost",
+                        port: "6800",
+                        secret: ""
+                    })
+
+                    const openDownloadListDialog = () => configDownload.value.visible = true
+
+                    const closeDownloadListDialog = () => {
+                        configDownload.value.visible = false
+                    }
 
                     return {
                         Announce,
@@ -363,7 +461,20 @@
                         downloadFile,
                         downloadFiles,
 
-                        fileListTableRef
+                        fileListTableRef,
+
+                        downloadDialogVisible,
+                        dlinkList,
+                        user_agent,
+                        copy,
+                        sendDownloadFile,
+
+                        configDownload,
+                        sendDownloadFiles,
+                        downloadListClick,
+
+                        openDownloadListDialog,
+                        closeDownloadListDialog
                     }
                 }
             })
@@ -376,6 +487,10 @@
 @section('style')
     <style>
         .card {
+            margin-top: 15px;
+        }
+
+        .table {
             margin-top: 15px;
         }
     </style>

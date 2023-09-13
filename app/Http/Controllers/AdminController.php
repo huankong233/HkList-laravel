@@ -225,7 +225,7 @@ class AdminController extends Controller
             'cookie'       => $request['cookie'],
             'add_time'     => date("Y-m-d H:i:s"),
             'use'          => date("Y-m-d H:i:s"),
-            'state'        => "未测试",
+            'state'        => "未使用",
             'switch'       => 1,
             'vip_type'     => $accountInfo['vip_type']
         ]);

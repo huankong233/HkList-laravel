@@ -62,9 +62,9 @@ class InstallController extends Controller
             file_put_contents($installLock, 'install ok');
             return ResponseController::response(200, 'success');
         } catch (QueryException $exception) {
-            return ResponseController::response(500, '数据库配置错误 :' . $exception->getMessage());
+            return ResponseController::response(400, '数据库配置错误 :' . $exception->getMessage());
         } catch (\Exception $exception) {
-            return ResponseController::response(500, $exception->getMessage());
+            return ResponseController::response(400, $exception->getMessage());
         }
     }
 }

@@ -4,150 +4,167 @@
 
 @section('template')
     <div class="container">
-        <h1>
-            <img src="https://x.imgs.ovh/x/2023/08/19/64df97c347088.png" alt="logo">
-        </h1>
-        <h2> 就是加速 </h2>
-        <div>
-            <p>每个梦想的路上，一起前行！</p>
-            <form method="post" v-on:submit.prevent="onSubmit">
-                <div id="error" v-show="error">
-                    <span v-html="message"></span>
-                </div>
-                <div id="success" v-show="success">
-                    <span v-html="message"></span>
-                </div>
-                <div class="form-group">
-                    <div class="form-field">
-                        <label>MySQL 数据库地址</label>
-                        <input name="db_host" v-model="db_host" required>
-                    </div>
-
-                    <div class="form-field">
-                        <label>MySQL 端口</label>
-                        <input type="number" name="db_port" v-model="db_port" required>
-                    </div>
-                    <div class="form-field">
-                        <label>MySQL 数据库名</label>
-                        <input name="db_database" v-model="db_database" required>
-                    </div>
-
-                    <div class="form-field">
-                        <label>MySQL 用户名</label>
-                        <input name="db_username" v-model="db_username" required>
-                    </div>
-
-                    <div class="form-field">
-                        <label>MySQL 密码</label>
-                        <input name="db_password" v-model="db_password" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="form-field">
-                        <label>网站名称</label>
-                        <input type="title" v-model="title" name="title" required>
-                    </div>
-
-                    <div class="form-field">
-                        <label>网站url</label>
-                        <input name="app_url" v-model="app_url" required placeholder="例如：http://94list.org"/>
-                    </div>
-
-                    <div class="form-field">
-                        <label>后台登录路径</label>
-                        <input name="admin_path" v-model="admin_path" required placeholder="例如：/admin">
-                    </div>
-
-                </div>
-
-                <div class="form-buttons">
-                    <button type="submit" v-bind:disabled="pending || success">点击安装</button>
-                </div>
-            </form>
-        </div>
+        <el-card>
+            <h1>
+                <img src="favicon.ico" alt="logo">
+            </h1>
+            <h2> 就是加速 </h2>
+            <h3 v-if="installForm.installed">
+                <p>您的后台登录账号密码均为:admin,请及时登录修改!</p>
+                <el-button type="danger" @click="goHome">访问首页</el-button>
+                <el-button type="success" @click="goAdmin">访问后台</el-button>
+                {{--                <a class="btn" href="/" style="background: #bc1818;margin-right: 20px">访问首页</a>--}}
+                {{--                <a class="btn" v-bind:href="installForm.admin_path" style="background:#18bc9c">访问后台</a>--}}
+            </h3>
+            <el-form
+                    ref="installFormRef"
+                    v-bind:model="installForm"
+                    v-bind:rules="installFormRule"
+                    label-width="150px"
+            >
+                <el-form-item label="MySQL 数据库地址" prop="db_host">
+                    <el-input v-model="installForm.db_host"></el-input>
+                </el-form-item>
+                <el-form-item label="MySQL 端口" prop="db_port">
+                    <el-input v-model="installForm.db_port"></el-input>
+                </el-form-item>
+                <el-form-item label="MySQL 数据库名" prop="db_database">
+                    <el-input v-model="installForm.db_database"></el-input>
+                </el-form-item>
+                <el-form-item label="MySQL 用户名" prop="db_username">
+                    <el-input v-model="installForm.db_username"></el-input>
+                </el-form-item>
+                <el-form-item label="MySQL 密码" prop="db_password">
+                    <el-input v-model="installForm.db_password"></el-input>
+                </el-form-item>
+                <el-divider></el-divider>
+                <el-form-item label="网站名称" prop="title">
+                    <el-input v-model="installForm.title"></el-input>
+                </el-form-item>
+                <el-form-item label="网站url" prop="app_url">
+                    <el-input v-model="installForm.app_url"></el-input>
+                </el-form-item>
+                <el-form-item label="后台登录路径" prop="admin_path">
+                    <el-input v-model="installForm.admin_path"></el-input>
+                </el-form-item>
+                <el-form-item class="center">
+                    <el-button
+                            type="primary"
+                            v-on:click="install(installFormRef)"
+                            v-bind:disabled="installForm.installed"
+                            v-bind:loading="installForm.pending"
+                    >
+                        安装
+                    </el-button>
+                </el-form-item>
+            </el-form>
+        </el-card>
     </div>
 @endsection
 
 @section('scripts')
     <script>
         const {createApp, ref} = Vue
+        const {ElMessage} = ElementPlus
 
         const app = createApp({
             setup() {
-                const db_host = ref('localhost')
-                const db_port = ref("3306")
-                const db_database = ref('94list')
-                const db_username = ref('root')
-                const db_password = ref('')
-                const title = ref('94list')
-                const app_url = ref('http://localhost')
-                const admin_path = ref('/admin')
-                const success = ref(false)
-                const error = ref(false)
-                const pending = ref(false)
-                const message = ref("")
+                const installForm = ref({
+                    db_host: "localhost",
+                    db_port: "3306",
+                    db_database: "94list",
+                    db_username: "94list",
+                    db_password: "",
+                    title: "94list-laravel",
+                    app_url: "",
+                    admin_path: "/admin",
+                    pending: false,
+                    installed: false
+                })
 
-                const onSubmit = async () => {
-                    error.value = false
-                    success.value = false
-                    pending.value = true
+                const installFormRef = ref(null)
 
-                    const response = await axios.post("/api/do_install", {
-                        db_host: db_host.value,
-                        db_port: db_port.value,
-                        db_database: db_database.value,
-                        db_username: db_username.value,
-                        db_password: db_password.value,
-                        title: title.value,
-                        app_url: app_url.value,
-                        admin_path: admin_path.value,
-                    }).catch(err => {
-                        error.value = true
-                        const {response: {data}} = err
-                        message.value = data.message ?? 'failed'
-                    }) ?? 'failed'
-                    pending.value = false
+                const installFormRule = {
+                    db_host: [{required: true, message: '请输入MySQL 数据库地址', trigger: 'blur'}],
+                    db_port: [{required: true, message: '请输入MySQL 端口', trigger: 'blur'}],
+                    db_database: [{required: true, message: '请输入MySQL 数据库名', trigger: 'blur'}],
+                    db_username: [{required: true, message: '请输入MySQL 用户名', trigger: 'blur'}],
+                    db_password: [{required: true, message: '请输入MySQL 密码', trigger: 'blur'}],
+                    title: [{required: true, message: '请输入网站名称', trigger: 'blur'}],
+                    app_url: [{required: true, message: '请输入网站url', trigger: 'blur'}],
+                    admin_path: [{required: true, message: '请输入后台登录路径', trigger: 'blur'}]
+                }
 
-                    if (response !== 'failed') {
-                        const {data} = response
-                        success.value = true
-                        if (data.message === 'success') {
-                            message.value = [
-                                "安装成功!",
-                                "您的后台登录账号密码均为:admin,请及时登录修改!<br>",
-                                `<a class="btn" href="/" style="background: #bc1818;margin-right: 20px">访问首页</a><a class="btn" href="${admin_path.value}" style="background:#18bc9c">访问后台</a>`
-                            ].join("<br>")
+                const install = async (formEl) => {
+                    if (!formEl) return
+                    if (await formEl.validate(() => {
+                    })) {
+                        installForm.value.pending = true
+
+                        const response = await axios.post("{{route('do_install')}}", {
+                            db_host: installForm.value.db_host,
+                            db_port: installForm.value.db_port,
+                            db_database: installForm.value.db_database,
+                            db_username: installForm.value.db_username,
+                            db_password: installForm.value.db_password,
+                            title: installForm.value.title,
+                            app_url: installForm.value.app_url,
+                            admin_path: installForm.value.admin_path
+                        }).catch(error => {
+                            const {response: {data: {message}, status}} = error
+                            ElMessage.error(status === 400 ? message : '服务器错误')
+                        }) ?? "failed"
+
+                        installForm.value.pending = false
+
+                        if (response !== 'failed') {
+                            ElMessage.success("安装成功!")
+                            installForm.value.installed = true
                         }
                     }
                 }
 
+                const goHome = () => location.href = '/'
+                const goAdmin = () => location.href = installForm.value.admin_path
+
                 return {
-                    onSubmit,
-                    pending,
-                    success,
-                    error,
-                    message,
-                    db_host,
-                    db_port,
-                    db_database,
-                    db_username,
-                    db_password,
-                    title,
-                    app_url,
-                    admin_path
+                    installForm,
+                    installFormRule,
+                    installFormRef,
+                    install,
+                    goHome,
+                    goAdmin
                 }
             }
         })
 
+        app.use(ElementPlus)
         app.mount('#app')
     </script>
 @endsection
 
 @section('style')
     <style>
-        img[alt='logo'] {
-            width: 100%;
+        .container {
+            max-width: 515px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0 0 15px 0;
+        }
+
+        .btn {
+            background: #3C5675;
+            color: #fff;
+            border: 0;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 15px 30px;
+            -webkit-appearance: none;
         }
     </style>
 @endsection

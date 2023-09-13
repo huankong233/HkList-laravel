@@ -4,15 +4,15 @@
 
 @section('template')
     <el-dialog
-        v-model="addAccountFormVisible"
-        title="添加代理账号"
-        width="60%"
+            v-model="addAccountFormVisible"
+            title="添加代理账号"
+            width="60%"
     >
         <el-form
-            ref="addAccountFormRef"
-            v-bind:model="addAccountForm"
-            v-bind:rules="addAccountFormRule"
-            label-width="200px"
+                ref="addAccountFormRef"
+                v-bind:model="addAccountForm"
+                v-bind:rules="addAccountFormRule"
+                label-width="200px"
         >
             <el-form-item label="账户Cookie" prop="cookie">
                 <el-input type="textarea" v-model="addAccountForm.cookie" rows="5"></el-input>
@@ -50,10 +50,10 @@
         <el-tabs v-model="activeName">
             <el-tab-pane label="基础配置" name="changeConfig">
                 <el-form
-                    ref="changeConfigFormRef"
-                    v-bind:model="changeConfigForm"
-                    v-bind:rules="changeConfigFormRule"
-                    label-width="200px"
+                        ref="changeConfigFormRef"
+                        v-bind:model="changeConfigForm"
+                        v-bind:rules="changeConfigFormRule"
+                        label-width="200px"
                 >
                     <el-form-item label="站点名称" prop="title">
                         <el-input v-model="changeConfigForm.title"></el-input>
@@ -63,8 +63,8 @@
                     </el-form-item>
                     <el-form-item label="公告开关" prop="announceSwitch">
                         <el-switch
-                            v-model="changeConfigForm.announceSwitch"
-                            size="large"
+                                v-model="changeConfigForm.announceSwitch"
+                                size="large"
                         />
                     </el-form-item>
                     <el-form-item label="公告内容" prop="announce">
@@ -86,10 +86,10 @@
             </el-tab-pane>
             <el-tab-pane label="修改用户信息" name="changeUserInfo">
                 <el-form
-                    ref="changeUserInfoFormRef"
-                    v-bind:model="changeUserInfoForm"
-                    v-bind:rules="changeUserInfoFormRule"
-                    label-width="200px"
+                        ref="changeUserInfoFormRef"
+                        v-bind:model="changeUserInfoForm"
+                        v-bind:rules="changeUserInfoFormRule"
+                        label-width="200px"
                 >
                     <el-form-item label="新的用户名(为空就是不改)" prop="newUsername">
                         <el-input v-model="changeUserInfoForm.newUsername"></el-input>
@@ -117,66 +117,66 @@
             <el-tab-pane label="代理账号管理" name="accountManagement">
                 <el-button type="primary" @click="openAddDialog">添加代理账号</el-button>
                 <el-table
-                    v-loading="accountLoading"
-                    v-bind:data="accountList.data"
-                    border
-                    show-overflow-tooltip
-                    class="table"
+                        v-loading="accountLoading"
+                        v-bind:data="accountList.data"
+                        border
+                        show-overflow-tooltip
+                        class="table"
                 >
                     <el-table-column
-                        prop="id"
-                        label="编号">
+                            prop="id"
+                            label="编号">
                     </el-table-column>
                     <el-table-column
-                        prop="baidu_name"
-                        label="百度用户名">
+                            prop="baidu_name"
+                            label="百度用户名">
                     </el-table-column>
                     <el-table-column
-                        prop="netdisk_name"
-                        label="网盘用户名">
+                            prop="netdisk_name"
+                            label="网盘用户名">
                     </el-table-column>
                     <el-table-column
-                        prop="state"
-                        label="状态">
+                            prop="state"
+                            label="状态">
                     </el-table-column>
                     <el-table-column
-                        prop="add_time"
-                        label="添加时间">
+                            prop="add_time"
+                            label="添加时间">
                     </el-table-column>
                     <el-table-column
-                        prop="use"
-                        label="最后一次有效时间">
+                            prop="use"
+                            label="最后一次有效时间">
                     </el-table-column>
                     <el-table-column
-                        prop="vip_type"
-                        label="会员类型">
+                            prop="vip_type"
+                            label="会员类型">
                     </el-table-column>
                     <el-table-column
-                        prop="cookie"
-                        label="cookie值">
+                            prop="cookie"
+                            label="cookie值">
                     </el-table-column>
                     <el-table-column
-                        prop="switch"
-                        label="是否启用">
+                            prop="switch"
+                            label="是否启用">
                         <template #default="scope">
                             @{{ scope.row.switch === 0 ? '禁用' : '启用'}}
                         </template>
                     </el-table-column>
                     <el-table-column
-                        label="操作"
-                        width="160">
+                            label="操作"
+                            width="160">
                         <template #default="scope">
                             <el-button
-                                size="small"
-                                v-bind:type="scope.row.switch === 0 ? 'success' : 'info'"
-                                @click="switchAccount(scope.row.id,scope.row.switch)"
+                                    size="small"
+                                    v-bind:type="scope.row.switch === 0 ? 'success' : 'info'"
+                                    @click="switchAccount(scope.row.id,scope.row.switch)"
                             >
                                 @{{ scope.row.switch === 0 ? '启用' : '禁用'}}
                             </el-button>
                             <el-button
-                                size="small"
-                                type="danger"
-                                @click="deleteAccount(scope.row.id)"
+                                    size="small"
+                                    type="danger"
+                                    @click="deleteAccount(scope.row.id)"
                             >
                                 删除
                             </el-button>
@@ -184,11 +184,11 @@
                     </el-table-column>
                 </el-table>
                 <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="pageSize"
-                    v-bind:total="accountList?.total"
-                    hide-on-single-page
-                    @current-change="getAccounts"
+                        v-model:current-page="currentPage"
+                        v-model:page-size="pageSize"
+                        v-bind:total="accountList?.total"
+                        hide-on-single-page
+                        @current-change="getAccounts"
                 ></el-pagination>
             </el-tab-pane>
             <el-tab-pane label="开源说明" name="openSourceNotice">

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware("installCheck:notInstall")->group(function () {
-    Route::post("/do_install", [\App\Http\Controllers\InstallController::class, 'do_install']);
+    Route::post("/do_install", [\App\Http\Controllers\InstallController::class, 'do_install'])->name("do_install");
 });
 
 
@@ -48,5 +48,15 @@ Route::middleware(['installCheck:haveInstall', 'web'])->group(function () {
     Route::prefix("/user")->name("user.")->group(function () {
         Route::post("/getFileList", [\App\Http\Controllers\UserController::class, 'getFileList'])->name("getFileList");
         Route::post("/getSign", [\App\Http\Controllers\UserController::class, 'getSign'])->name("getSign");
+        Route::post("/downloadFile", [\App\Http\Controllers\UserController::class, 'downloadFile'])
+             ->name("downloadFile");
     });
+});
+
+Route::post("/test", function (Request $request) {
+    return [
+        "url"   => $request->fullUrl(),
+        "query" => $request->query(),
+        "post"  => $request->post()
+    ];
 });

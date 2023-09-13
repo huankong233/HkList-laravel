@@ -17,8 +17,8 @@
             return response;
         }, function (error) {
             const {response: {data: {message}}} = error
-            if (message === "Unauthenticated.") {
-                alert("登陆凭证过期, 请重新登陆")
+            if (message === "Unauthenticated." || message === "CSRF token mismatch.") {
+                alert("登陆凭证过期, 请重新刷新页面或重新登陆")
                 location.href = "/"
             }
             return Promise.reject(error);

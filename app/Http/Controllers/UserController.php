@@ -16,42 +16,6 @@ class UserController extends Controller
         return view("pages.user");
     }
 
-    public function getRandomCookie($vipType = ["超级会员"])
-    {
-        return BdUser::query()
-                     ->where([
-                         'switch' => '1'
-                     ])
-                     ->where(function (Builder $query) use ($vipType) {
-                         foreach ($vipType as $item) {
-                             $query->orWhere("vip_type", $item);
-                         }
-                     })
-                     ->where('state', '!=', '死亡')
-                     ->orderByRaw("RAND()")
-                     ->first();
-    }
-
-    public function getClientIp()
-    {
-        if (getenv('HTTP_CLIENT_IP')) {
-            $ip = getenv('HTTP_CLIENT_IP');
-        }
-        if (getenv('HTTP_X_REAL_IP')) {
-            $ip = getenv('HTTP_X_REAL_IP');
-        } else if (getenv('HTTP_X_FORWARDED_FOR')) {
-            $ip  = getenv('HTTP_X_FORWARDED_FOR');
-            $ips = explode(',', $ip);
-            $ip  = $ips[0];
-        } else if (getenv('REMOTE_ADDR')) {
-            $ip = getenv('REMOTE_ADDR');
-        } else {
-            $ip = '0.0.0.0';
-        }
-
-        return $ip;
-    }
-
     public function getFileList(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -71,8 +35,7 @@ class UserController extends Controller
 
         $http = new Client([
             'headers' => [
-                'User-Agent' => config("94list.user_agent"),
-                'cookie'     => config("94list.cookie")
+                'Cookie' => config("94list.cookie")
             ]
         ]);
 
@@ -102,7 +65,7 @@ class UserController extends Controller
                 'randsk'  => $contents["data"]["seckey"],
                 'list'    => $contents['data']['list'],
             ]),
-            9019 => ResponseController::response(400, "代理账号出现问题,请重试", $requestData),
+            9019 => ResponseController::response(400, "获取列表的Cookie失效", $requestData),
             default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",可能链接已失效或是未提供正确的密码", $requestData),
         };
     }
@@ -120,8 +83,7 @@ class UserController extends Controller
 
         $http = new Client([
             'headers' => [
-                'User-Agent' => config("94list.user_agent"),
-                'cookie'     => config("94list.cookie")
+                'Cookie' => config("94list.cookie")
             ]
         ]);
 
@@ -144,9 +106,139 @@ class UserController extends Controller
 
         return match ($contents['errno']) {
             0 => ResponseController::response(200, "获取签名成功", $contents['data']),
-            9019 => ResponseController::response(400, "获取信息的代理账号有问题"),
+            9019 => ResponseController::response(400, "获取列表的Cookie失效"),
             default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",获取签名信息失败"),
         };
-
     }
+
+    public function getRandomCookie($vipType = ["超级会员"])
+    {
+        return BdUser::query()
+                     ->where([
+                         'switch' => '1'
+                     ])
+                     ->where(function (Builder $query) use ($vipType) {
+                         foreach ($vipType as $item) {
+                             $query->orWhere("vip_type", $item);
+                         }
+                     })
+                     ->where('state', '!=', '死亡')
+                     ->orderByRaw("RAND()")
+                     ->first();
+    }
+
+    public function getClientIp()
+    {
+        if (getenv('HTTP_CLIENT_IP')) {
+            $ip = getenv('HTTP_CLIENT_IP');
+        } else if (getenv('HTTP_X_REAL_IP')) {
+            $ip = getenv('HTTP_X_REAL_IP');
+        } else if (getenv('HTTP_X_FORWARDED_FOR')) {
+            $ip  = getenv('HTTP_X_FORWARDED_FOR');
+            $ips = explode(',', $ip);
+            $ip  = $ips[0];
+        } else if (getenv('REMOTE_ADDR')) {
+            $ip = getenv('REMOTE_ADDR');
+        } else {
+            $ip = '0.0.0.0';
+        }
+
+        return $ip;
+    }
+
+    public function downloadFile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'fs_id'           => 'required',
+            'timestamp'       => 'required',
+            'uk'              => 'required',
+            'sign'            => 'required',
+            'randsk'          => 'required',
+            'shareid'         => 'required',
+            'server_filename' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            ResponseController::response(400, 'failed');
+        }
+
+        $cookie = $this->getRandomCookie();
+        if ($cookie === null) {
+            return ResponseController::response(400, '代理账号已用完');
+        }
+
+        $http = new Client([
+            'headers' => [
+                'User-Agent' => config("94list.user_agent"),
+                'Cookie'     => $cookie['cookie'],
+                "Referer"    => "https://pan.baidu.com/disk/home",
+                "Host"       => "pan.baidu.com",
+            ]
+        ]);
+
+        try {
+            $response = $http->post('https://pan.baidu.com/api/sharedownload', [
+                'query' => [
+                    "channel"    => "chunlei",
+                    "clienttype" => 12,
+                    "sign"       => $request['sign'],
+                    "timestamp"  => $request['timestamp'],
+                    "web"        => 1
+                ],
+                "body"  => join("&", [
+                    "encrypt=0",
+                    "extra=" . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
+                    "fid_list=[" . $request['fs_id'] . "]",
+                    "primaryid=" . $request['shareid'],
+                    "uk=" . $request["uk"],
+                    "product=share",
+                    "type=nolimit"
+                ])
+            ]);
+            $contents = json_decode($response->getBody()->getContents(), true);
+        } catch (GuzzleException $e) {
+            $contents = json_decode($e->getResponse()->getBody()->getContents(), true);
+        }
+
+        switch ($contents["errno"]) {
+            case 0:
+                $cookie->state = "能用";
+                $cookie->use   = date("Y-m-d H:i:s");
+                $cookie->save();
+
+                try {
+                    $headResponse  = $http->head($contents["list"][0]['dlink'], [
+                        'allow_redirects' => [
+                            'follow_redirects' => false,
+                            'track_redirects'  => true,
+                        ]
+                    ]);
+                    $redirects     = $headResponse->getHeader(\GuzzleHttp\RedirectMiddleware::HISTORY_HEADER);
+                    $effective_url = end($redirects) ?: $headResponse->getEffectiveUri();
+                } catch (GuzzleException $e) {
+                    return ResponseController::response(500, $e->getMessage());
+                }
+
+                return ResponseController::response(200, 'success', [
+                    [
+                        'filename' => $request['server_filename'],
+                        'dlink'    => $effective_url
+                    ]
+                ]);
+            case 112:
+                return ResponseController::response(400, "当前签名已过期,请刷新页面重新获取");
+            case '9019':
+            case '8001':
+                $cookie->state  = "死亡";
+                $cookie->switch = 0;
+                $cookie->save();
+                return ResponseController::response(400, "代理账号失效或者IP被封禁");
+            case '110':
+                return ResponseController::response(400, "当前代理ip被封禁");
+            default:
+                return ResponseController::response(400, "未知错误代码：" . $contents['errno']);
+        }
+    }
+
+
 }

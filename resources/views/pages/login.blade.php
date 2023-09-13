@@ -4,29 +4,35 @@
 
 @section('template')
     <div class="container">
-        <h1>
-            <img src="https://x.imgs.ovh/x/2023/08/19/64df97c347088.png" alt="logo">
-        </h1>
-        <h2> {{config("app.name")}} </h2>
-        <div>
-            <form method="post" @@submit.prevent="onSubmit">
-                <div class="form-group">
-                    <div class="form-field">
-                        <label>用户名</label>
-                        <input name="username" v-model="username" required>
-                    </div>
-
-                    <div class="form-field">
-                        <label>密码</label>
-                        <input name="password" v-model="password" required>
-                    </div>
-                </div>
-
-                <div class="form-buttons">
-                    <button type="submit" :disabled="pending">登陆</button>
-                </div>
-            </form>
-        </div>
+        <el-card>
+            <h1>
+                <img src="favicon.ico" alt="logo">
+            </h1>
+            <h2> {{config("app.name")}} </h2>
+            <el-form
+                    ref="loginFormRef"
+                    v-bind:model="loginForm"
+                    v-bind:rules="loginFormRule"
+                    label-width="100px"
+            >
+                <el-form-item label="用户名" prop="username">
+                    <el-input v-model="loginForm.username"></el-input>
+                </el-form-item>
+                <el-form-item label="密码" prop="password">
+                    <el-input v-model="loginForm.password"></el-input>
+                </el-form-item>
+                <el-form-item class="center">
+                    <el-button
+                            type="primary"
+                            v-on:click="login(loginFormRef)"
+                            v-bind:disabled="loginForm.pending"
+                            v-bind:loading="loginForm.pending"
+                    >
+                        登陆
+                    </el-button>
+                </el-form-item>
+            </el-form>
+        </el-card>
     </div>
 @endsection
 
@@ -37,31 +43,47 @@
 
         const app = createApp({
             setup() {
-                const username = ref("")
-                const password = ref("")
-                const pending = ref(false)
+                const loginForm = ref({
+                    username: "",
+                    password: "",
+                    pending: false
+                })
 
-                const onSubmit = async () => {
-                    pending.value = true
-                    const response = await axios.post("{{route("admin.login")}}", {
-                        username: username.value,
-                        password: password.value
-                    }).catch(error => {
-                        const {response: {status}} = error
-                        ElMessage.error(status === 400 ? '用户名或密码错误' : '服务器错误')
-                    }) ?? 'failed'
-                    pending.value = false
+                const loginFormRef = ref(null)
 
-                    if (response !== 'failed') {
-                        location.reload()
+                const loginFormRule = {
+                    username: [{required: true, message: '请输入用户名', trigger: 'blur'}],
+                    password: [{required: true, message: '请输入密码', trigger: 'blur'}]
+                }
+
+                const login = async (formEl) => {
+                    if (!formEl) return
+                    if (await formEl.validate(() => {
+                    })) {
+                        loginForm.value.pending = true
+
+                        const response = await axios.post("{{route('admin.login')}}", {
+                            username: loginForm.value.username,
+                            password: loginForm.value.password
+                        }).catch(error => {
+                            const {response: {data: {message}, status}} = error
+                            ElMessage.error(status === 400 ? "用户名或密码错误" : '服务器错误')
+                        }) ?? "failed"
+
+                        loginForm.value.pending = false
+
+                        if (response !== 'failed') {
+                            ElMessage.success('登陆成功')
+                            setTimeout(() => location.reload(), 1000)
+                        }
                     }
                 }
 
                 return {
-                    onSubmit,
-                    pending,
-                    username,
-                    password
+                    loginForm,
+                    loginFormRule,
+                    loginFormRef,
+                    login
                 }
             }
         })
@@ -73,8 +95,15 @@
 
 @section('style')
     <style>
-        img[alt='logo'] {
-            width: 100%;
+        .container {
+            max-width: 515px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            margin: 0 0 15px 0;
         }
     </style>
 @endsection
