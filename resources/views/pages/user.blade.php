@@ -89,9 +89,13 @@
         @else
             <el-alert title="当前中转账号充足" type="success"></el-alert>
         @endif
+        @if(config("app.debug") === true)
+            <el-alert class="alert" title="当前网站开启了DEBUG模式,非调试请关闭!!!!"
+                      type="error"></el-alert>
+        @endif
         @if(!Request::secure())
-            <el-alert title="当前网站未开启https,可能出现无法请求Aria2服务器" type="error"
-                      style="margin-top: 15px;"></el-alert>
+            <el-alert class="alert" title="当前网站未开启https,可能出现无法请求Aria2服务器的问题"
+                      type="error"></el-alert>
         @endif
         <el-form
                 ref="getFileListFormRef"
@@ -123,7 +127,7 @@
                 <el-button type="primary"
                            v-on:click="freshFileList"
                 >
-                    重新获取当前路径文件
+                    刷新列表
                 </el-button>
                 <el-button type="primary"
                            v-bind:disabled="selectedRows.length <= 0"
@@ -186,11 +190,11 @@
                     setTimeout(() => Announce.value.switch = {{config("94list.announceSwitch")}} === 1, 300)
 
                     const getFileListForm = ref({
-                        url: "https://pan.baidu.com/s/1AHSE9K1EpL2ga1ldU88C5A",
-                        password: "j94h",
+                        url: "",
+                        password: "",
                         pending: false,
                         @if(Auth::check())
-                        "bd_user_id": 0
+                        "bd_user_id": null
                         @endif
                     })
 
@@ -300,6 +304,7 @@
                     const freshFileList = async () => {
                         getFileListForm.value.pending = true
                         await getFileList(0, true)
+                        await getFileSign()
                         getFileListForm.value.pending = false
                     }
 
@@ -372,7 +377,7 @@
                             if (message.includes("当前签名已过期")) {
                                 ElMessage.error(message)
                                 ElMessage.success("自动重新获取中...")
-                                await getFileSign()
+                                await freshFileList()
                             } else {
                                 ElMessage.error(status === 400 ? message : '服务器错误')
                             }
@@ -407,6 +412,7 @@
 
                         if (selectedRows.value.length <= 0 || selectedRows.value.length >= parseFloat({{config("94list.max_once")}})) {
                             ElMessage.error(`一次请求请不要超过${parseFloat({{config("94list.max_once")}})}个文件`)
+                            fileListTableRef.value?.clearSelection()
                             getFileListForm.value.pending = false
                             return
                         }
@@ -489,7 +495,6 @@
                         ElMessage.error("请确保最大同时下载文件数在5及以下,否则可能下载失败!")
                         await sleep(3000)
                         ElMessage.success("开始下载")
-
                         selectDownloadFiles.value.forEach(item => sendDownloadFile(item.dlink, item.server_filename))
                     }
 
@@ -515,13 +520,13 @@
                             configAria2FormVisible.value = false
                         }
                     }
+
                     onMounted(() => {
                         const config = localStorage.getItem("configAria2")
                         if (config) {
                             configAria2Form.value = JSON.parse(config)
                         }
                     })
-
 
                     const openDownloadListDialog = () => configAria2FormVisible.value = true
 
@@ -581,15 +586,7 @@
 
 @section('style')
     <style>
-        .card {
-            margin-top: 15px;
-        }
-
-        .table {
-            margin-top: 15px;
-        }
-
-        .form {
+        .card, .table, .form, .alert {
             margin-top: 15px;
         }
     </style>

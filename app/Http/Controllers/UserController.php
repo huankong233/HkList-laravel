@@ -46,7 +46,7 @@ class UserController extends Controller
             'root'     => $request['dir'] === '' || $request['dir'] === null || $request['dir'] === '/' ? 1 : 0,
             'pwd'      => $request['password'] ?? '',
             'page'     => $request['page'] ?? 1,
-            'num'      => $request['num'] ?? 1000,
+            'num'      => $request['num'] ?? 9999,
             'order'    => $request['order'] ?? 'filename'
         ];
 
@@ -64,7 +64,7 @@ class UserController extends Controller
                 'uk'      => $contents["data"]["uk"],
                 'shareid' => $contents["data"]["shareid"],
                 'randsk'  => $contents["data"]["seckey"],
-                'list'    => $contents['data']['list'],
+                'list'    => $contents['data']['list']
             ]),
             9019 => ResponseController::response(400, "获取列表的Cookie失效", $requestData),
             default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",可能链接已失效或是未提供正确的密码", $requestData),
