@@ -53,13 +53,19 @@
                         ref="changeConfigFormRef"
                         v-bind:model="changeConfigForm"
                         v-bind:rules="changeConfigFormRule"
-                        label-width="200px"
+                        label-width="230px"
                 >
-                    <el-form-item label="站点名称" prop="title">
-                        <el-input v-model="changeConfigForm.title"></el-input>
+                    <el-form-item label="版本号" prop="version">
+                        <el-input disabled v-model="changeConfigForm.version"></el-input>
                     </el-form-item>
                     <el-form-item label="下载使用的 User_Agent" prop="user_agent">
                         <el-input v-model="changeConfigForm.user_agent"></el-input>
+                    </el-form-item>
+                    <el-form-item label="批量解析时休眠时间(秒)" prop="sleep">
+                        <el-input v-model="changeConfigForm.sleep"></el-input>
+                    </el-form-item>
+                    <el-form-item label="批量解析时单次最大解析数量" prop="max_once">
+                        <el-input v-model="changeConfigForm.max_once"></el-input>
                     </el-form-item>
                     <el-form-item label="公告开关" prop="announceSwitch">
                         <el-switch
@@ -116,13 +122,21 @@
             </el-tab-pane>
             <el-tab-pane label="代理账号管理" name="accountManagement">
                 <el-button type="primary" @click="openAddDialog">添加代理账号</el-button>
+                <el-button type="primary" v-bind:disabled="selectAccounts.length <= 0" @click="enableSelectAccounts">
+                    批量启用
+                </el-button>
+                <el-button type="primary" v-bind:disabled="selectAccounts.length <= 0" @click="blockSelectAccounts">
+                    批量禁用
+                </el-button>
                 <el-table
                         v-loading="accountLoading"
                         v-bind:data="accountList.data"
                         border
                         show-overflow-tooltip
                         class="table"
+                        @selection-change="selectAccountsChange"
                 >
+                    <el-table-column type="selection" width="40"></el-table-column>
                     <el-table-column
                             prop="id"
                             label="编号">
@@ -209,7 +223,7 @@
 
         const app = createApp({
             setup() {
-                const activeName = ref('accountManagement')
+                const activeName = ref('changeConfig')
 
                 const changeUserInfoForm = ref({
                     nowPassword: "",
@@ -257,8 +271,10 @@
                 }
 
                 const changeConfigForm = ref({
-                    title: "{{config("94list.title")}}",
+                    version: "{{config("94list.version")}}",
                     user_agent: "{{config("94list.user_agent")}}",
+                    sleep: "{{config("94list.sleep")}}",
+                    "max_once": "{{config("94list.max_once")}}",
                     announceSwitch: {{config("94list.announceSwitch")}} === 1,
                     announce: "{{config("94list.announce")}}",
                     cookie: "{{config("94list.cookie")}}",
@@ -268,10 +284,12 @@
                 const changeConfigFormRef = ref(null)
 
                 const changeConfigFormRule = {
-                    title: [{required: true, message: '请输入站点标题', trigger: 'blur'}],
                     user_agent: [{required: true, message: '请输入User_Agent', trigger: 'blur'}],
+                    announce: [{required: true, message: '请公告内容', trigger: 'blur'}],
                     announceSwitch: [{required: true, message: '请确认开关状态', trigger: 'blur'}],
-                    cookie: [{required: true, message: '请输入获取列表时的 Cookie', trigger: 'blur'}]
+                    cookie: [{required: true, message: '请输入获取列表时的 Cookie', trigger: 'blur'}],
+                    "max_once": [{required: true, message: '请输入批量解析时单次最大解析数量', trigger: 'blur'}],
+                    sleep: [{required: true, message: '请输入批量解析时休眠时间(秒)', trigger: 'blur'}],
                 }
 
                 const changeConfig = async (formEl) => {
@@ -281,11 +299,12 @@
                         changeConfigForm.value.pending = true
 
                         const response = await axios.post("{{route('admin.changeConfig')}}", {
-                            title: changeConfigForm.value.title,
                             user_agent: changeConfigForm.value.user_agent,
                             announceSwitch: changeConfigForm.value.announceSwitch,
-                            announce: changeConfigForm.value.announce ?? "",
-                            cookie: changeConfigForm.value.cookie
+                            announce: changeConfigForm.value.announce,
+                            cookie: changeConfigForm.value.cookie,
+                            sleep: changeConfigForm.value.sleep,
+                            "max_once": changeConfigForm.value["max_once"]
                         }).catch(error => {
                             const {response: {data: {message}, status}} = error
                             ElMessage.error(status === 400 ? message : '服务器错误')
@@ -417,7 +436,7 @@
                     }) ?? 'failed'
 
                     if (response !== 'failed') {
-                        ElMessage.success(`成功${state === 0 ? '开启' : '关闭'}`)
+                        ElMessage.success(`成功${state === 0 ? '启用' : '禁用'}`)
                         await getAccounts();
                     }
                 }
@@ -434,6 +453,23 @@
                         ElMessage.success(`删除账户成功`)
                         await getAccounts();
                     }
+                }
+
+                const selectAccounts = ref([])
+                const selectAccountsChange = (row) => selectAccounts.value = row
+
+                const enableSelectAccounts = () => {
+                    selectAccounts.value.forEach(item => {
+                        if (item.switch === 1) return ElMessage.info(`编号:${item.id},已经启用了`)
+                        switchAccount(item.id, item.switch)
+                    })
+                }
+
+                const blockSelectAccounts = () => {
+                    selectAccounts.value.forEach(item => {
+                        if (item.switch === 0) return ElMessage.info(`编号:${item.id},已经禁用了`)
+                        switchAccount(item.id, item.switch)
+                    })
                 }
 
                 return {
@@ -466,7 +502,12 @@
                     currentPage,
                     getAccounts,
                     switchAccount,
-                    deleteAccount
+                    deleteAccount,
+
+                    selectAccounts,
+                    selectAccountsChange,
+                    enableSelectAccounts,
+                    blockSelectAccounts
                 }
             }
         })

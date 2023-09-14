@@ -112,9 +112,12 @@ class AdminController extends Controller
     public function changeConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title'          => 'required',
+            'sleep'          => 'required',
+            'max_once'       => 'required',
             'user_agent'     => 'required',
-            'announceSwitch' => 'required|boolean'
+            'announce'       => 'required',
+            'announceSwitch' => 'required|boolean',
+            'cookie'         => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -122,11 +125,12 @@ class AdminController extends Controller
         }
 
         $this->modifyEnv([
-            "_94LIST_TITLE"          => $request['title'],
             "_94LIST_UA"             => $request['user_agent'],
             "_94LIST_ANNOUNCESWITCH" => $request['announceSwitch'] ? 1 : 0,
-            "_94LIST_ANNOUNCE"       => $request['announce'] ?? '',
-            "_94LIST_COOKIE"         => '"' . $request['cookie'] . '"' ?? '""'
+            "_94LIST_ANNOUNCE"       => $request['announce'],
+            "_94LIST_COOKIE"         => '"' . $request['cookie'] . '"',
+            "_94LIST_SLEEP"          => $request['sleep'],
+            "_94LIST_MAXONCE"        => $request['max_once']
         ]);
 
         return ResponseController::response(200, "success");

@@ -24,6 +24,9 @@
             return Promise.reject(error);
         });
 
+        // 防止延迟过高
+        axios.defaults.timeout = 120000;
+
         const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
         if (dark) document.querySelector("html").classList.add("dark")
     </script>

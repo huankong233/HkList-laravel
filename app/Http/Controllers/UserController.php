@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -111,7 +112,7 @@ class UserController extends Controller
         };
     }
 
-    public function getRandomCookie($vipType = ["超级会员"])
+    static public function getRandomCookie($vipType = ["超级会员"])
     {
         return BdUser::query()
                      ->where([
@@ -146,25 +147,41 @@ class UserController extends Controller
         return $ip;
     }
 
-    public function downloadFile(Request $request)
+    public function downloadFiles(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fs_id'           => 'required',
-            'timestamp'       => 'required',
-            'uk'              => 'required',
-            'sign'            => 'required',
-            'randsk'          => 'required',
-            'shareid'         => 'required',
-            'server_filename' => 'required'
+            'fs_ids'    => 'required',
+            'timestamp' => 'required',
+            'uk'        => 'required',
+            'sign'      => 'required',
+            'randsk'    => 'required',
+            'shareid'   => 'required'
         ]);
 
         if ($validator->fails()) {
             ResponseController::response(400, 'failed');
         }
 
-        $cookie = $this->getRandomCookie();
-        if ($cookie === null) {
-            return ResponseController::response(400, '代理账号已用完');
+        if (count($request['fs_ids']) > config("94list.max_once")) {
+            return ResponseController::response(400, 'failed');
+        }
+
+        // 判断是否指定了某个账户
+        $cookieId = $request['bd_user_id'];
+        if ($cookieId) {
+            if (Auth::user()->is_admin) {
+                $cookie = BdUser::query()->find($cookieId);
+                if ($cookie === null) {
+                    return ResponseController::response(400, '代理账号不存在');
+                }
+            } else {
+                return ResponseController::response(400, '您没有权限下载');
+            }
+        } else {
+            $cookie = $this->getRandomCookie();
+            if ($cookie === null) {
+                return ResponseController::response(400, '代理账号已用完');
+            }
         }
 
         $http = new Client([
@@ -188,7 +205,7 @@ class UserController extends Controller
                 "body"  => join("&", [
                     "encrypt=0",
                     "extra=" . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
-                    "fid_list=[" . $request['fs_id'] . "]",
+                    "fid_list=[" . join(",", $request['fs_ids']) . "]",
                     "primaryid=" . $request['shareid'],
                     "uk=" . $request["uk"],
                     "product=share",
@@ -206,25 +223,33 @@ class UserController extends Controller
                 $cookie->use   = date("Y-m-d H:i:s");
                 $cookie->save();
 
-                try {
-                    $headResponse  = $http->head($contents["list"][0]['dlink'], [
-                        'allow_redirects' => [
-                            'follow_redirects' => false,
-                            'track_redirects'  => true,
-                        ]
-                    ]);
-                    $redirects     = $headResponse->getHeader(\GuzzleHttp\RedirectMiddleware::HISTORY_HEADER);
-                    $effective_url = end($redirects) ?: $headResponse->getEffectiveUri();
-                } catch (GuzzleException $e) {
-                    return ResponseController::response(500, $e->getMessage());
+                // 如果就一个文件就不睡
+                // 有多个文件就每个睡一觉
+                $sleepTime    = count($contents['list']) > 1 ? config("94list.sleep") : 0;
+                $responseData = [];
+
+                foreach ($contents['list'] as $list) {
+                    $dlink = $list['dlink'];
+                    try {
+                        $headResponse   = $http->head($dlink, [
+                            'allow_redirects' => [
+                                'follow_redirects' => false,
+                                'track_redirects'  => true,
+                            ]
+                        ]);
+                        $redirects      = $headResponse->getHeader(\GuzzleHttp\RedirectMiddleware::HISTORY_HEADER);
+                        $effective_url  = end($redirects) ?: $headResponse->getEffectiveUri();
+                        $responseData[] = [
+                            'dlink'           => $effective_url,
+                            'server_filename' => $list['server_filename']
+                        ];
+                    } catch (GuzzleException $e) {
+                        return ResponseController::response(500, $e->getMessage());
+                    }
+                    sleep($sleepTime);
                 }
 
-                return ResponseController::response(200, 'success', [
-                    [
-                        'filename' => $request['server_filename'],
-                        'dlink'    => $effective_url
-                    ]
-                ]);
+                return ResponseController::response(200, 'success', $responseData);
             case 112:
                 return ResponseController::response(400, "当前签名已过期,请刷新页面重新获取");
             case '9019':
@@ -239,6 +264,4 @@ class UserController extends Controller
                 return ResponseController::response(400, "未知错误代码：" . $contents['errno']);
         }
     }
-
-
 }

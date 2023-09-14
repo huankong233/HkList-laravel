@@ -48,15 +48,7 @@ Route::middleware(['installCheck:haveInstall', 'web'])->group(function () {
     Route::prefix("/user")->name("user.")->group(function () {
         Route::post("/getFileList", [\App\Http\Controllers\UserController::class, 'getFileList'])->name("getFileList");
         Route::post("/getSign", [\App\Http\Controllers\UserController::class, 'getSign'])->name("getSign");
-        Route::post("/downloadFile", [\App\Http\Controllers\UserController::class, 'downloadFile'])
-             ->name("downloadFile");
+        Route::post("/downloadFiles", [\App\Http\Controllers\UserController::class, 'downloadFiles'])
+             ->name("downloadFiles");
     });
-});
-
-Route::post("/test", function (Request $request) {
-    return [
-        "url"   => $request->fullUrl(),
-        "query" => $request->query(),
-        "post"  => $request->post()
-    ];
 });

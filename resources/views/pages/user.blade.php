@@ -11,12 +11,43 @@
         <span>@{{Announce.message}}</span>
     </el-dialog>
 
+    <el-dialog
+            v-model="configAria2FormVisible"
+            title="Aria2配置"
+            width="90%"
+    >
+        <el-form
+                ref="configAria2FormRef"
+                v-bind:model="configAria2Form"
+                v-bind:rules="configAria2FormRule"
+                label-width="200px"
+        >
+            <el-form-item label="Aria2 服务器地址" prop="host">
+                <el-input v-model="configAria2Form.host"></el-input>
+            </el-form-item>
+            <el-form-item label="Aria2 端口号" prop="port">
+                <el-input v-model="configAria2Form.port"></el-input>
+            </el-form-item>
+            <el-form-item label="Aria2 下载密钥" prop="secret">
+                <el-input v-model="configAria2Form.secret"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary"
+                           v-on:click="configAria2(configAria2FormRef)"
+                >
+                    保存
+                </el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
     <el-dialog v-model="downloadDialogVisible" title="解析任务列表" width="80%">
-        <el-space wrap> 当前的UA :
+        <el-space>
+            <el-text class="mx-1">当前的UA :</el-text>
             <el-link type="danger" @click="copy(user_agent,'已复制UA')">@{{ user_agent }}</el-link>
-        </el-space>
-        <el-space wrap>
-            <el-button type="primary" @click="sendDownloadFiles">批量下载</el-button>
+            <el-button type="primary" v-bind:disabled="selectDownloadFiles.length <= 0" @click="sendDownloadFiles">
+                批量下载
+            </el-button>
             <el-button type="primary" @click="openDownloadListDialog">下载配置</el-button>
         </el-space>
         <el-table
@@ -24,9 +55,9 @@
                 show-overflow-tooltip
                 class="table"
                 :data="dlinkList"
-                @selection-change="sendDownloadFiles">
+                @selection-change="selectDownloadFilesChange">
             <el-table-column type="selection" width="40"></el-table-column>
-            <el-table-column prop="filename" label="文件名"></el-table-column>
+            <el-table-column prop="server_filename" label="文件名"></el-table-column>
             <el-table-column prop="dlink" label="下载链接"></el-table-column>
             <el-table-column label="操作" width="280">
                 <template #default="scope">
@@ -40,7 +71,7 @@
                     <el-button
                             type="primary"
                             size="small"
-                            @click="sendDown(scope.row.dlink,scope.row.filename)"
+                            @click="sendDownloadFile(scope.row.dlink,scope.row.server_filename)"
                     >
                         发送Aria2
                     </el-button>
@@ -53,11 +84,17 @@
             v-loading="getFileListForm.pending"
     >
         <h2>前台解析中心 | {{ config("app.name") }}</h2>
+        @if(\App\Http\Controllers\UserController::getRandomCookie() === null)
+            <el-alert title="当前中转账号不足" type="error"></el-alert>
+        @else
+            <el-alert title="当前中转账号充足" type="success"></el-alert>
+        @endif
         <el-form
                 ref="getFileListFormRef"
                 v-bind:model="getFileListForm"
                 v-bind:rules="getFileListFormRule"
                 label-width="100"
+                class="form"
         >
             <el-form-item label="链接" prop="url">
                 <el-input v-model="getFileListForm.url" @blur="checkLink"></el-input>
@@ -126,7 +163,7 @@
 
 @section('scripts')
     <script>
-        const {createApp, ref} = Vue
+        const {createApp, ref, onMounted} = Vue
         const {ElMessage} = ElementPlus
 
         const app = createApp({
@@ -305,10 +342,11 @@
                         return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
                     }
 
-                    const downloadFile = async (fs_id, server_filename) => {
-                        const response = await axios.post("{{route('user.downloadFile')}}", {
-                            fs_id,
-                            server_filename,
+                    const downloadFile = async (fs_id) => {
+                        const response = await axios.post("{{route('user.downloadFiles')}}", {
+                            // 如果fs_id是数组则表示批量下载
+                            // 否则就是单个下载手动修改成数组
+                            fs_ids: Array.isArray(fs_id) ? fs_id : [fs_id],
                             timestamp: timestamp.value,
                             uk: uk.value,
                             sign: sign.value,
@@ -333,7 +371,8 @@
                         downloadDialogVisible.value = true
                     }
 
-                    const downloadFiles = () => {
+                    const downloadFiles = async () => {
+                        getFileListForm.value.pending = true
                         let bad = false
                         selectedRows.value = selectedRows.value.filter(item => {
                             if (bad) return false
@@ -346,9 +385,21 @@
                             return !bool
                         })
 
-                        if (selectedRows.value.length > 0) {
-                            console.log(selectedRows.value)
+                        if (bad) {
+                            getFileListForm.value.pending = false
+                            return
                         }
+
+                        if (selectedRows.value.length <= 0 || selectedRows.value.length >= parseFloat({{config("94list.max_once")}})) {
+                            ElMessage.error(`一次请求请不要超过${parseFloat({{config("94list.max_once")}})}个文件`)
+                            getFileListForm.value.pending = false
+                            return
+                        }
+
+                        // 收集fids
+                        const fs_ids = selectedRows.value.map(item => item.fs_id)
+                        await downloadFile(fs_ids)
+                        getFileListForm.value.pending = false
                     }
 
                     const getDir = async (path, server_mtime) => {
@@ -394,46 +445,70 @@
                     }
 
                     const sendDownloadFile = async (dlink, filename) => {
-                        const response = await axios.post(`http://${configDownload.value.host}:${configDownload.value.port}/jsonrpc`, {
+                        const response = await axios.post(`${configAria2Form.value.host}:${configAria2Form.value.port}/jsonrpc`, {
                             jsonrpc: '2.0',
                             id: "{{config("app.name")}}",
                             method: 'aria2.addUri',
                             params: [
-                                configDownload.value.secret,
+                                `token:${configAria2Form.value.secret}`,
                                 [dlink],
                                 {
                                     'out': filename,
-                                    'header': ['User-Agent:' + user_agent.value]
+                                    'header': [`User-Agent: ${user_agent}`]
                                 }
                             ]
                         }).catch(error => {
-                            ElMessage.error('发送失败，可能相对应的下载器没有启动')
+                            ElMessage.error('发送失败，请检查控制台输出')
                         }) ?? 'failed'
 
                         if (response !== 'failed') {
-                            ElMessage.success('已把 ' + filename + ' 任务发送给下载器')
+                            ElMessage.success(`已把${filename}任务发送给下载器`)
                         }
                     }
 
                     const selectDownloadFiles = ref([])
-                    const downloadListClick = () => {
-                        console.log(selectDownloadFiles.value)
+                    const selectDownloadFilesChange = (row) => selectDownloadFiles.value = row
+                    const sendDownloadFiles = async () => {
+                        ElMessage.error("请确保最大同时下载文件数在5及以下,否则可能下载失败!")
+                        ElMessage.error("请确保最大同时下载文件数在5及以下,否则可能下载失败!")
+                        ElMessage.error("请确保最大同时下载文件数在5及以下,否则可能下载失败!")
+                        await sleep(3000)
+                        ElMessage.success("开始下载")
+
+                        selectDownloadFiles.value.forEach(item => sendDownloadFile(item.dlink, item.server_filename))
                     }
 
-                    const sendDownloadFiles = (row) => selectDownloadFiles.value = row
+                    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-                    const configDownload = ref({
-                        visible: false,
-                        host: "localhost",
+                    const configAria2Form = ref({
+                        host: "http://localhost",
                         port: "6800",
                         secret: ""
                     })
-
-                    const openDownloadListDialog = () => configDownload.value.visible = true
-
-                    const closeDownloadListDialog = () => {
-                        configDownload.value.visible = false
+                    const configAria2FormRule = {
+                        host: [{required: true, message: '请输入Aria2 服务器地址', trigger: 'blur'}],
+                        port: [{required: true, message: '请输入Aria2 端口号', trigger: 'blur'}]
                     }
+                    const configAria2FormRef = ref(null)
+                    const configAria2FormVisible = ref(false)
+                    const configAria2 = async (formEl) => {
+                        if (!formEl) return
+                        if (await formEl.validate(() => {
+                        })) {
+                            localStorage.setItem('configAria2', JSON.stringify(configAria2Form.value))
+                            ElMessage.success("保存成功")
+                            configAria2FormVisible.value = false
+                        }
+                    }
+                    onMounted(() => {
+                        const config = localStorage.getItem("configAria2")
+                        if (config) {
+                            configAria2Form.value = JSON.parse(config)
+                        }
+                    })
+
+
+                    const openDownloadListDialog = () => configAria2FormVisible.value = true
 
                     return {
                         Announce,
@@ -467,14 +542,19 @@
                         dlinkList,
                         user_agent,
                         copy,
+
                         sendDownloadFile,
 
-                        configDownload,
+                        configAria2,
+                        configAria2Form,
+                        configAria2FormRef,
+                        configAria2FormRule,
+                        configAria2FormVisible,
+                        selectDownloadFiles,
+                        selectDownloadFilesChange,
                         sendDownloadFiles,
-                        downloadListClick,
 
-                        openDownloadListDialog,
-                        closeDownloadListDialog
+                        openDownloadListDialog
                     }
                 }
             })
@@ -491,6 +571,10 @@
         }
 
         .table {
+            margin-top: 15px;
+        }
+
+        .form {
             margin-top: 15px;
         }
     </style>

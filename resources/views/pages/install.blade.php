@@ -13,8 +13,6 @@
                 <p>您的后台登录账号密码均为:admin,请及时登录修改!</p>
                 <el-button type="danger" @click="goHome">访问首页</el-button>
                 <el-button type="success" @click="goAdmin">访问后台</el-button>
-                {{--                <a class="btn" href="/" style="background: #bc1818;margin-right: 20px">访问首页</a>--}}
-                {{--                <a class="btn" v-bind:href="installForm.admin_path" style="background:#18bc9c">访问后台</a>--}}
             </h3>
             <el-form
                     ref="installFormRef"
@@ -154,17 +152,6 @@
 
         h1 {
             margin: 0 0 15px 0;
-        }
-
-        .btn {
-            background: #3C5675;
-            color: #fff;
-            border: 0;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 15px 30px;
-            -webkit-appearance: none;
         }
     </style>
 @endsection
