@@ -89,6 +89,10 @@
         @else
             <el-alert title="当前中转账号充足" type="success"></el-alert>
         @endif
+        @if(!Request::secure())
+            <el-alert title="当前网站未开启https,可能出现无法请求Aria2服务器" type="error"
+                      style="margin-top: 15px;"></el-alert>
+        @endif
         <el-form
                 ref="getFileListFormRef"
                 v-bind:model="getFileListForm"
@@ -102,6 +106,11 @@
             <el-form-item label="密码" prop="password">
                 <el-input v-model="getFileListForm.password"></el-input>
             </el-form-item>
+            @if(Auth::check())
+                <el-form-item label="指定用户解析" prop="bd_user_id">
+                    <el-input v-model="getFileListForm.bd_user_id"></el-input>
+                </el-form-item>
+            @endif
             <el-form-item label="当前路径" prop="dir">
                 <el-input v-model="dir" disabled></el-input>
             </el-form-item>
@@ -179,7 +188,10 @@
                     const getFileListForm = ref({
                         url: "https://pan.baidu.com/s/1AHSE9K1EpL2ga1ldU88C5A",
                         password: "j94h",
-                        pending: false
+                        pending: false,
+                        @if(Auth::check())
+                        "bd_user_id": 0
+                        @endif
                     })
 
                     const getFileListFormRef = ref(null)
@@ -351,7 +363,10 @@
                             uk: uk.value,
                             sign: sign.value,
                             randsk: randsk.value,
-                            shareid: shareid.value
+                            shareid: shareid.value,
+                            @if(Auth::check())
+                            "bd_user_id": getFileListForm.value["bd_user_id"]
+                            @endif
                         }).catch(async error => {
                             const {response: {data: {message}, status}} = error
                             if (message.includes("当前签名已过期")) {

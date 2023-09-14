@@ -168,7 +168,7 @@ class UserController extends Controller
 
         // 判断是否指定了某个账户
         $cookieId = $request['bd_user_id'];
-        if ($cookieId) {
+        if (isset($cookieId)) {
             if (Auth::user()->is_admin) {
                 $cookie = BdUser::query()->find($cookieId);
                 if ($cookie === null) {
