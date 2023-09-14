@@ -380,7 +380,7 @@
                         if (response !== 'failed') {
                             const {data: {data}} = response
                             checkedInfo.value = true
-                            addAccountForm.value.username = data.netdisk_name
+                            addAccountForm.value.username = data.baidu_name
                             addAccountForm.value.vipType = vipTypeMap.get(data.vip_type)
                         }
                     }
