@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'ssl'            => env("APP_SSL", false),
     'prefix'         => env("ADMIN_ROUTE_PREFIX", "/admin"),
     'user_agent'     => env("_94LIST_UA", 'netpan'),
     'announceSwitch' => env("_94LIST_ANNOUNCESWITCH", true),
