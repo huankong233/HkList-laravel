@@ -129,7 +129,7 @@ class AdminController extends Controller
             "APP_DEBUG"              => $request['debug'] ? 'true' : 'false',
             "_94LIST_UA"             => $request['user_agent'],
             "_94LIST_ANNOUNCESWITCH" => $request['announceSwitch'] ? 'true' : 'false',
-            "_94LIST_ANNOUNCE"       => $request['announce'],
+            "_94LIST_ANNOUNCE"       => '"' . $request['announce'] . '"',
             "_94LIST_COOKIE"         => '"' . $request['cookie'] . '"',
             "_94LIST_SLEEP"          => $request['sleep'],
             "_94LIST_MAXONCE"        => $request['max_once']
