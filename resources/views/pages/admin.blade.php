@@ -67,6 +67,12 @@
                     <el-form-item label="批量解析时单次最大解析数量" prop="max_once">
                         <el-input v-model="changeConfigForm.max_once"></el-input>
                     </el-form-item>
+                    <el-form-item label="DEBUG模式开关" prop="debug">
+                        <el-switch
+                                v-model="changeConfigForm.debug"
+                                size="large"
+                        />
+                    </el-form-item>
                     <el-form-item label="公告开关" prop="announceSwitch">
                         <el-switch
                                 v-model="changeConfigForm.announceSwitch"
@@ -275,9 +281,10 @@
                     user_agent: "{{config("94list.user_agent")}}",
                     sleep: "{{config("94list.sleep")}}",
                     "max_once": "{{config("94list.max_once")}}",
-                    announceSwitch: {{config("94list.announceSwitch")}} === 1,
+                    announceSwitch: {{config("94list.announceSwitch")?'true':'false'}} === 1,
                     announce: "{{config("94list.announce")}}",
                     cookie: "{{config("94list.cookie")}}",
+                    debug: {{config("app.debug")?'true':'false'}} === 1,
                     pending: false
                 })
 
@@ -287,6 +294,7 @@
                     user_agent: [{required: true, message: '请输入User_Agent', trigger: 'blur'}],
                     announce: [{required: true, message: '请公告内容', trigger: 'blur'}],
                     announceSwitch: [{required: true, message: '请确认开关状态', trigger: 'blur'}],
+                    debug: [{required: true, message: '请确认开关状态', trigger: 'blur'}],
                     cookie: [{required: true, message: '请输入获取列表时的 Cookie', trigger: 'blur'}],
                     "max_once": [{required: true, message: '请输入批量解析时单次最大解析数量', trigger: 'blur'}],
                     sleep: [{required: true, message: '请输入批量解析时休眠时间(秒)', trigger: 'blur'}],
@@ -304,7 +312,8 @@
                             announce: changeConfigForm.value.announce,
                             cookie: changeConfigForm.value.cookie,
                             sleep: changeConfigForm.value.sleep,
-                            "max_once": changeConfigForm.value["max_once"]
+                            "max_once": changeConfigForm.value["max_once"],
+                            debug: changeConfigForm.value.debug
                         }).catch(error => {
                             const {response: {data: {message}, status}} = error
                             ElMessage.error(status === 400 ? message : '服务器错误')

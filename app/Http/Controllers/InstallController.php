@@ -45,7 +45,6 @@ class InstallController extends Controller
                 $envTemp = str_replace('{' . $key . '}', $item, $envTemp);
             }
 
-
             // 写入配置
             file_put_contents($envPath, $envTemp);
             // 导入sql
@@ -60,7 +59,7 @@ class InstallController extends Controller
 
             // 写入安装锁
             file_put_contents($installLock, 'install ok');
-            return ResponseController::response(200, 'success');
+            return ResponseController::response(200, '安装成功');
         } catch (QueryException $exception) {
             return ResponseController::response(400, '数据库配置错误 :' . $exception->getMessage());
         } catch (\Exception $exception) {

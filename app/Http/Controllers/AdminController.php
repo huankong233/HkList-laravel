@@ -31,7 +31,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, "1");
+            return ResponseController::response(400, "参数错误");
         }
 
         if (Auth::attempt([
@@ -39,9 +39,9 @@ class AdminController extends Controller
             'password' => $request['password'],
         ])) {
             $request->session()->regenerate();
-            return ResponseController::response(200, "success");
+            return ResponseController::response(200, "登陆成功");
         } else {
-            return ResponseController::response(400, "failed");
+            return ResponseController::response(400, "登陆失败,用户名或密码错误");
         }
     }
 
@@ -50,7 +50,7 @@ class AdminController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return ResponseController::response(200, "success");
+        return ResponseController::response(200, "退出登陆成功");
     }
 
     public function changeUserInfo(Request $request)
@@ -76,7 +76,7 @@ class AdminController extends Controller
         }
 
         if ($request['newPassword'] != $request['confirmPassword']) {
-            return ResponseController::response(400, "failed");
+            return ResponseController::response(400, "两次密码不一致");
         }
 
         $user->username = $request['newUsername'];
@@ -85,7 +85,7 @@ class AdminController extends Controller
 
         $this->logout($request);
 
-        return ResponseController::response(200, "success");
+        return ResponseController::response(200, "修改信息成功");
     }
 
     static public function modifyEnv(array $data)
@@ -117,23 +117,25 @@ class AdminController extends Controller
             'user_agent'     => 'required',
             'announce'       => 'required',
             'announceSwitch' => 'required|boolean',
-            'cookie'         => 'required'
+            'cookie'         => 'required',
+            'debug'          => 'required'
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, "failed");
+            return ResponseController::response(400, "参数错误");
         }
 
         $this->modifyEnv([
+            "APP_DEBUG"              => $request['debug'] ? 'true' : 'false',
             "_94LIST_UA"             => $request['user_agent'],
-            "_94LIST_ANNOUNCESWITCH" => $request['announceSwitch'] ? 1 : 0,
+            "_94LIST_ANNOUNCESWITCH" => $request['announceSwitch'] ? 'true' : 'false',
             "_94LIST_ANNOUNCE"       => $request['announce'],
             "_94LIST_COOKIE"         => '"' . $request['cookie'] . '"',
             "_94LIST_SLEEP"          => $request['sleep'],
             "_94LIST_MAXONCE"        => $request['max_once']
         ]);
 
-        return ResponseController::response(200, "success");
+        return ResponseController::response(200, "修改配置成功");
     }
 
     public function _getAccountInfo($cookie)
@@ -168,7 +170,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, "failed");
+            return ResponseController::response(400, "参数错误");
         }
 
         $response = $this->_getAccountInfo($request['cookie']);
@@ -176,14 +178,15 @@ class AdminController extends Controller
         if ($response['type'] === 'failed') {
             $e     = $response['error'];
             $error = $response['data'];
+
             if ($e->getCode() === 0) {
-                return ResponseController::response(500, $e->getMessage(), $e);
+                return ResponseController::response(500, $e->getMessage());
             }
 
             if ($e->hasResponse()) {
-                return ResponseController::response(500, $error['errmsg'], $error);
+                return ResponseController::response(500, $error['errmsg']);
             } else {
-                return ResponseController::response(500, "failed");
+                return ResponseController::response(500, $e->getMessage());
             }
         }
         return ResponseController::response(200, 'success', $response['data']);
@@ -196,7 +199,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, "failed");
+            return ResponseController::response(400, "参数错误");
         }
 
         $accountInfo = $this->_getAccountInfo(['cookie' => $request['cookie']]);
@@ -234,7 +237,7 @@ class AdminController extends Controller
             'vip_type'     => $accountInfo['vip_type']
         ]);
 
-        return ResponseController::response(200, 'success');
+        return ResponseController::response(200, '添加账号成功');
     }
 
     public function deleteAccount(Request $request)
@@ -244,7 +247,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, "failed");
+            return ResponseController::response(400, "参数错误");
         }
 
         $account = BdUser::query()->find($request['account_id']);
@@ -255,7 +258,7 @@ class AdminController extends Controller
 
         $account->delete();
 
-        return ResponseController::response(200, 'success');
+        return ResponseController::response(200, '删除账号成功');
     }
 
     public function switchAccount(Request $request)
@@ -265,7 +268,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, "failed");
+            return ResponseController::response(400, "参数错误");
         }
 
         $account = BdUser::query()->find($request['account_id']);
@@ -275,15 +278,16 @@ class AdminController extends Controller
         }
 
         $account->switch = $account->switch == 1 ? 0 : 1;
+        $account->state  = "能用";
         $account->save();
 
-        return ResponseController::response(200, 'success');
+        return ResponseController::response(200, '切换成功');
     }
 
     public function getAccounts(Request $request)
     {
         $size  = $request['size'] ?? 10;
         $users = BdUser::query()->paginate($size);
-        return ResponseController::response(200, 'success', $users);
+        return ResponseController::response(200, '获取成功', $users);
     }
 }

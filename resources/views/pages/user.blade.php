@@ -94,7 +94,7 @@
                       type="error"></el-alert>
         @endif
         @if(!Request::secure())
-            <el-alert class="alert" title="当前网站未开启https,可能出现无法请求Aria2服务器的问题"
+            <el-alert class="alert" title="当前网站未开启SSL,可能出现无法请求Aria2服务器的问题"
                       type="error"></el-alert>
         @endif
         <el-form

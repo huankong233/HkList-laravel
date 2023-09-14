@@ -23,6 +23,7 @@ Route::middleware(['installCheck:haveInstall', 'web'])->group(function () {
     Route::prefix(config("94list.prefix"))->name("admin.")->group(function () {
         Route::post("/login", [\App\Http\Controllers\AdminController::class, 'login'])->name("login");
         Route::post('/register', [\App\Http\Controllers\AdminController::class, 'register'])->name("register");
+
         Route::middleware('auth')->group(function () {
             Route::middleware("isAdmin")->group(function () {
                 Route::post("/changeConfig", [\App\Http\Controllers\AdminController::class, 'changeConfig'])

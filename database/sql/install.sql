@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： 127.0.0.1
--- 生成日期： 2023-09-13 03:10:39
+-- 生成日期： 2023-09-14 15:10:37
 -- 服务器版本： 10.4.28-MariaDB
 -- PHP 版本： 8.2.4
 
@@ -34,22 +34,10 @@ CREATE TABLE `bd_users` (
   `cookie` text NOT NULL COMMENT '身份值',
   `add_time` datetime NOT NULL COMMENT '添加时间',
   `use` datetime NOT NULL COMMENT '时间表示最后一次使用日期',
-  `state` enum('能用','死亡','未测试') NOT NULL COMMENT '状态',
+  `state` enum('能用','死亡','未使用') NOT NULL COMMENT '状态',
   `switch` tinyint(11) NOT NULL COMMENT '开关',
   `vip_type` enum('普通用户','普通会员','超级会员') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- 表的结构 `requests`
---
-
-CREATE TABLE `requests` (
-  `id` int(11) NOT NULL,
-  `bd_user_id` int(11) NOT NULL COMMENT '使用的解析账户id',
-  `ip` text NOT NULL COMMENT '请求用户的ip'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -75,12 +63,6 @@ ALTER TABLE `bd_users`
   ADD PRIMARY KEY (`id`);
 
 --
--- 表的索引 `requests`
---
-ALTER TABLE `requests`
-  ADD PRIMARY KEY (`id`);
-
---
 -- 表的索引 `users`
 --
 ALTER TABLE `users`
@@ -94,12 +76,6 @@ ALTER TABLE `users`
 -- 使用表AUTO_INCREMENT `bd_users`
 --
 ALTER TABLE `bd_users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- 使用表AUTO_INCREMENT `requests`
---
-ALTER TABLE `requests`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --

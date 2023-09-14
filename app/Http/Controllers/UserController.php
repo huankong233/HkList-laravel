@@ -24,7 +24,7 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, 'failed');
+            return ResponseController::response(400, '参数错误');
         }
 
         preg_match(strpos($request['url'], '/surl') ? "/surl=([a-zA-Z0-9_-]+)/" : "/s\/([a-zA-Z0-9_-]+)/", $request['url'], $shortUrl);
@@ -40,19 +40,17 @@ class UserController extends Controller
             ]
         ]);
 
-        $requestData = [
-            'shorturl' => $shortUrl,
-            'dir'      => $request['dir'] ?? null,
-            'root'     => $request['dir'] === '' || $request['dir'] === null || $request['dir'] === '/' ? 1 : 0,
-            'pwd'      => $request['password'] ?? '',
-            'page'     => $request['page'] ?? 1,
-            'num'      => $request['num'] ?? 9999,
-            'order'    => $request['order'] ?? 'filename'
-        ];
-
         try {
             $response = $http->post("https://pan.baidu.com/share/wxlist?channel=weixin&version=2.2.2&clienttype=25&web=1&qq-pf-to=pcqq.c2c", [
-                'form_params' => $requestData
+                'form_params' => [
+                    'shorturl' => $shortUrl,
+                    'dir'      => $request['dir'] ?? null,
+                    'root'     => $request['dir'] === '' || $request['dir'] === null || $request['dir'] === '/' ? 1 : 0,
+                    'pwd'      => $request['password'] ?? '',
+                    'page'     => $request['page'] ?? 1,
+                    'num'      => $request['num'] ?? 9999,
+                    'order'    => $request['order'] ?? 'filename'
+                ]
             ]);
             $contents = json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $e) {
@@ -66,8 +64,8 @@ class UserController extends Controller
                 'randsk'  => $contents["data"]["seckey"],
                 'list'    => $contents['data']['list']
             ]),
-            9019 => ResponseController::response(400, "获取列表的Cookie失效", $requestData),
-            default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",可能链接已失效或是未提供正确的密码", $requestData),
+            9019 => ResponseController::response(400, "获取列表的Cookie失效"),
+            default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",可能链接已失效或是未提供正确的密码"),
         };
     }
 
@@ -79,7 +77,7 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseController::response(400, 'failed');
+            return ResponseController::response(400, '参数错误');
         }
 
         $http = new Client([
@@ -115,36 +113,15 @@ class UserController extends Controller
     static public function getRandomCookie($vipType = ["超级会员"])
     {
         return BdUser::query()
-                     ->where([
-                         'switch' => '1'
-                     ])
+                     ->where('switch', '=', '1')
+                     ->where('state', '!=', '死亡')
                      ->where(function (Builder $query) use ($vipType) {
                          foreach ($vipType as $item) {
                              $query->orWhere("vip_type", $item);
                          }
                      })
-                     ->where('state', '!=', '死亡')
                      ->orderByRaw("RAND()")
                      ->first();
-    }
-
-    public function getClientIp()
-    {
-        if (getenv('HTTP_CLIENT_IP')) {
-            $ip = getenv('HTTP_CLIENT_IP');
-        } else if (getenv('HTTP_X_REAL_IP')) {
-            $ip = getenv('HTTP_X_REAL_IP');
-        } else if (getenv('HTTP_X_FORWARDED_FOR')) {
-            $ip  = getenv('HTTP_X_FORWARDED_FOR');
-            $ips = explode(',', $ip);
-            $ip  = $ips[0];
-        } else if (getenv('REMOTE_ADDR')) {
-            $ip = getenv('REMOTE_ADDR');
-        } else {
-            $ip = '0.0.0.0';
-        }
-
-        return $ip;
     }
 
     public function downloadFiles(Request $request)
@@ -159,11 +136,11 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            ResponseController::response(400, 'failed');
+            ResponseController::response(400, '参数错误');
         }
 
         if (count($request['fs_ids']) > config("94list.max_once")) {
-            return ResponseController::response(400, 'failed');
+            return ResponseController::response(400, '超出单次解析最大数量');
         }
 
         // 判断是否指定了某个账户
@@ -249,7 +226,7 @@ class UserController extends Controller
                     sleep($sleepTime);
                 }
 
-                return ResponseController::response(200, 'success', $responseData);
+                return ResponseController::response(200, '获取成功', $responseData);
             case 112:
                 return ResponseController::response(400, "当前签名已过期,请刷新页面重新获取");
             case '9019':

@@ -4,7 +4,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') | {{ config("app.name") }}</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+    {{--    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.min.js"></script>--}}
     {{--    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.3.12/theme-chalk/dark/css-vars.css">--}}
     <link href="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.12/index.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./assets/css/css-vars.css">
@@ -25,7 +26,7 @@
         });
 
         // 防止延迟过高
-        axios.defaults.timeout = 120000;
+        axios.defaults.timeout = 600000;
 
         const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
         if (dark) document.querySelector("html").classList.add("dark")
