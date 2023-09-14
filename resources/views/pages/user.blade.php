@@ -187,7 +187,7 @@
                     })
 
                     // 淡入效果
-                    setTimeout(() => Announce.value.switch = {{config("94list.announceSwitch")}} === 1, 300)
+                    setTimeout(() => Announce.value.switch = {{config("94list.announceSwitch")?'true':'false'}}, 300)
 
                     const getFileListForm = ref({
                         url: "",
