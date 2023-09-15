@@ -188,7 +188,7 @@
                 setup() {
                     const Announce = ref({
                         switch: false,
-                        message: "{{config("94list.announce")}}"
+                        message: `{{config("94list.announce")}}`
                     })
 
                     @if($fetchOnIn)
