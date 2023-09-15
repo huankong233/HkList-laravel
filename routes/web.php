@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware("installCheck:haveInstall")->group(function () {
-    Route::get('/', [\App\Http\Controllers\UserController::class, 'view']);
-    Route::get(config("94list.prefix"), [\App\Http\Controllers\AdminController::class, 'view']);
+    Route::get('/', [\App\Http\Controllers\UserController::class, 'view'])->name("user");
+    Route::get(config("94list.prefix"), [\App\Http\Controllers\AdminController::class, 'view'])->name("admin");
 });
 
 

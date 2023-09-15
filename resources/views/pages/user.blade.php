@@ -93,7 +93,7 @@
             <el-alert class="alert" title="当前网站开启了DEBUG模式,非调试请关闭!!!!"
                       type="error"></el-alert>
         @endif
-        @if(!Request::secure())
+        @if(!Request::secure() && !config("94list.ssl"))
             <el-alert class="alert" title="当前网站未开启SSL,可能出现无法请求Aria2服务器的问题"
                       type="error"></el-alert>
         @endif
@@ -134,6 +134,11 @@
                            v-on:click="downloadFiles"
                 >
                     批量解析
+                </el-button>
+                <el-button type="primary"
+                           v-on:click="copyLink(getFileListFormRef)"
+                >
+                    复制当前地址
                 </el-button>
             </el-form-item>
         </el-form>
@@ -186,12 +191,19 @@
                         message: "{{config("94list.announce")}}"
                     })
 
+                    @if($fetchOnIn)
+                    onMounted(() => {
+                        ElMessage.success("已收到链接,即将自动解析")
+                        setTimeout(() => getFileListClickEvent(getFileListFormRef.value), 1000)
+                    })
+                    @else
                     // 淡入效果
                     setTimeout(() => Announce.value.switch = {{config("94list.announceSwitch")?'true':'false'}}, 300)
+                    @endif
 
                     const getFileListForm = ref({
-                        url: "",
-                        password: "",
+                        url: "{{$url}}",
+                        password: "{{$pwd}}",
                         pending: false,
                         @if(Auth::check())
                         "bd_user_id": null
@@ -244,7 +256,7 @@
                     const list = ref([])
                     const sign = ref(null)
                     const timestamp = ref(0)
-                    const dir = ref("/")
+                    const dir = ref("{{$dir}}")
 
                     const getFileListClickEvent = async (formEl) => {
                         if (!formEl) return
@@ -253,7 +265,6 @@
 
                         getFileListForm.value.pending = true
 
-                        dir.value = "/"
                         // 如果获取列表成功再获取签名
                         if (await getFileList()) await getFileSign()
 
@@ -530,6 +541,14 @@
 
                     const openDownloadListDialog = () => configAria2FormVisible.value = true
 
+                    const copyLink = async (formEl) => {
+                        if (!formEl) return
+                        if (!await formEl.validate(() => {
+                        })) return
+
+                        copy(`{{route("user")}}/?url=${getFileListForm.value.url}&pwd=${getFileListForm.value.password}&dir=${dir.value}`, "复制成功")
+                    }
+
                     return {
                         Announce,
 
@@ -574,7 +593,8 @@
                         selectDownloadFilesChange,
                         sendDownloadFiles,
 
-                        openDownloadListDialog
+                        openDownloadListDialog,
+                        copyLink
                     }
                 }
             })

@@ -12,9 +12,14 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    public function view()
+    public function view(Request $request)
     {
-        return view("pages.user");
+        return view("pages.user", [
+            'url'       => $request['url'] ?? "",
+            'pwd'       => $request['pwd'] ?? "",
+            'dir'       => $request['dir'] ?? "/",
+            'fetchOnIn' => $request['url'] && $request['pwd'] && $request['dir'],
+        ]);
     }
 
     public function getFileList(Request $request)
