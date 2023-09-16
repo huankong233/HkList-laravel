@@ -59,7 +59,7 @@
             <el-table-column type="selection" width="40"></el-table-column>
             <el-table-column prop="server_filename" label="文件名"></el-table-column>
             <el-table-column prop="dlink" label="下载链接"></el-table-column>
-            <el-table-column label="操作" width="280">
+            <el-table-column label="操作">
                 <template #default="scope">
                     <el-button
                             type="primary"
@@ -125,7 +125,7 @@
                     解析链接
                 </el-button>
                 <el-button type="primary"
-                           v-on:click="freshFileList"
+                           v-on:click="freshFileList(getFileListFormRef)"
                 >
                     刷新列表
                 </el-button>
@@ -151,7 +151,8 @@
                   stripe
                   ref="fileListTableRef"
                   v-bind:data="list"
-                  @row-dblclick="clickRow"
+                  @row-click="clickRow"
+                  @row-dblclick="dblclickRow"
                   @selection-change="clickSelection">
             <el-table-column type="selection" width="40"></el-table-column>
             <el-table-column label="文件名">
@@ -165,7 +166,7 @@
                     </el-space>
                 </template>
             </el-table-column>
-            <el-table-column label="修改时间" width="180">
+            <el-table-column label="修改时间">
                 <template #default="scope">
                     @{{ formatTimestamp(scope.row.server_mtime) }}
                 </template>
@@ -312,7 +313,11 @@
                         return 'success'
                     }
 
-                    const freshFileList = async () => {
+                    const freshFileList = async (formEl) => {
+                        if (!formEl) return
+                        if (!await formEl.validate(() => {
+                        })) return
+
                         getFileListForm.value.pending = true
                         await getFileList(0, true)
                         await getFileSign()
@@ -439,7 +444,7 @@
                         await getFileList(server_mtime)
                     }
 
-                    const clickRow = async (scope) => {
+                    const dblclick = async (scope) => {
                         getFileListForm.value.pending = true
                         if (scope.isdir === "1" || scope.isdir === 1) {
                             await getDir(scope.path, scope.server_mtime)
@@ -448,6 +453,18 @@
                         }
                         getFileListForm.value.pending = false
                     }
+
+                    const clickRow = async (scope) => {
+                        if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) return
+                        getFileListForm.value.pending = true
+                        if (scope.isdir === "1" || scope.isdir === 1) {
+                            await getDir(scope.path, scope.server_mtime)
+                        } else {
+                            await downloadFile(scope.fs_id, scope.server_filename)
+                        }
+                        getFileListForm.value.pending = false
+                    }
+
 
                     const fileListTableRef = ref(null)
                     const selectedRows = ref([])
@@ -569,6 +586,7 @@
                         formatBytes,
 
                         clickRow,
+                        dblclick,
                         clickSelection,
                         selectedRows,
 
