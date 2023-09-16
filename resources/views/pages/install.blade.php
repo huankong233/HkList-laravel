@@ -20,21 +20,29 @@
                     v-bind:rules="installFormRule"
                     label-width="150px"
             >
-                <el-form-item label="MySQL 数据库地址" prop="db_host">
-                    <el-input v-model="installForm.db_host"></el-input>
+                <el-form-item label="数据库驱动" prop="install_type">
+                    <el-select v-model="installForm.db_type" placeholder="请选择数据库驱动">
+                        <el-option label="MySQL" value="mysql"></el-option>
+                        <el-option label="SQLite" value="sqlite"></el-option>
+                    </el-select>
                 </el-form-item>
-                <el-form-item label="MySQL 端口" prop="db_port">
-                    <el-input v-model="installForm.db_port"></el-input>
-                </el-form-item>
-                <el-form-item label="MySQL 数据库名" prop="db_database">
-                    <el-input v-model="installForm.db_database"></el-input>
-                </el-form-item>
-                <el-form-item label="MySQL 用户名" prop="db_username">
-                    <el-input v-model="installForm.db_username"></el-input>
-                </el-form-item>
-                <el-form-item label="MySQL 密码" prop="db_password">
-                    <el-input v-model="installForm.db_password"></el-input>
-                </el-form-item>
+                <div v-if="installForm.db_type === 'mysql'">
+                    <el-form-item label="MySQL 数据库地址" prop="db_host">
+                        <el-input v-model="installForm.db_host"></el-input>
+                    </el-form-item>
+                    <el-form-item label="MySQL 端口" prop="db_port">
+                        <el-input v-model="installForm.db_port"></el-input>
+                    </el-form-item>
+                    <el-form-item label="MySQL 数据库名" prop="db_database">
+                        <el-input v-model="installForm.db_database"></el-input>
+                    </el-form-item>
+                    <el-form-item label="MySQL 用户名" prop="db_username">
+                        <el-input v-model="installForm.db_username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="MySQL 密码" prop="db_password">
+                        <el-input v-model="installForm.db_password"></el-input>
+                    </el-form-item>
+                </div>
                 <el-divider></el-divider>
                 <el-form-item label="网站名称" prop="title">
                     <el-input v-model="installForm.title"></el-input>
@@ -68,6 +76,7 @@
         const app = createApp({
             setup() {
                 const installForm = ref({
+                    db_type: "",
                     db_host: "localhost",
                     db_port: "3306",
                     db_database: "94list",
@@ -83,6 +92,7 @@
                 const installFormRef = ref(null)
 
                 const installFormRule = {
+                    db_type: [{required: true, message: '请选择安装方式', trigger: 'change'}],
                     db_host: [{required: true, message: '请输入MySQL 数据库地址', trigger: 'blur'}],
                     db_port: [{required: true, message: '请输入MySQL 端口', trigger: 'blur'}],
                     db_database: [{required: true, message: '请输入MySQL 数据库名', trigger: 'blur'}],
@@ -100,6 +110,7 @@
                         installForm.value.pending = true
 
                         const response = await axios.post("{{route('do_install')}}", {
+                            db_type: installForm.value.db_type,
                             db_host: installForm.value.db_host,
                             db_port: installForm.value.db_port,
                             db_database: installForm.value.db_database,

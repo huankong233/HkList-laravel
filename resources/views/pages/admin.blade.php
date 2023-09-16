@@ -282,7 +282,7 @@
                     sleep: "{{config("94list.sleep")}}",
                     "max_once": "{{config("94list.max_once")}}",
                     announceSwitch: {{config("94list.announceSwitch")?'true':'false'}},
-                    announce: "{{config("94list.announce")}}",
+                    announce: `{{config("94list.announce")}}`,
                     cookie: "{{config("94list.cookie")}}",
                     debug: {{config("app.debug")?'true':'false'}},
                     pending: false

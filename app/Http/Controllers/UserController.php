@@ -125,7 +125,7 @@ class UserController extends Controller
                              $query->orWhere("vip_type", $item);
                          }
                      })
-                     ->orderByRaw("RAND()")
+                     ->orderByRaw(config("database.default") === 'sqlite' ? "RANDOM()" : "RAND()")
                      ->first();
     }
 

@@ -444,7 +444,7 @@
                         await getFileList(server_mtime)
                     }
 
-                    const dblclick = async (scope) => {
+                    const dblclickRow = async (scope) => {
                         getFileListForm.value.pending = true
                         if (scope.isdir === "1" || scope.isdir === 1) {
                             await getDir(scope.path, scope.server_mtime)
@@ -586,7 +586,7 @@
                         formatBytes,
 
                         clickRow,
-                        dblclick,
+                        dblclickRow,
                         clickSelection,
                         selectedRows,
 
