@@ -62,7 +62,7 @@
                     })) {
                         loginForm.value.pending = true
 
-                        const response = await axios.post("{{route('admin.login')}}", {
+                        const response = await axios.post("{{relative_route('admin.login')}}", {
                             username: loginForm.value.username,
                             password: loginForm.value.password
                         }).catch(error => {

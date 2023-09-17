@@ -41,7 +41,7 @@ class UserController extends Controller
 
         $http = new Client([
             'headers' => [
-                'Cookie' => config("94list.cookie")
+//                'Cookie' => config("94list.cookie")
             ]
         ]);
 

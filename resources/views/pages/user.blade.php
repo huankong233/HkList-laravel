@@ -281,7 +281,7 @@
                     }
 
                     const getFileList = async (server_mtime = 0, refresh = false) => {
-                        const fileList = await axios.post("{{route('user.getFileList')}}", {
+                        const fileList = await axios.post("{{relative_route('user.getFileList')}}", {
                             url: getFileListForm.value.url,
                             password: getFileListForm.value.password,
                             dir: dir.value
@@ -340,7 +340,7 @@
                     }
 
                     const getFileSign = async () => {
-                        const response = await axios.post("{{route('user.getSign')}}", {
+                        const response = await axios.post("{{relative_route('user.getSign')}}", {
                             uk: uk.value,
                             shareid: shareid.value
                         }).catch(error => {
@@ -376,7 +376,7 @@
                     }
 
                     const downloadFile = async (fs_id) => {
-                        const response = await axios.post("{{route('user.downloadFiles')}}", {
+                        const response = await axios.post("{{relative_route('user.downloadFiles')}}", {
                             // 如果fs_id是数组则表示批量下载
                             // 否则就是单个下载手动修改成数组
                             fs_ids: Array.isArray(fs_id) ? fs_id : [fs_id],
@@ -563,7 +563,7 @@
                         if (!await formEl.validate(() => {
                         })) return
 
-                        copy(`{{route("user")}}/?url=${getFileListForm.value.url}&pwd=${getFileListForm.value.password}&dir=${dir.value}`, "复制成功")
+                        copy(`{{relative_route("user")}}/?url=${getFileListForm.value.url}&pwd=${getFileListForm.value.password}&dir=${dir.value}`, "复制成功")
                     }
 
                     return {

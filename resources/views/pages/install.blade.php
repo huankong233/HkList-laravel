@@ -109,7 +109,7 @@
                     })) {
                         installForm.value.pending = true
 
-                        const response = await axios.post("{{route('do_install')}}", {
+                        const response = await axios.post("{{relative_route('do_install')}}", {
                             db_type: installForm.value.db_type,
                             db_host: installForm.value.db_host,
                             db_port: installForm.value.db_port,
