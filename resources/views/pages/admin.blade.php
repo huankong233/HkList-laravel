@@ -82,9 +82,9 @@
                     <el-form-item label="公告内容" prop="announce">
                         <el-input type="textarea" v-model="changeConfigForm.announce"></el-input>
                     </el-form-item>
-                    {{--                    <el-form-item label="获取列表时的 Cookie" prop="cookie">--}}
-                    {{--                        <el-input type="textarea" v-model="changeConfigForm.cookie" rows="5"></el-input>--}}
-                    {{--                    </el-form-item>--}}
+                    <el-form-item label="获取列表时的 Cookie" prop="cookie">
+                        <el-input type="textarea" v-model="changeConfigForm.cookie" rows="5"></el-input>
+                    </el-form-item>
                     <el-form-item>
                         <el-button type="primary"
                                    v-on:click="changeConfig(changeConfigFormRef)"
@@ -283,7 +283,7 @@
                     "max_once": "{{config("94list.max_once")}}",
                     announceSwitch: {{config("94list.announceSwitch")?'true':'false'}},
                     announce: `{{config("94list.announce")}}`,
-                    {{--cookie: "{{config("94list.cookie")}}",--}}
+                    cookie: "{{config("94list.cookie")}}",
                     debug: {{config("app.debug")?'true':'false'}},
                     pending: false
                 })
@@ -295,7 +295,7 @@
                     announce: [{required: true, message: '请公告内容', trigger: 'blur'}],
                     announceSwitch: [{required: true, message: '请确认开关状态', trigger: 'blur'}],
                     debug: [{required: true, message: '请确认开关状态', trigger: 'blur'}],
-                    // cookie: [{required: true, message: '请输入获取列表时的 Cookie', trigger: 'blur'}],
+                    cookie: [{required: true, message: '请输入获取列表时的 Cookie', trigger: 'blur'}],
                     "max_once": [{required: true, message: '请输入批量解析时单次最大解析数量', trigger: 'blur'}],
                     sleep: [{required: true, message: '请输入批量解析时休眠时间(秒)', trigger: 'blur'}],
                 }
@@ -307,22 +307,22 @@
                         changeConfigForm.value.pending = true
 
                         // 检验cookie是否包含账号
-                        {{--const accountInfo = await axios.post("{{relative_route("admin.getAccountInfo")}}", {--}}
-                        {{--    cookie: changeConfigForm.value.cookie--}}
-                        {{--}).catch(error => {--}}
-                        {{--}) ?? 'failed'--}}
+                        const accountInfo = await axios.post("{{relative_route("admin.getAccountInfo")}}", {
+                            cookie: changeConfigForm.value.cookie
+                        }).catch(error => {
+                        }) ?? 'failed'
 
-                        // if (accountInfo !== 'failed') {
-                        //     changeConfigForm.value.pending = false
-                        //     ElMessage.error("请不要使用包含账户的cookie,直接退出登陆刷新获取一个纯净的cookie即可")
-                        //     return
-                        // }
+                        if (accountInfo !== 'failed') {
+                            changeConfigForm.value.pending = false
+                            ElMessage.error("请不要使用包含账户的cookie,直接退出登陆刷新获取一个纯净的cookie即可")
+                            return
+                        }
 
                         const response = await axios.post("{{relative_route('admin.changeConfig')}}", {
                             user_agent: changeConfigForm.value.user_agent,
                             announceSwitch: changeConfigForm.value.announceSwitch,
                             announce: changeConfigForm.value.announce,
-                            // cookie: changeConfigForm.value.cookie,
+                            cookie: changeConfigForm.value.cookie,
                             sleep: changeConfigForm.value.sleep,
                             "max_once": changeConfigForm.value["max_once"],
                             debug: changeConfigForm.value.debug

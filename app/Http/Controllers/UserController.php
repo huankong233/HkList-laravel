@@ -41,7 +41,7 @@ class UserController extends Controller
 
         $http = new Client([
             'headers' => [
-//                'Cookie' => config("94list.cookie")
+                'Cookie' => config("94list.cookie")
             ]
         ]);
 
@@ -110,7 +110,7 @@ class UserController extends Controller
 
         return match ($contents['errno']) {
             0 => ResponseController::response(200, "获取签名成功", $contents['data']),
-            9019 => ResponseController::response(400, "获取列表的Cookie失效"),
+            9019 => ResponseController::response(400, "获取列表签名的Cookie失效"),
             default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",获取签名信息失败"),
         };
     }
