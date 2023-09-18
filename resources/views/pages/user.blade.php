@@ -8,7 +8,7 @@
             title="公告"
             width="90%"
     >
-        <span>@{{Announce.message}}</span>
+        <span v-html="Announce.message"></span>
     </el-dialog>
 
     <el-dialog
@@ -189,7 +189,7 @@
                 setup() {
                     const Announce = ref({
                         switch: false,
-                        message: `{{config("94list.announce")}}`
+                        message: `{!!config("94list.announce")!!}`
                     })
 
                     @if($fetchOnIn)

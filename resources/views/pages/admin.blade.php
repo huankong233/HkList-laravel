@@ -318,11 +318,16 @@
                             return
                         }
 
+                        if (changeConfigForm.value.cookie.trim().includes("\n")) {
+                            ElMessage.error("cookie字段请不要包含换行符")
+                            return
+                        }
+
                         const response = await axios.post("{{relative_route('admin.changeConfig')}}", {
                             user_agent: changeConfigForm.value.user_agent,
                             announceSwitch: changeConfigForm.value.announceSwitch,
                             announce: changeConfigForm.value.announce,
-                            cookie: changeConfigForm.value.cookie,
+                            cookie: changeConfigForm.value.cookie.trim(),
                             sleep: changeConfigForm.value.sleep,
                             "max_once": changeConfigForm.value["max_once"],
                             debug: changeConfigForm.value.debug
