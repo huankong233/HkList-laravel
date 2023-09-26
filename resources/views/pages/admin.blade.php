@@ -214,7 +214,9 @@
             <el-tab-pane label="退出登陆" name="logout">
                 <el-card>
                     <el-button type="primary"
-                               @click="logout"></el-button>
+                               @click="logout">
+                        退出登陆
+                    </el-button>
                 </el-card>
             </el-tab-pane>
             <el-tab-pane label="开源说明" name="openSourceNotice">
