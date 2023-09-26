@@ -211,6 +211,7 @@
                         @current-change="getAccounts"
                 ></el-pagination>
             </el-tab-pane>
+            <el-tab-pane label="退出登陆" @click="logout" name="logout"></el-tab-pane>
             <el-tab-pane label="开源说明" name="openSourceNotice">
                 <el-card class="illustrate">
                     <el-text>
@@ -498,6 +499,19 @@
                     })
                 }
 
+                const logout = async () => {
+                    const response = await axios.post("{{relative_route('admin.logout')}}")
+                        .catch(error => {
+                            const {response: {data: {message}, status}} = error
+                            ElMessage.error(status === 400 ? message : '服务器错误')
+                        }) ?? 'failed'
+
+                    if (response !== 'failed') {
+                        ElMessage.success(`退出登陆成功`)
+                        setTimeout(() => location.href = '/')
+                    }
+                }
+
                 return {
                     activeName,
 
@@ -533,7 +547,9 @@
                     selectAccounts,
                     selectAccountsChange,
                     enableSelectAccounts,
-                    blockSelectAccounts
+                    blockSelectAccounts,
+
+                    logout
                 }
             }
         })
