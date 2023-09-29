@@ -141,7 +141,7 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            ResponseController::response(400, '参数错误');
+            return ResponseController::response(400, '参数错误');
         }
 
         if (count($request['fs_ids']) > config("94list.max_once")) {
