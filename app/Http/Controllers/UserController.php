@@ -123,7 +123,7 @@ class UserController extends Controller
         };
     }
 
-    static public function getRandomCookie($vipType = ["普通用户"])
+    static public function getRandomCookie($vipType = ["超级会员"])
     {
         return BdUser::query()
                      ->where('switch', '=', '1')
