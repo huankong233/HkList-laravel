@@ -31,7 +31,7 @@ class InstallCheck
             if (!$fileExists) {
                 return $next($request);
             } else {
-                return ResponseController::response(400, config("app.name") . ' 已安装');
+                return ResponseController::response(403, config("app.name") . ' 已安装');
             }
         }
 

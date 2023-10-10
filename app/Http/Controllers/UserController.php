@@ -14,11 +14,19 @@ class UserController extends Controller
 {
     public function view(Request $request)
     {
-        return view("pages.user", [
-            'url'       => $request['url'] ?? "",
-            'pwd'       => $request['pwd'] ?? "",
-            'dir'       => $request['dir'] ?? "/",
-            'fetchOnIn' => $request['url'] && $request['pwd'] && $request['dir'],
+        return view("main");
+    }
+
+    public function getConfig()
+    {
+        $config = config("94list");
+
+        return ResponseController::response(200, "获取成功", [
+            'announce'       => $config['announce'],
+            'announceSwitch' => $config['announceSwitch'],
+            'userAgent'      => $config['userAgent'],
+            "debug"          => config("app.debug"),
+            "haveAccount"    => $this->getRandomCookie() !== null
         ]);
     }
 
@@ -32,7 +40,7 @@ class UserController extends Controller
             return ResponseController::response(400, '参数错误');
         }
 
-        preg_match(strpos($request['url'], '/surl') ? "/surl=([a-zA-Z0-9_-]+)/" : "/s\/([a-zA-Z0-9_-]+)/", $request['url'], $shortUrl);
+        preg_match("/s\/([a-zA-Z0-9_-]+)/", $request['url'], $shortUrl);
         if (!$shortUrl) {
             return ResponseController::response(400, 'url格式错误');
         } else {
@@ -115,7 +123,7 @@ class UserController extends Controller
         };
     }
 
-    static public function getRandomCookie($vipType = ["超级会员"])
+    static public function getRandomCookie($vipType = ["普通用户"])
     {
         return BdUser::query()
                      ->where('switch', '=', '1')
@@ -144,7 +152,7 @@ class UserController extends Controller
             return ResponseController::response(400, '参数错误');
         }
 
-        if (count($request['fs_ids']) > config("94list.max_once")) {
+        if (count($request['fs_ids']) > config("94list.maxOnce")) {
             return ResponseController::response(400, '超出单次解析最大数量');
         }
 
@@ -157,7 +165,7 @@ class UserController extends Controller
                     return ResponseController::response(400, '代理账号不存在');
                 }
             } else {
-                return ResponseController::response(400, '您没有权限下载');
+                return ResponseController::response(400, '您没有权限指定下载的用户');
             }
         } else {
             $cookie = $this->getRandomCookie();

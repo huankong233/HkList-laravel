@@ -96,7 +96,7 @@ class AdminController extends Controller
 
         $contentArray->transform(function ($item) use ($data) {
             foreach ($data as $key => $value) {
-                if (str_contains($item, $key)) {
+                if (str_starts_with($item, $key . '=')) {
                     return $key . '=' . $value;
                 }
             }
@@ -109,16 +109,30 @@ class AdminController extends Controller
         File::put($envPath, $content);
     }
 
+    public function getConfig()
+    {
+        $config = config("94list");
+        return ResponseController::response(200, "获取成功", [
+            ...$config,
+            "announce" => str_replace("[NextLine]", "\n", $config['announce']),
+            "sleep"    => (int)$config['sleep'],
+            'maxOnce'  => (int)$config['maxOnce'],
+            "debug"    => config("app.debug")
+        ]);
+    }
+
     public function changeConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'sleep'          => 'required',
-            'max_once'       => 'required',
-            'user_agent'     => 'required',
+            'maxOnce'        => 'required',
+            'userAgent'      => 'required',
             'announce'       => 'required',
             'announceSwitch' => 'required|boolean',
             'cookie'         => 'required',
-            'debug'          => 'required'
+            'debug'          => 'required',
+            'ssl'            => 'required',
+            'prefix'         => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -127,12 +141,14 @@ class AdminController extends Controller
 
         $this->modifyEnv([
             "APP_DEBUG"              => $request['debug'] ? 'true' : 'false',
-            "_94LIST_UA"             => $request['user_agent'],
+            "_94LIST_UA"             => $request['userAgent'],
             "_94LIST_ANNOUNCESWITCH" => $request['announceSwitch'] ? 'true' : 'false',
-            "_94LIST_ANNOUNCE"       => '"' . str_replace("\n", "<br>", $request['announce']) . '"',
+            "_94LIST_ANNOUNCE"       => '"' . htmlspecialchars(str_replace("\n", "[NextLine]", $request['announce']), ENT_QUOTES) . '"',
             "_94LIST_COOKIE"         => '"' . $request['cookie'] . '"',
             "_94LIST_SLEEP"          => $request['sleep'],
-            "_94LIST_MAXONCE"        => $request['max_once']
+            "_94LIST_MAXONCE"        => $request['maxOnce'],
+            "APP_SSL"                => $request['ssl'] ? 'true' : 'false',
+            "ADMIN_ROUTE_PREFIX"     => $request['prefix']
         ]);
 
         return ResponseController::response(200, "修改配置成功");
@@ -184,7 +200,15 @@ class AdminController extends Controller
             }
 
             if ($e->hasResponse()) {
-                return ResponseController::response(500, $error['errmsg']);
+                if ($request['check']) {
+                    if ($error['errmsg'] === "Invalid Bduss") {
+                        return ResponseController::response(200, "cookie校验成功");
+                    } else {
+                        return ResponseController::response(500, $error['errmsg']);
+                    }
+                } else {
+                    return ResponseController::response(500, $error['errmsg']);
+                }
             } else {
                 return ResponseController::response(500, $e->getMessage());
             }
@@ -277,8 +301,15 @@ class AdminController extends Controller
             return ResponseController::response(400, "账号不存在");
         }
 
-        $account->switch = $account->switch == 1 ? 0 : 1;
-        $account->state  = "能用";
+        $account->switch = $account['switch'] === 1 ? 0 : 1;
+        if ($account['state'] !== "未使用") {
+            if ($account['switch'] === 1) {
+                $account->state = "能用";
+            } else if ($account['switch'] === 0 && $account['state'] === "死亡") {
+                $account->state = "死亡";
+            }
+        }
+
         $account->save();
 
         return ResponseController::response(200, '切换成功');

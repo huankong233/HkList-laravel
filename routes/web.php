@@ -13,12 +13,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware("installCheck:haveInstall")->group(function () {
-    Route::get('/', [\App\Http\Controllers\UserController::class, 'view'])->name("user");
-    Route::get(config("94list.prefix"), [\App\Http\Controllers\AdminController::class, 'view'])->name("admin");
-});
+//Route::middleware("installCheck:haveInstall")->group(function () {
+//    Route::get('/', [\App\Http\Controllers\UserController::class, 'view'])->name("user");
+//    Route::get(config("94list.prefix"), [\App\Http\Controllers\AdminController::class, 'view'])->name("admin");
+//});
+//
+//
+//Route::middleware("installCheck:notInstall")->group(function () {
+//    Route::view("/install", "pages.install");
+//});
 
-
-Route::middleware("installCheck:notInstall")->group(function () {
-    Route::view("/install", "pages.install");
-});
+Route::get('/{any}', [\App\Http\Controllers\UserController::class, 'view'])->where('any', '.*');
