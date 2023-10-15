@@ -158,7 +158,7 @@ class AdminController extends Controller
     {
         $http = new Client([
             'headers' => [
-                'User-Agent' => config("94list.user_agent"),
+                'User-Agent' => config("94list.userAgent"),
                 'cookie'     => $cookie
             ]
         ]);

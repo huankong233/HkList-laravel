@@ -176,7 +176,7 @@ class UserController extends Controller
 
         $http = new Client([
             'headers' => [
-                'User-Agent' => config("94list.user_agent"),
+                'User-Agent' => config("94list.userAgent"),
                 'Cookie'     => $cookie['cookie'],
                 "Referer"    => "https://pan.baidu.com/disk/home",
                 "Host"       => "pan.baidu.com",
