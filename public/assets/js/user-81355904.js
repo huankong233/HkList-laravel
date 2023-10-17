@@ -1,1 +1,0 @@
-import{h as o}from"./request-40fd0d0c.js";const e=s=>o.post("/doInstall",s),n=()=>o.post("/user/getConfig"),a=s=>o.post("/user/getFileList",s),i=s=>o.post("/user/getSign",s),d=s=>o.post("/user/downloadFiles",s);export{a,i as b,d as c,n as d,e};
