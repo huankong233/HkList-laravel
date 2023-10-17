@@ -10,25 +10,28 @@
  Target Server Version : 3035005
  File Encoding         : 65001
 
- Date: 16/09/2023 23:39:36
+ Date: 17/10/2023 12:32:50
 */
 
-PRAGMA foreign_keys = false;
+PRAGMA
+foreign_keys = false;
 
 -- ----------------------------
 -- Table structure for bd_users
 -- ----------------------------
 DROP TABLE IF EXISTS "bd_users";
-CREATE TABLE "bd_users" (
-  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  "baidu_name" TEXT,
-  "netdisk_name" TEXT,
-  "cookie" TEXT,
-  "add_time" DATE,
-  "use" DATE,
-  "state" TEXT,
-  "switch" integer,
-  "vip_type" TEXT
+CREATE TABLE "bd_users"
+(
+    "id"            INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "baidu_name"    TEXT,
+    "netdisk_name"  TEXT,
+    "cookie"        TEXT,
+    "add_time"      DATE,
+    "svip_end_time" DATE,
+    "use"           DATE,
+    "state"         TEXT,
+    "switch"        integer,
+    "vip_type"      TEXT
 );
 
 -- ----------------------------
@@ -36,14 +39,27 @@ CREATE TABLE "bd_users" (
 -- ----------------------------
 
 -- ----------------------------
+-- Table structure for sqlite_sequence
+-- ----------------------------
+
+-- ----------------------------
+-- Records of sqlite_sequence
+-- ----------------------------
+INSERT INTO "sqlite_sequence"
+VALUES ('users', 1);
+INSERT INTO "sqlite_sequence"
+VALUES ('bd_users', 1);
+
+-- ----------------------------
 -- Table structure for users
 -- ----------------------------
 DROP TABLE IF EXISTS "users";
-CREATE TABLE "users" (
-  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  "username" TEXT,
-  "password" TEXT,
-  "is_admin" integer
+CREATE TABLE "users"
+(
+    "id"       INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "username" TEXT,
+    "password" TEXT,
+    "is_admin" integer
 );
 
 -- ----------------------------
@@ -51,7 +67,18 @@ CREATE TABLE "users" (
 -- ----------------------------
 
 -- ----------------------------
+-- Auto increment value for bd_users
+-- ----------------------------
+UPDATE "sqlite_sequence"
+SET seq = 1
+WHERE name = 'bd_users';
+
+-- ----------------------------
 -- Auto increment value for users
 -- ----------------------------
+UPDATE "sqlite_sequence"
+SET seq = 1
+WHERE name = 'users';
 
-PRAGMA foreign_keys = true;
+PRAGMA
+foreign_keys = true;

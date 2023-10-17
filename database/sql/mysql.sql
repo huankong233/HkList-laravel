@@ -3,13 +3,15 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： 127.0.0.1
--- 生成日期： 2023-09-14 15:10:37
+-- 生成日期： 2023-10-17 06:39:14
 -- 服务器版本： 10.4.28-MariaDB
 -- PHP 版本： 8.2.4
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET
+SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
-SET time_zone = "+00:00";
+SET
+time_zone = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -27,16 +29,18 @@ SET time_zone = "+00:00";
 -- 表的结构 `bd_users`
 --
 
-CREATE TABLE `bd_users` (
-  `id` int(11) NOT NULL,
-  `baidu_name` text NOT NULL COMMENT '百度用户名',
-  `netdisk_name` text NOT NULL COMMENT '网盘用户名',
-  `cookie` text NOT NULL COMMENT '身份值',
-  `add_time` datetime NOT NULL COMMENT '添加时间',
-  `use` datetime NOT NULL COMMENT '时间表示最后一次使用日期',
-  `state` enum('能用','死亡','未使用') NOT NULL COMMENT '状态',
-  `switch` tinyint(11) NOT NULL COMMENT '开关',
-  `vip_type` enum('普通用户','普通会员','超级会员') NOT NULL
+CREATE TABLE `bd_users`
+(
+    `id`            int(11) NOT NULL,
+    `baidu_name`    text     NOT NULL COMMENT '百度用户名',
+    `netdisk_name`  text     NOT NULL COMMENT '网盘用户名',
+    `cookie`        text     NOT NULL COMMENT '身份值',
+    `add_time`      datetime NOT NULL COMMENT '添加时间',
+    `svip_end_time` datetime NOT NULL COMMENT 'SVIP过期时间',
+    `use`           datetime NOT NULL COMMENT '时间表示最后一次使用日期',
+    `state`         enum('能用','死亡','未使用','会员过期') NOT NULL COMMENT '状态',
+    `switch`        tinyint(11) NOT NULL COMMENT '开关',
+    `vip_type`      enum('普通用户','普通会员','超级会员') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -45,11 +49,12 @@ CREATE TABLE `bd_users` (
 -- 表的结构 `users`
 --
 
-CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `username` text NOT NULL,
-  `password` text NOT NULL,
-  `is_admin` tinyint(1) NOT NULL COMMENT '是否为管理员'
+CREATE TABLE `users`
+(
+    `id`       int(11) NOT NULL,
+    `username` text NOT NULL,
+    `password` text NOT NULL,
+    `is_admin` tinyint(1) NOT NULL COMMENT '是否为管理员'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -60,13 +65,13 @@ CREATE TABLE `users` (
 -- 表的索引 `bd_users`
 --
 ALTER TABLE `bd_users`
-  ADD PRIMARY KEY (`id`);
+    ADD PRIMARY KEY (`id`);
 
 --
 -- 表的索引 `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`);
+    ADD PRIMARY KEY (`id`);
 
 --
 -- 在导出的表使用AUTO_INCREMENT
@@ -76,13 +81,13 @@ ALTER TABLE `users`
 -- 使用表AUTO_INCREMENT `bd_users`
 --
 ALTER TABLE `bd_users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+    MODIFY `id` int (11) NOT NULL AUTO_INCREMENT;
 
 --
 -- 使用表AUTO_INCREMENT `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+    MODIFY `id` int (11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

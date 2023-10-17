@@ -40,7 +40,7 @@ class UserController extends Controller
             return ResponseController::response(400, '参数错误');
         }
 
-        preg_match("/s\/([a-zA-Z0-9_-]+)/", $request['url'], $shortUrl);
+        preg_match("/s\/([a-zA-Z0-9_-]+)/", trim($request['url']), $shortUrl);
         if (!$shortUrl) {
             return ResponseController::response(400, 'url格式错误');
         } else {
@@ -59,7 +59,7 @@ class UserController extends Controller
                     'shorturl' => $shortUrl,
                     'dir'      => $request['dir'] ?? null,
                     'root'     => $request['dir'] === '' || $request['dir'] === null || $request['dir'] === '/' ? 1 : 0,
-                    'pwd'      => $request['password'] ?? '',
+                    'pwd'      => trim($request['password']) ?? '',
                     'page'     => $request['page'] ?? 1,
                     'num'      => $request['num'] ?? 9999,
                     'order'    => $request['order'] ?? 'filename'
@@ -125,9 +125,30 @@ class UserController extends Controller
 
     static public function getRandomCookie($vipType = ["超级会员"])
     {
+        // 禁用不可用的账户
+        BdUser::query()
+              ->where('switch', '=', '1')
+              ->where('state', '!=', '死亡')
+              ->where('state', '!=', '会员过期')
+              ->where(function (Builder $query) use ($vipType) {
+                  foreach ($vipType as $item) {
+                      $query->orWhere("vip_type", $item);
+                  }
+              })
+              ->whereRaw(
+                  config("database.default") === 'sqlite'
+                      ? "\"svip_end_time\" < DATETIME('now', 'utc', '+16 hours')"
+                      : "`svip_end_time` < convert_tz(UTC_TIMESTAMP(), '+00:00', '+08:00')"
+              )
+              ->update([
+                  'switch' => '0',
+                  'state'  => '会员过期'
+              ]);
+
         return BdUser::query()
                      ->where('switch', '=', '1')
                      ->where('state', '!=', '死亡')
+                     ->where('state', '!=', '会员过期')
                      ->where(function (Builder $query) use ($vipType) {
                          foreach ($vipType as $item) {
                              $query->orWhere("vip_type", $item);

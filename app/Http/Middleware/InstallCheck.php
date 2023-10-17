@@ -20,7 +20,7 @@ class InstallCheck
         $fileExists  = file_exists($installLock);
 
         if ($need === 'haveInstall') {
-            if (!$fileExists) {
+            if (!$fileExists && !$request->is('install')) {
                 return redirect(url('/install'));
             } else {
                 return $next($request);

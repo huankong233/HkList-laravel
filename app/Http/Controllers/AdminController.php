@@ -14,15 +14,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
-    public function view()
-    {
-        if (Auth::check()) {
-            return view("pages.admin");
-        } else {
-            return view("pages.login");
-        }
-    }
-
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -179,6 +170,31 @@ class AdminController extends Controller
         ];
     }
 
+    public function _getSvipEndTime($cookie)
+    {
+        $http = new Client([
+            'headers' => [
+                'User-Agent' => config("94list.userAgent"),
+                'Cookie'     => $cookie
+            ]
+        ]);
+
+        try {
+            $response = $http->get('https://pan.baidu.com/rest/2.0/membership/user?method=query&clienttype=0&app_id=250528&web=1');
+        } catch (GuzzleException $e) {
+            return [
+                'type'  => 'failed',
+                'data'  => json_decode($e->getResponse()->getBody()->getContents(), true),
+                'error' => $e
+            ];
+        }
+
+        return [
+            'type' => 'success',
+            'data' => json_decode($response->getBody()->getContents(), true)
+        ];
+    }
+
     public function getAccountInfo(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -213,6 +229,16 @@ class AdminController extends Controller
                 return ResponseController::response(500, $e->getMessage());
             }
         }
+
+        if ($response['data']['vip_type'] === 2) {
+            $svipEndTime = $this->_getSvipEndTime($request['cookie'])['data'];
+
+            return ResponseController::response(200, 'success', [
+                'svipEndTime' => $svipEndTime['currenttime'] + $svipEndTime['reminder']['svip']['leftseconds'],
+                ...$response['data']
+            ]);
+        }
+
         return ResponseController::response(200, 'success', $response['data']);
     }
 
@@ -226,7 +252,8 @@ class AdminController extends Controller
             return ResponseController::response(400, "参数错误");
         }
 
-        $accountInfo = $this->_getAccountInfo(['cookie' => $request['cookie']]);
+        $accountInfo = $this->_getAccountInfo($request['cookie']);
+
         if ($accountInfo['type'] === 'failed') {
             return ResponseController::response(400, '获取账户信息失败');
         }
@@ -250,18 +277,95 @@ class AdminController extends Controller
             return ResponseController::response(400, '账号已存在');
         }
 
+        $svip_end_time = date("Y-m-d H:i:s");
+
+        if ($accountInfo['vip_type'] === '超级会员') {
+            $svipEndTime = $this->_getSvipEndTime($request['cookie']);
+
+            if ($svipEndTime['type'] === 'failed') {
+                return ResponseController::response(400, '获取SVIP到期时间失败');
+            }
+
+            $svipEndTime   = $svipEndTime['data'];
+            $svip_end_time = date("Y-m-d H:i:s", $svipEndTime['currenttime'] + $svipEndTime['reminder']['svip']['leftseconds']);
+        }
+
         BdUser::query()->insert([
-            'netdisk_name' => $accountInfo['netdisk_name'],
-            'baidu_name'   => $accountInfo['baidu_name'],
-            'cookie'       => $request['cookie'],
-            'add_time'     => date("Y-m-d H:i:s"),
-            'use'          => date("Y-m-d H:i:s"),
-            'state'        => "未使用",
-            'switch'       => 1,
-            'vip_type'     => $accountInfo['vip_type']
+            'netdisk_name'  => $accountInfo['netdisk_name'],
+            'baidu_name'    => $accountInfo['baidu_name'],
+            'cookie'        => $request['cookie'],
+            'add_time'      => date("Y-m-d H:i:s"),
+            'svip_end_time' => $svip_end_time,
+            'use'           => date("Y-m-d H:i:s"),
+            'state'         => "未使用",
+            'switch'        => 1,
+            'vip_type'      => $accountInfo['vip_type']
         ]);
 
         return ResponseController::response(200, '添加账号成功');
+    }
+
+    public function updateAccount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'account_id' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseController::response(400, "参数错误");
+        }
+
+        $account = BdUser::query()->find($request['account_id']);
+
+        if ($account == null) {
+            return ResponseController::response(400, "账号不存在");
+        }
+
+        $cookie = $account['cookie'];
+
+        $accountInfo = $this->_getAccountInfo($cookie);
+
+        if ($accountInfo['type'] === 'failed') {
+            return ResponseController::response(400, '获取账户信息失败');
+        }
+
+        $accountInfo = $accountInfo['data'];
+
+        switch ($accountInfo['vip_type']) {
+            case 0:
+                $accountInfo['vip_type'] = '普通用户';
+                break;
+            case 1:
+                $accountInfo['vip_type'] = '普通会员';
+                break;
+            case 2:
+                $accountInfo['vip_type'] = '超级会员';
+                break;
+        }
+
+        $svip_end_time = date("Y-m-d H:i:s");
+
+        if ($accountInfo['vip_type'] === '超级会员') {
+            $svipEndTime = $this->_getSvipEndTime($cookie);
+
+            if ($svipEndTime['type'] === 'failed') {
+                return ResponseController::response(400, '获取SVIP到期时间失败');
+            }
+
+            $svipEndTime   = $svipEndTime['data'];
+            $svip_end_time = date("Y-m-d H:i:s", $svipEndTime['currenttime'] + $svipEndTime['reminder']['svip']['leftseconds']);
+        }
+
+        $account->update([
+            'netdisk_name'  => $accountInfo['netdisk_name'],
+            'baidu_name'    => $accountInfo['baidu_name'],
+            'svip_end_time' => $svip_end_time,
+            'state'         => "未使用",
+            'switch'        => 1,
+            'vip_type'      => $accountInfo['vip_type']
+        ]);
+
+        return ResponseController::response(200, '更新账号信息成功');
     }
 
     public function deleteAccount(Request $request)
@@ -302,7 +406,7 @@ class AdminController extends Controller
         }
 
         $account->switch = $account['switch'] === 1 ? 0 : 1;
-        if ($account['state'] !== "未使用") {
+        if ($account['state'] !== "未使用" && $account['state'] !== '会员过期') {
             if ($account['switch'] === 1) {
                 $account->state = "能用";
             } else if ($account['switch'] === 0 && $account['state'] === "死亡") {

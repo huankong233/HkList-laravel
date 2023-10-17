@@ -29,6 +29,7 @@ Route::middleware(['installCheck:haveInstall'])->group(function () {
                 Route::post("/changeConfig", [\App\Http\Controllers\AdminController::class, 'changeConfig']);
                 Route::post("/getAccountInfo", [\App\Http\Controllers\AdminController::class, 'getAccountInfo']);
                 Route::post("/addAccount", [\App\Http\Controllers\AdminController::class, 'addAccount']);
+                Route::post("/updateAccount", [\App\Http\Controllers\AdminController::class, 'updateAccount']);
                 Route::post("/deleteAccount", [\App\Http\Controllers\AdminController::class, 'deleteAccount']);
                 Route::post("/switchAccount", [\App\Http\Controllers\AdminController::class, 'switchAccount']);
                 Route::post("/getAccounts", [\App\Http\Controllers\AdminController::class, 'getAccounts']);
