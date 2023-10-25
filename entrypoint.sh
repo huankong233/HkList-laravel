@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 dir_path="/var/www/html"
 if [ -d "$dir_path" ]; then
@@ -17,3 +17,5 @@ else
     # 文件夹不存在
     echo "没有正确映射路径~"
 fi
+
+exec "$@"
