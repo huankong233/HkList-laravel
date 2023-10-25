@@ -8,4 +8,7 @@ FROM huankong233/php-nginx:latest
 
 COPY --chown=nobody nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --chown=nobody --from=composer /app /var/www/html
+# 复制到文件夹内，运行时判断是否复制
+COPY --chown=nobody --from=composer /app /var/www/94list-laravel
+
+ENTRYPOINT ["docker-entrypoint.sh"]
