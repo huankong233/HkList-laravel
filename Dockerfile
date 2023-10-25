@@ -11,4 +11,4 @@ COPY --chown=nobody nginx.conf /etc/nginx/conf.d/default.conf
 # 复制到文件夹内，运行时判断是否复制
 COPY --chown=nobody --from=composer /app /var/www/94list-laravel
 
-ENTRYPOINT ["/var/www/94list-laravel/docker-entrypoint.sh"]
+ENTRYPOINT ["./var/www/94list-laravel/docker-entrypoint.sh"]
