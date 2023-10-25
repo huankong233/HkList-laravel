@@ -1,5 +1,3 @@
-RUN chmod a+x /var/www/94list-laravel/entrypoint.sh
-
 dir_path="/var/www/html"
 if [ -d "$dir_path" ]; then
     # 判断文件夹是否为空
