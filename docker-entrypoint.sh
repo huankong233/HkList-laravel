@@ -1,3 +1,5 @@
+#!/bin/bash
+
 dir_path="/var/www/html"
 if [ -d "$dir_path" ]; then
     # 判断文件夹是否为空
