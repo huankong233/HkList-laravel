@@ -11,11 +11,15 @@ IP，如无官方授权进行商业用途会对你造成更严重后果。源码
 
 ## 安装方法
 
+### 普通安装（宝塔等环境）
+
 可以参考 [独角发卡](https://github.com/assimon/dujiaoka/wiki) 的安装教程
 
-现在也支持 `docker` 安装
+### Docker 安装
 
-[docker 镜像地址](https://hub.docker.com/r/huankong233/94list-laravel)
+[Docker 镜像地址](https://hub.docker.com/r/huankong233/94list-laravel)
+
+[DockerCompose 样例文件](./docker-compose.yml)
 
 ## 功能完成状态
 

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  94list-laravel:
+    container_name: 94list-laravel
+    # 镜像名字
+    image: huankong233/94list-laravel:latest
+    # 网络模式
+    # "bridge"为桥接模式,"host"为主机模式
+    network_mode: 'bridge'
+    #开放端口
+    ports:
+      # 左边为外部开放端口，右边为容器内端口，请勿修改右边端口
+      - '8080:8080'
+    # 目录映射
+    volumes:
+      # 左侧为宿主机目录，请自行修改，右侧为容器内部目录，请勿修改
+      - ./path/94list-laravel/html:/var/www/html
+    # 重启策略
+    restart: always
+    # 环境变量
+    environment:
+      ### 模式选择
+      #  0 为.env模式
+      #  1 为容器环境变量模式
+      # 使用1时，必须#注释或删除掉"数据库配置大项"
+      - APP_INSTALL_MODE=1
+
+      ### 基础配置
+      # 网站名字
+      #- APP_NAME=94list-laravel
+      # 网站地址
+      #- APP_URL=http://localhost
+      # 是否打开调试模式
+      #- APP_DEBUG=false
+      # 是否强制打开SSL(一般不用动!!!)
+      #- APP_SSL=false
+
+      # 后台登录地址
+      #- ADMIN_ROUTE_PREFIX=/admin
+      #- _94LIST_UA=netpan
+      #- _94LIST_ANNOUNCESWITCH=true
+      #- _94LIST_ANNOUNCE="公告[NextLine]你好[NextLine]好哦~"
+      #- _94LIST_COOKIE="csrfToken=g9xUHDEoA7Pxc6CRSKEgRGiL; newlogin=1; BAIDUID=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1; BAIDUID_BFESS=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1"
+      #- _94LIST_SLEEP=3
+      #- _94LIST_MAXONCE=20
+
+      ### 数据库配置
+      # db_type有效参数，"sqlite"、"mysql"
+      # 如果需要使用sqlite请手动创建好一个空文件，然后在DB_DATABASE中指定数据库文件的绝对位置
+      #- DB_CONNECTION=mysql
+      # 数据库地址
+      #- DB_HOST=127.0.0.1
+      # 数据库端口
+      #- DB_PORT=3306
+      # 数据库名字
+      #- DB_DATABASE=94list
+      # 用户名
+      #- DB_USERNAME=94list
+      # 登陆密码
+      #- DB_PASSWORD=passwd
+
+      ### 邮箱配置
+      # 邮件服务器协议类型
+      #- MAIL_MAILER=smtp
+      # 邮件服务器地址
+      #- MAIL_HOST=smtp.qq.com
+      # 邮件服务器端口
+      #- MAIL_PORT=465
+      # 邮件服务器登陆账号
+      #- MAIL_USERNAME=hello@example.com
+      # 邮件服务器授权码（注意！非账号登陆密码）
+      #- MAIL_PASSWORD=passwd
+      # 邮件服务器加密类型
+      #- MAIL_ENCRYPTION=TLS
+      # 发送人名字
+      #- MAIL_FROM_ADDRESS=hello@example.com
+      # 自定义用户名
+      #- MAIL_FROM_NAME=自定义用户名
