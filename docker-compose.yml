@@ -2,15 +2,18 @@ version: '3.8'
 
 services:
   94list-laravel:
+    # 容器名字
     container_name: 94list-laravel
-    # 镜像名字
+    ### 镜像名字
+    # 请使用 "huankong233/94list-laravel:0.1.3" 及以上版本
     image: huankong233/94list-laravel:latest
-    # 网络模式
-    # "bridge"为网桥模式,"host"为主机模式
-    network_mode: 'bridge'
-    #开放端口
+    # 使用的虚拟网口，必须配合底部 "自动创建网卡" 大项使用
+    networks:
+      - database
+    # 开放端口
     ports:
-      # 左边为外部开放端口，右边为容器内端口，请勿修改右边端口
+      # 左侧为外部开放端口，请自行修改，右侧为容器内端口，请勿修改
+      # 注意！左侧开放端口不要与其他项目端口重复
       - '8080:8080'
     # 目录映射
     volumes:
@@ -37,9 +40,10 @@ services:
       # db_type有效参数，"sqlite"、"mysql"
       # 如果需要使用sqlite请手动创建好一个空文件，然后在DB_DATABASE中指定数据库文件的绝对位置
       #- DB_CONNECTION=mysql
-      # 数据库地址
-      #- DB_HOST=127.0.0.1
-      # 数据库端口
+      # 数据库地址（注意！使用 "mysql" 数据库时，请改成可访问 "mysql" 的地址，请勿在 "brider" 模式下使用 "localhost"、"127.0.0.1" 地址）
+      # 同个"docker-compose"部署下，可直接填入容器名
+      #- DB_HOST=mysql
+      # 数据库端口 （Tip:"mysql" 默认端口3306）
       #- DB_PORT=3306
       # 数据库名字
       #- DB_DATABASE=94list
@@ -65,3 +69,11 @@ services:
       #- MAIL_FROM_ADDRESS=hello@example.com
       # 自定义用户名
       #- MAIL_FROM_NAME=自定义用户名
+
+
+##### 自动创建网卡 #####
+### 必选项！！！ ###
+# 定义网口类型
+networks:
+  datebase:
+    driver: bridge
