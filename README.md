@@ -21,6 +21,8 @@ IP，如无官方授权进行商业用途会对你造成更严重后果。源码
 
 [DockerCompose 样例文件](./docker-compose.yml)
 
+[完整版 Docker-Compose 样例文件](./docker-compose.yaml)
+
 !! Tip:
 
 如果在安装完成后需要修改数据库请在修改完成后删除项目根目录 `install.lock` 文件来重新安装
