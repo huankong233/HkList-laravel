@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  94list-laravel:
+    # 容器名字
+    container_name: 94list-laravel
+    ### 镜像名字
+    # 请使用 "huankong233/94list-laravel:0.1.3" 及以上版本
+    image: huankong233/94list-laravel:latest
+    # 使用的虚拟网口，必须配合底部 "network" 大项使用
+    networks:
+      - database
+    # 开放端口
+    ports:
+      # 左侧为外部开放端口，请自行修改，右侧为容器内端口，请勿修改
+      # 注意！左侧开放端口不要与其他项目端口重复
+      - '8080:8080'
+    # 目录映射
+    volumes:
+      # 左侧为宿主机目录，请自行修改，右侧为容器内部目录，请勿修改
+      - ./path/94list-laravel/html:/var/www/html
+    # 重启策略
+    restart: always
+    # 环境变量
+    environment:
+      ### 模式选择
+      #  0 为.env模式
+      #  1 为容器环境变量模式 
+      # 使用模式0时，必须#注释或删除掉"数据库配置"大项，否则会出现参数被环境变量代替的情况
+      # 使用模式1时，可搭配下方数据库配置一同使用
+      - APP_INSTALL_MODE=1
+
+      ### 基础配置
+      # 网站名字
+      #- APP_NAME=94list-laravel
+      # 网站地址
+      #- APP_URL=http://localhost
+
+      ### 数据库配置
+      # db_type有效参数，"sqlite"、"mysql"
+      # 如果需要使用sqlite请手动创建好一个空文件，然后在DB_DATABASE中指定数据库文件的绝对路径
+      # 通常一般为 /var/www/html/database/database.sqlite 对应的宿主机位置就是 ./path/94list-laravel/html/database/database.sqlite
+      #- DB_CONNECTION=mysql
+      # 数据库地址（注意！使用 "mysql" 数据库时，请改成可访问 "mysql" 的地址，请勿在 "brider" 模式下使用 "localhost"、"127.0.0.1" 地址）
+      # 同个"docker-compose"部署下，可直接填入容器名
+      #- DB_HOST=mysql
+      # 数据库端口 （Tip:"mysql" 默认端口3306）
+      #- DB_PORT=3306
+      # 数据库名字
+      #- DB_DATABASE=94list
+      # 用户名
+      #- DB_USERNAME=94list
+      # 登陆密码
+      #- DB_PASSWORD=passwd
+
+      ### 邮箱配置
+      # 邮件服务器协议类型
+      #- MAIL_MAILER=smtp
+      # 邮件服务器地址
+      #- MAIL_HOST=smtp.qq.com
+      # 邮件服务器端口
+      #- MAIL_PORT=465
+      # 邮件服务器登陆账号
+      #- MAIL_USERNAME=hello@example.com
+      # 邮件服务器授权码（注意！非账号登陆密码）
+      #- MAIL_PASSWORD=passwd
+      # 邮件服务器加密类型
+      #- MAIL_ENCRYPTION=TLS
+      # 发送人名字
+      #- MAIL_FROM_ADDRESS=hello@example.com
+      # 自定义用户名
+      #- MAIL_FROM_NAME=自定义用户名
+
+
+
+####### 数据库 #######
+
+### mysql数据库 ###
+  mysql:
+    container_name: mysql
+    # 请使用高于 "mysql:5.6" 的版本
+    image: mysql:5.7
+    networks:
+      - database
+    #ports:
+      # 注意！左侧开放端口不要与其他项目端口重复
+    #  - 3306:3306
+    restart: always      
+    volumes:
+      - .path/mysql/conf:/etc/mysql/conf.d
+      - .path/mysql/logs:/logs
+      - .path/mysql/data:/var/lib/mysql
+    environment:
+      # 用户组id
+      - PUID=1000
+      - PGID=1000
+      # 时区
+      - TZ=Asia/Shanghai
+      # root用户登录密码
+      - MYSQL_ROOT_PASSWORD=passwd
+
+
+
+###### 数据库UI管理 ######
+# adminer 与 phpmyadmin 二选一即可，无需搭建两个
+
+### adminer-UI管理 ###
+  adminer:
+    container_name: adminer
+    image: adminer:latest
+    networks:
+      - database
+    ports:
+      # 注意！左侧开放端口不要与其他项目端口重复
+      - 8081:8080
+    restart: always
+    environment:
+      # 绑定数据库，请填入可访问数据库的地址，同个"docker-compose"部署下，"network" 相同也可以直接填入容器名
+      - ADMINER_DEFAULT_SERVER=mysql
+
+### phpmyadmin-UI管理 ###
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin
+    networks:
+      - database
+    ports:
+      # 注意！左侧开放端口不要与其他项目端口重复
+      - 8082:80
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+      - PMA_ARBITRARY=0
+      # 绑定数据库，请填入可访问数据库的地址，同个"docker-compose"部署下，"network" 相同也可以直接填入容器名
+      - PMA_HOST=mysql
+
+
+
+##### 自动创建网卡 #####
+### 必选项！！！ ###
+# 定义网口类型
+networks:
+  datebase:
+    driver: bridge
