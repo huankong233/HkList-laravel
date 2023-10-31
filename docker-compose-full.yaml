@@ -81,9 +81,9 @@ services:
     image: mysql:5.7
     networks:
       - database
-    ports:
+    #ports:
       # 注意！左侧开放端口不要与其他项目端口重复
-      - 3306:3306
+    #  - 3306:3306
     restart: always      
     volumes:
       - .path/mysql/conf:/etc/mysql/conf.d
