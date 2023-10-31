@@ -26,7 +26,7 @@ services:
       ### 模式选择
       #  0 为.env模式
       #  1 为容器环境变量模式
-      # 使用模式0时，必须#注释或删除掉"数据库配置"大项，否则会出现参数被环境变量代替的情况
+      # 使用模式0时，必须#注释或删除掉 "数据库配置" 大项，否则会出现参数被环境变量代替的情况
       # 使用模式1时，可搭配下方数据库配置一同使用
       - APP_INSTALL_MODE=1
 
@@ -37,16 +37,15 @@ services:
       #- APP_URL=http://localhost
 
       ### 数据库配置
-      # db_type有效参数，"sqlite"、"mysql"
-      # 如果需要使用sqlite请手动创建好一个空文件，然后在DB_DATABASE中指定数据库文件的绝对路径
-      # 通常一般为 /var/www/html/database/database.sqlite 对应的宿主机位置就是 ./path/94list-laravel/html/database/database.sqlite
+      # 数据库类型（有效参数："sqlite"、"mysql"）
       #- DB_CONNECTION=mysql
       # 数据库地址（注意！使用 "mysql" 数据库时，请改成可访问 "mysql" 的地址，请勿在 "brider" 模式下使用 "localhost"、"127.0.0.1" 地址）
-      # 同个"docker-compose"部署下，可直接填入容器名
+      # Tip:同个"docker-compose"部署下，"network"网卡相同，可直接填入容器名
       #- DB_HOST=mysql
       # 数据库端口 （Tip:"mysql" 默认端口3306）
       #- DB_PORT=3306
-      # 数据库名字
+      # 数据库名字 (Tip:使用mysql时，填数据库名字；使用本地sqlite时，填入文件绝对路径)
+      # Tip:通常一般为 "/var/www/html/database/database.sqlite" 对应的宿主机位置就是 "./path/94list-laravel/html/database/database.sqlite"
       #- DB_DATABASE=94list
       # 用户名
       #- DB_USERNAME=94list
@@ -64,8 +63,8 @@ services:
       #- MAIL_USERNAME=hello@example.com
       # 邮件服务器授权码（注意！非账号登陆密码）
       #- MAIL_PASSWORD=passwd
-      # 邮件服务器加密类型
-      #- MAIL_ENCRYPTION=TLS
+      # 邮件服务器加密类型（有效参数："SSL"、"TLS"）
+      #- MAIL_ENCRYPTION=SSL
       # 发送人名字
       #- MAIL_FROM_ADDRESS=hello@example.com
       # 自定义用户名
@@ -75,5 +74,5 @@ services:
 ### 必选项！！！ ###
 # 定义网口类型
 networks:
-  datebase:
+  database:
     driver: bridge
