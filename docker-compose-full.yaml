@@ -38,7 +38,8 @@ services:
 
       ### 数据库配置
       # db_type有效参数，"sqlite"、"mysql"
-      # 如果需要使用sqlite请手动创建好一个空文件，然后在DB_DATABASE中指定数据库文件的绝对位置
+      # 如果需要使用sqlite请手动创建好一个空文件，然后在DB_DATABASE中指定数据库文件的绝对路径
+      # 通常一般为 /var/www/html/database/database.sqlite 对应的宿主机位置就是 ./path/94list-laravel/html/database/database.sqlite
       #- DB_CONNECTION=mysql
       # 数据库地址（注意！使用 "mysql" 数据库时，请改成可访问 "mysql" 的地址，请勿在 "brider" 模式下使用 "localhost"、"127.0.0.1" 地址）
       # 同个"docker-compose"部署下，可直接填入容器名
