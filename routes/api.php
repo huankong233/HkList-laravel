@@ -40,7 +40,7 @@ Route::middleware(['installCheck:haveInstall'])->group(function () {
         });
     });
 
-    Route::prefix("/user")->group(function () {
+    Route::middleware("web")->prefix("/user")->group(function () {
         Route::post('/getConfig', [\App\Http\Controllers\UserController::class, 'getConfig']);
         Route::post("/getFileList", [\App\Http\Controllers\UserController::class, 'getFileList']);
         Route::post("/getSign", [\App\Http\Controllers\UserController::class, 'getSign']);

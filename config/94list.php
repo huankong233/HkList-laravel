@@ -9,5 +9,7 @@ return [
     'version'        => env("_94LIST_VERSION", '1.0.0'),
     'cookie'         => env("_94LIST_COOKIE", ""),
     'sleep'          => env("_94LIST_SLEEP", 3),
-    'maxOnce'        => env("_94LIST_MAXONCE", 20)
+    'maxOnce'        => env("_94LIST_MAXONCE", 20),
+    'passwordSwitch' => env("_94LIST_PASSWORDSWITCH", false),
+    'password'       => env("_94LIST_PASSWORD", "")
 ];

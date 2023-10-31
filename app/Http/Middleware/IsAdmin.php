@@ -17,7 +17,12 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::user()->is_admin) {
+        $user = Auth::user();
+        if (!$user) {
+            return ResponseController::response(400, 'Unauthorized');
+        }
+
+        if ($user->is_admin) {
             return $next($request);
         } else {
             return ResponseController::response(400, 'Unauthorized');

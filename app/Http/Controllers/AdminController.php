@@ -118,16 +118,28 @@ class AdminController extends Controller
             'sleep'          => 'required',
             'maxOnce'        => 'required',
             'userAgent'      => 'required',
-            'announce'       => 'required',
             'announceSwitch' => 'required|boolean',
             'cookie'         => 'required',
             'debug'          => 'required',
             'ssl'            => 'required',
-            'prefix'         => 'required'
+            'prefix'         => 'required',
+            'passwordSwitch' => 'required|boolean',
         ]);
 
         if ($validator->fails()) {
             return ResponseController::response(400, "参数错误");
+        }
+
+        if ($request['announceSwitch']) {
+            if (!isset($request['announce'])) return ResponseController::response(400, "参数错误");
+        } else {
+            $request['announceSwitch'] = config("94list.announceSwitch");
+        }
+
+        if ($request['passwordSwitch']) {
+            if (!isset($request['password'])) return ResponseController::response(400, "参数错误");
+        } else {
+            $request['password'] = config("94list.password");
         }
 
         $this->modifyEnv([
@@ -139,7 +151,9 @@ class AdminController extends Controller
             "_94LIST_SLEEP"          => $request['sleep'],
             "_94LIST_MAXONCE"        => $request['maxOnce'],
             "APP_SSL"                => $request['ssl'] ? 'true' : 'false',
-            "ADMIN_ROUTE_PREFIX"     => $request['prefix']
+            "ADMIN_ROUTE_PREFIX"     => $request['prefix'],
+            "_94LIST_PASSWORDSWITCH" => $request['passwordSwitch'] ? 'true' : 'false',
+            "_94LIST_PASSWORD"       => $request['password']
         ]);
 
         return ResponseController::response(200, "修改配置成功");

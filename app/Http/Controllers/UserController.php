@@ -26,7 +26,9 @@ class UserController extends Controller
             'announceSwitch' => $config['announceSwitch'],
             'userAgent'      => $config['userAgent'],
             "debug"          => config("app.debug"),
-            "haveAccount"    => $this->getRandomCookie() !== null
+            "haveAccount"    => $this->getRandomCookie() !== null,
+            'havePassword'   => $config['passwordSwitch'],
+            "haveLogin"      => Auth::check()
         ]);
     }
 
@@ -39,6 +41,10 @@ class UserController extends Controller
         if ($validator->fails()) {
             return ResponseController::response(400, '参数错误');
         }
+
+        $user          = Auth::user();
+        $checkPassword = self::checkPassword($user, $request['password']);
+        if ($checkPassword) return $checkPassword;
 
         preg_match("/s\/([a-zA-Z0-9_-]+)/", trim($request['url']), $shortUrl);
         if (!$shortUrl) {
@@ -59,7 +65,7 @@ class UserController extends Controller
                     'shorturl' => $shortUrl,
                     'dir'      => $request['dir'] ?? null,
                     'root'     => $request['dir'] === '' || $request['dir'] === null || $request['dir'] === '/' ? 1 : 0,
-                    'pwd'      => trim($request['password']) ?? '',
+                    'pwd'      => trim($request['pwd']) ?? '',
                     'page'     => $request['page'] ?? 1,
                     'num'      => $request['num'] ?? 9999,
                     'order'    => $request['order'] ?? 'filename'
@@ -92,6 +98,10 @@ class UserController extends Controller
         if ($validator->fails()) {
             return ResponseController::response(400, '参数错误');
         }
+
+        $user          = Auth::user();
+        $checkPassword = self::checkPassword($user, $request['password']);
+        if ($checkPassword) return $checkPassword;
 
         $http = new Client([
             'headers' => [
@@ -158,6 +168,26 @@ class UserController extends Controller
                      ->first();
     }
 
+    static function checkPassword($user, $password)
+    {
+        // 判断是否启用了密码
+        if (config("94list.passwordSwitch")) {
+            // 如果是管理员就跳过
+            // 未登陆或不是管理员
+            if (!$user || !$user['is_admin']) {
+                if (!$password) {
+                    return ResponseController::response(400, '请提供密码!');
+                }
+
+                if ($password !== config("94list.password")) {
+                    return ResponseController::response(400, '密码不匹配');
+                }
+            }
+        }
+
+        return false;
+    }
+
     public function downloadFiles(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -177,10 +207,15 @@ class UserController extends Controller
             return ResponseController::response(400, '超出单次解析最大数量');
         }
 
+        $user = Auth::user();
+
+        $checkPassword = self::checkPassword($user, $request['password']);
+        if ($checkPassword) return $checkPassword;
+
         // 判断是否指定了某个账户
         $cookieId = $request['bd_user_id'];
         if (isset($cookieId)) {
-            if (Auth::user()->is_admin) {
+            if ($user && $user['is_admin']) {
                 $cookie = BdUser::query()->find($cookieId);
                 if ($cookie === null) {
                     return ResponseController::response(400, '代理账号不存在');

@@ -23,7 +23,8 @@ services:
       ### 模式选择
       #  0 为.env模式
       #  1 为容器环境变量模式
-      # 使用1时，必须#注释或删除掉"数据库配置大项"
+      # 使用模式0时，必须#注释或删除掉"数据库配置"大项，否则会出现参数被环境变量代替的情况
+      # 使用模式1时，可搭配下方数据库配置一同使用
       - APP_INSTALL_MODE=1
 
       ### 基础配置
@@ -31,19 +32,6 @@ services:
       #- APP_NAME=94list-laravel
       # 网站地址
       #- APP_URL=http://localhost
-      # 是否打开调试模式
-      #- APP_DEBUG=false
-      # 是否强制打开SSL(一般不用动!!!)
-      #- APP_SSL=false
-
-      # 后台登录地址
-      #- ADMIN_ROUTE_PREFIX=/admin
-      #- _94LIST_UA=netpan
-      #- _94LIST_ANNOUNCESWITCH=true
-      #- _94LIST_ANNOUNCE="公告[NextLine]你好[NextLine]好哦~"
-      #- _94LIST_COOKIE="csrfToken=g9xUHDEoA7Pxc6CRSKEgRGiL; newlogin=1; BAIDUID=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1; BAIDUID_BFESS=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1"
-      #- _94LIST_SLEEP=3
-      #- _94LIST_MAXONCE=20
 
       ### 数据库配置
       # db_type有效参数，"sqlite"、"mysql"
