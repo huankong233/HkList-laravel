@@ -32,6 +32,17 @@ class InstallCheck
                 if (config("app.installMode") === '1') {
                     try {
                         $dbConfig = config('database');
+                        if ($dbConfig['default'] === 'sqlite') {
+                            // 如果不存在则自动创建
+                            if (file_exists($dbConfig['DB_DATABASE'])) {
+                                $bakPath = $dbConfig['DB_DATABASE'] . '.bak';
+                                if (file_exists($bakPath)) unlink($bakPath);
+                                rename($dbConfig['DB_DATABASE'], $bakPath);
+                            };
+
+                            file_put_contents($dbConfig['DB_DATABASE'], '');
+                        }
+
                         DB::purge();
                         // db测试
                         DB::connection()->select('select 1 limit 1');
