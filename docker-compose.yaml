@@ -44,8 +44,7 @@ services:
       #- DB_HOST=mysql
       # 数据库端口 （Tip:"mysql" 默认端口3306）
       #- DB_PORT=3306
-      # 数据库名字 (Tip:使用mysql时，填数据库名字；使用本地sqlite时，填入文件绝对路径)
-      # Tip:通常一般为 "/var/www/html/database/database.sqlite" 对应的宿主机位置就是 "./path/94list-laravel/html/database/database.sqlite"
+      # 数据库名字 (Tip:使用mysql时，填数据库名字；使用sqlite时，留空即可)
       #- DB_DATABASE=94list
       # 用户名
       #- DB_USERNAME=94list

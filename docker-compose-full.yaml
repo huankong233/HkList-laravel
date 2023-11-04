@@ -44,8 +44,7 @@ services:
       #- DB_HOST=mysql
       # 数据库端口 （Tip:"mysql" 默认端口3306）
       #- DB_PORT=3306
-      # 数据库名字 (Tip:使用mysql时，填数据库名字；使用本地sqlite时，填入文件绝对路径)
-      # Tip:通常一般为 "/var/www/html/database/database.sqlite" 对应的宿主机位置就是 "./path/94list-laravel/html/database/database.sqlite"
+      # 数据库名字 (Tip:使用mysql时，填数据库名字；使用本地sqlite时，留空即可)
       #- DB_DATABASE=94list
       # 用户名
       #- DB_USERNAME=94list
@@ -70,11 +69,9 @@ services:
       # 自定义用户名
       #- MAIL_FROM_NAME=自定义用户名
 
+  ####### 数据库 #######
 
-
-####### 数据库 #######
-
-### mysql数据库 ###
+  ### mysql数据库 ###
   mysql:
     container_name: mysql
     # 请使用高于 "mysql:5.6" 的版本
@@ -82,9 +79,9 @@ services:
     networks:
       - database
     #ports:
-      # 注意！左侧开放端口不要与其他项目端口重复
+    # 注意！左侧开放端口不要与其他项目端口重复
     #  - 3306:3306
-    restart: always      
+    restart: always
     volumes:
       - .path/mysql/conf:/etc/mysql/conf.d
       - .path/mysql/logs:/logs
@@ -98,12 +95,10 @@ services:
       # root用户登录密码
       - MYSQL_ROOT_PASSWORD=passwd
 
+  ###### 数据库UI管理 ######
+  # adminer 与 phpmyadmin 二选一即可，无需搭建两个
 
-
-###### 数据库UI管理 ######
-# adminer 与 phpmyadmin 二选一即可，无需搭建两个
-
-### adminer-UI管理 ###
+  ### adminer-UI管理 ###
   adminer:
     container_name: adminer
     image: adminer:latest
@@ -117,7 +112,7 @@ services:
       # 绑定数据库，请填入可访问数据库的地址，同个"docker-compose"部署下，"network" 相同也可以直接填入容器名
       - ADMINER_DEFAULT_SERVER=mysql
 
-### phpmyadmin-UI管理 ###
+  ### phpmyadmin-UI管理 ###
   phpmyadmin:
     container_name: phpmyadmin
     image: phpmyadmin
@@ -132,8 +127,6 @@ services:
       - PMA_ARBITRARY=0
       # 绑定数据库，请填入可访问数据库的地址，同个"docker-compose"部署下，"network" 相同也可以直接填入容器名
       - PMA_HOST=mysql
-
-
 
 ##### 自动创建网卡 #####
 ### 必选项！！！ ###
