@@ -70,6 +70,8 @@ if [[ $(echo -e "$local_version\n$latest_version" | sort -V | head -n 1) == "$lo
 	cp -f /var/www/html_old/"$local_version"/.env /var/www/html/ && \
 	# 输入新的版本号
 	sed -i "s/_94LIST_VERSION=.*/_94LIST_VERSION=$latest_version/" /var/www/html/.env
+
+  touch /var/www/html/install.lock
 	
 	### 输出结果
 	echo "更新完成…"
