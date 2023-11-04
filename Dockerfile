@@ -42,8 +42,10 @@ WORKDIR /var/www/html
 # 开放端口
 EXPOSE 8080
 
-# 映射目录
+# 映射源码目录
 VOLUME ["/var/www/html"]
+# 映射备份目录
+VOLUME ["/var/www/html_old"]
 
 # 启动
 ENTRYPOINT ["/entrypoint.sh"]
