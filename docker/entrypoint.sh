@@ -72,6 +72,8 @@ if [[ $(echo -e "$local_version\n$latest_version" | sort -V | head -n 1) == "$lo
 	sed -i "s/_94LIST_VERSION=.*/_94LIST_VERSION=$latest_version/" /var/www/html/.env
 
   touch /var/www/html/install.lock
+
+  echo "$latest_version" >> /var/www/html/update.lock
 	
 	### 输出结果
 	echo "更新完成…"

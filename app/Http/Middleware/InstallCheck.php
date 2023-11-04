@@ -23,11 +23,19 @@ class InstallCheck
      */
     public function handle(Request $request, Closure $next, $need): Response
     {
-        $installLock = base_path() . DIRECTORY_SEPARATOR . 'install.lock';
-        $fileExists  = file_exists($installLock);
+        $installLock       = base_path() . DIRECTORY_SEPARATOR . 'install.lock';
+        $installLockExists = file_exists($installLock);
+        $updateLock        = base_path() . DIRECTORY_SEPARATOR . 'update.lock';
+        $updateLockExists  = file_exists($updateLock);
+
+        if ($updateLockExists) {
+            // 执行需要的更新操作
+            $this->updateThings(file_get_contents($updateLock));
+            unlink($updateLock);
+        }
 
         if ($need === 'haveInstall') {
-            if (!$fileExists && !$request->is('install')) {
+            if (!$installLockExists && !$request->is('install')) {
                 // 判断是否是 docker 模式
                 if (config("app.installMode") === '1') {
                     try {
@@ -81,7 +89,7 @@ class InstallCheck
         }
 
         if ($need === 'notInstall') {
-            if (!$fileExists) {
+            if (!$installLockExists) {
                 return $next($request);
             } else {
                 return ResponseController::response(403, config("app.name") . ' 已安装');
@@ -89,5 +97,10 @@ class InstallCheck
         }
 
         return $next($request);
+    }
+
+    function updateThings($now_version)
+    {
+
     }
 }
