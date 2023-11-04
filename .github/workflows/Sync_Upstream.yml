@@ -1,0 +1,48 @@
+name: Sync_Upstream
+
+on:
+  # 在push或pull request事件触发时运行工作流程，但只针对main分支
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # 手动触发
+  workflow_dispatch:
+
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # 设置git配置
+      - name: Configure Git
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      # 将上游仓库作为一个远程仓库添加
+      - name: Add Upstream
+        run: |
+          git remote add upstream https://github.com/${{ github.repository }}
+          git remote -v
+
+      # 获取上游的更改
+      - name: Fetch Upstream
+        run: |
+          git fetch upstream
+
+      # 将上游的更改合并到main分支
+      - name: Merge Upstream
+        run: |
+          git checkout main
+          git merge upstream/main
+
+      # 将更改推送到你的fork的仓库
+      - name: Push Changes
+        run: |
+          git push origin main
