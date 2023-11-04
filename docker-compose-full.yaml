@@ -17,11 +17,11 @@ services:
       - '8080:8080'
     # 目录映射
     volumes:
-      # 左侧为宿主机目录，请自行修改，右侧为容器内部目录，请勿修改
+      ### 左侧为宿主机目录，请自行修改，右侧为容器内部目录，请勿修改
       # 当前版本配置
       - ./path/94list-laravel/html:/var/www/html
-      # 版本备份，用于升级时存放老版本
-      - ./path/94list-laravel/html_old:/var/www/html_old      
+      # 版本备份储存 (用于升级时更高版本镜像时，存放d旧版本的配置文件)
+      - ./path/94list-laravel/html_old:/var/www/html_old  
     # 重启策略
     restart: always
     # 环境变量
