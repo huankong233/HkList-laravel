@@ -30,11 +30,11 @@ latest_version=$(grep "_94LIST_VERSION=" /var/www/94list-laravel/.env | cut -d '
 ### 比较版本号
 # local=<latest
 if [[ $(echo -e "$local_version\n$latest_version" | sort -V | head -n 1) == "$local_version" ]]; then
-	### local=latest
+	# local=latest
 	if [ "$local_version" = "$latest_version" ]; then
 		echo "当前版本与内置版本一致，无需更改…"
   
-	### local<latest	
+	# local<latest	
 	else
 		echo "当前版本\"$local_version\"低于内置版本\"$latest_version\"，开始更新…" && \
 		echo "开始备份当前版本…" && \
