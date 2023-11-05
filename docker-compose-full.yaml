@@ -5,7 +5,7 @@ services:
     # 容器名字
     container_name: 94list-laravel
     ### 镜像名字
-    # 请使用 "huankong233/94list-laravel:0.1.3" 及以上版本
+    # 请使用 "huankong233/94list-laravel:0.1.6" 及以上版本
     image: huankong233/94list-laravel:latest
     # 使用的虚拟网口，必须配合底部 "自动创建网卡" 大项使用
     networks:
@@ -17,8 +17,11 @@ services:
       - '8080:8080'
     # 目录映射
     volumes:
-      # 左侧为宿主机目录，请自行修改，右侧为容器内部目录，请勿修改
+      ### 左侧为宿主机目录，请自行修改，右侧为容器内部目录，请勿修改
+      # 当前版本配置
       - ./path/94list-laravel/html:/var/www/html
+      # 版本备份储存 (用于升级时更高版本镜像时，存放旧版本的配置文件)
+      - ./path/94list-laravel/html_old:/var/www/html_old
     # 重启策略
     restart: always
     # 环境变量
@@ -44,7 +47,7 @@ services:
       #- DB_HOST=mysql
       # 数据库端口 （Tip:"mysql" 默认端口3306）
       #- DB_PORT=3306
-      # 数据库名字 (Tip:使用mysql时，填数据库名字；使用本地sqlite时，留空即可)
+      # 数据库名字 (Tip:使用 "mysql" 时，填数据库名字；使用本地 "sqlite" 时，留空即可)
       #- DB_DATABASE=94list
       # 用户名
       #- DB_USERNAME=94list
