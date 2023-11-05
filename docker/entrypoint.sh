@@ -50,7 +50,7 @@ if [[ $(echo -e "$local_version\n$latest_version" | sort -V | head -n 1) == "$lo
 		# 备份老版本源码
 		cp -rp /var/www/html/. /var/www/html_old/"$local_version" && \
 		# 清空 html 下所有内容
-		rm -rf /var/www/html/. && \
+		rm -rf /var/www/html/.* /var/www/html/* 2> /dev/null && \
 		# 复制新版本源码
 		cp -a /var/www/94list-laravel/. /var/www/html/ && \
 	
