@@ -29,7 +29,7 @@ if [ ! -d "$commands_path" ]; then
     # 判断文件夹是否为空
     if [ ! "$(ls -A $commands_path)" ]; then
         # 文件夹为空 复制文件夹内容
-        cp -r /var/www/94list-laravel/app/Console/Commands "$commands_path"
+        cp -r /var/www/94list-laravel/app/Console/Commands "$commands_path/.."
         # 复制 vendor 文件夹
         rm -rf "$dir_path/vendor"
         cp -r /var/www/94list-laravel/vendor "$dir_path/vendor"
