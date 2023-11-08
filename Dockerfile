@@ -21,6 +21,7 @@ COPY docker/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/entrypoint.sh /entrypoint.sh
+COPY docker/python /python
 
 # 复制构建后项目源码
 COPY --from=composer /app /var/www/94list-laravel
@@ -34,7 +35,8 @@ RUN chmod a+x /entrypoint.sh
 #  默认使用.env文件模式
 #  0 为.env模式
 #  1 为容器环境变量模式
-ENV APP_INSTALL_MODE=1
+ENV APP_INSTALL_MODE=1 \
+    APP_AUTO_UPDATE=true
 
 # 默认工作目录
 WORKDIR /var/www/html
