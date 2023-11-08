@@ -24,7 +24,8 @@ fi && \
 # 兼容老版本不存在 复制自定义命令文件夹
 commands_path=$dir_path/app/Console/Commands
 if [ ! -d "$commands_path" ]; then
-    echo "检测到老版本"
+    echo "检测到老版本,开始迁移"
+    mkdir $commands_path
     # 判断文件夹是否为空
     if [ ! "$(ls -A $commands_path)" ]; then
         # 文件夹为空 复制文件夹内容
