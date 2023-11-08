@@ -30,6 +30,9 @@ if [ ! -d "$commands_path" ]; then
     if [ ! "$(ls -A $commands_path)" ]; then
         # 文件夹为空 复制文件夹内容
         cp -a /var/www/94list-laravel/app/Console/Commands "$commands_path"
+        # 复制 vendor 文件夹
+        rm -rf "$dir_path/vendor"
+        cp -r /var/www/94list-laravel/vendor "$dir_path/vendor"
     else
         # 文件夹不为空
         chown -R nobody "$commands_path" && \
