@@ -37,7 +37,7 @@ class checkAppStatus extends Command
      * @param string $path
      * @return bool
      */
-    public function dir_del(string $path): bool
+    public function dir_del(string $path, bool $delPath = false): bool
     {
         if (!is_dir($path)) {
             return false;
@@ -58,7 +58,7 @@ class checkAppStatus extends Command
             $this->dir_del($item);
         }
         closedir($open);
-        return rmdir($path);
+        return !$delPath || rmdir($path);
     }
 
     /**
@@ -148,7 +148,7 @@ class checkAppStatus extends Command
             $this->dir_mkdir($bakPath);
         } else {
             $this->warn($bakPath . "已存在，清空文件夹并开始重新备份");
-            $this->dir_del($bakPath);
+            $this->dir_del($bakPath, true);
         }
 
         # 备份老版本源码
