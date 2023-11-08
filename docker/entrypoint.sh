@@ -21,6 +21,21 @@ else
     echo "没有正确映射路径…"
 fi && \
 
+# 兼容老版本不存在 复制自定义命令文件夹
+commands_path=$dir_path/app/Console/Commands
+if [ -d "$commands_path"];then
+    # 判断文件夹是否为空
+    if [ ! "$(ls -A $commands_path)" ]; then
+        # 文件夹为空 复制文件夹内容
+        cp -a /var/www/94list-laravel/app/Console/Commands "$commands_path"
+    else
+        # 文件夹不为空
+        chown -R nobody "$commands_path" && \
+        chgrp -R nobody "$commands_path" && \
+        chmod -R 755 "$commands_path"/
+    fi
+fi
+
 # 判断环境变量APP_AUTO_UPDATE的值
 if [ "$APP_AUTO_UPDATE" = "true" ]; then
     # 值为true时
