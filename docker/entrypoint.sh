@@ -5,6 +5,7 @@ dir_path="/var/www/html"
 
 # 目录映射检测
 if [ -d "$dir_path" ]; then
+    cd $dir_path
     # 判断文件夹是否为空
     if [ ! "$(ls -A $dir_path)" ]; then
         # 文件夹为空 复制文件夹内容
@@ -23,8 +24,7 @@ fi && \
 # 判断环境变量APP_AUTO_UPDATE的值
 if [ "$APP_AUTO_UPDATE" = "true" ]; then
     # 值为true时
-    python3 /python/main.py
-    # 等待运行结束后再执行底部的exec "$@"
+    php artisan app:check-app-status
 elif [ "$APP_AUTO_UPDATE" = "false" ]; then
     # 值为false时
     echo "没有开启更新检测…"

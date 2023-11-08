@@ -21,7 +21,7 @@ COPY docker/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/entrypoint.sh /entrypoint.sh
-COPY docker/python /python
+# COPY docker/python /python
 
 # 复制构建后项目源码
 COPY --from=composer /app /var/www/94list-laravel

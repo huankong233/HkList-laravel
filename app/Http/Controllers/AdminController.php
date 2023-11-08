@@ -79,9 +79,9 @@ class AdminController extends Controller
         return ResponseController::response(200, "修改信息成功");
     }
 
-    static public function modifyEnv(array $data)
+    static public function modifyEnv(array $data, $envPath = null)
     {
-        $envPath = base_path() . DIRECTORY_SEPARATOR . '.env';
+        if ($envPath === null) $envPath = base_path() . DIRECTORY_SEPARATOR . '.env';
 
         $contentArray = collect(file($envPath, FILE_IGNORE_NEW_LINES));
 

@@ -31,6 +31,8 @@ IP，如无官方授权进行商业用途会对你造成更严重后果。源码
 
 ### 前台
 
+[94list-laravel-frontend](https://github.com/huankong233/94list-laravel-frontend)
+
 - [x] 前台文件列表解析
 - [x] 前台文件列表进入退出
 - [x] 前台下载链接解析
@@ -38,18 +40,22 @@ IP，如无官方授权进行商业用途会对你造成更严重后果。源码
 
 ### 后台
 
+[94list-laravel](https://github.com/huankong233/94list-laravel)
+
 - [x] 后台配置修改
 - [x] 后台账户添加删除禁用
 - [x] 后台账户可用性完成
 - [x] 管理员账号密码修改
 - [x] 指定账号解析测试
 
-## 前端部分
-
-[94list-laravel-frontend](https://github.com/huankong233/94list-laravel-frontend)
-
 ## 感谢
+
+### 项目
 
 - [laravel](https://laravel.com)
 - [94list](https://github.com/codehub666/94list)
 - [独角发卡](https://github.com/assimon/dujiaoka)
+
+### 贡献者
+
+- [Aqr-K](https://github.com/Aqr-K)
