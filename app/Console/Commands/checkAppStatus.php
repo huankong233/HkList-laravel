@@ -113,7 +113,7 @@ class checkAppStatus extends Command
      */
     public function handle(): void
     {
-        $this->info('开始检查容器是否更新');
+        $this->info('开始检查是否更新');
 
         # 各项文件夹目录与配置文件的名称
         $local_html_path  = "/var/www/html";
@@ -143,6 +143,7 @@ class checkAppStatus extends Command
         $this->info("本地版本低于容器版本，开始更新");
 
         # 创建版本文件夹
+        $this->info("开始创建版本文件夹");
         $bakPath = $old_html_path . '/' . $local_version;
         if (!file_exists($bakPath)) {
             $this->dir_mkdir($bakPath);
@@ -150,16 +151,21 @@ class checkAppStatus extends Command
             $this->warn($bakPath . "已存在，清空文件夹并开始重新备份");
             $this->dir_del($bakPath, true);
         }
+        $this->info("完成创建版本文件夹");
+
 
         # 备份老版本源码
+        $this->info("开始备份老版本");
         $this->dir_copy($local_html_path, $bakPath);
         # 清空 html 下所有内容
         $this->dir_del($local_html_path);
         $this->dir_mkdir($local_html_path);
+        $this->info("完成备份老版本");
 
         # 复制新版本源码
         $this->info("开始导入容器版本源码");
         $this->dir_copy($latest_html_path, $local_html_path);
+        $this->info("完成导入容器版本源码");
 
         # 复制数据库
         $sqliteDbFile = $bakPath . "/database/database.sqlite";
