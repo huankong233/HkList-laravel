@@ -44,6 +44,7 @@ fi
 # 判断环境变量APP_AUTO_UPDATE的值
 if [ "$APP_AUTO_UPDATE" = "true" ]; then
     # 值为true时
+    cd /var/www/94list-laravel
     php artisan app:check-app-status
 elif [ "$APP_AUTO_UPDATE" = "false" ]; then
     # 值为false时

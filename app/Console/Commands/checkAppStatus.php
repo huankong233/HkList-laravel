@@ -61,7 +61,6 @@ class checkAppStatus extends Command
         return rmdir($path);
     }
 
-
     /**
      * 文件夹文件拷贝
      *
@@ -91,7 +90,6 @@ class checkAppStatus extends Command
         return true;
     }
 
-
     /**
      * 创建文件夹
      *
@@ -109,7 +107,6 @@ class checkAppStatus extends Command
         }
         return true;
     }
-
 
     /**
      * Execute the console command.
@@ -146,7 +143,7 @@ class checkAppStatus extends Command
         $this->info("本地版本低于容器版本，开始更新");
 
         # 创建版本文件夹
-        $bakPath = $old_html_path . $local_version;
+        $bakPath = $old_html_path . '/' . $local_version;
         if (!file_exists($bakPath)) {
             $this->dir_mkdir($bakPath);
         } else {
@@ -174,7 +171,8 @@ class checkAppStatus extends Command
         }
 
         # 更新版本号
-        $bakEnvPath = $bakPath . $env_name;
+        $bakEnvPath = $bakPath . '/' . $env_name;
+        unlink($local_env_path);
         copy($bakEnvPath, $local_env_path);
         AdminController::modifyEnv([
             '_94LIST_VERSION' => $latest_version
