@@ -290,7 +290,10 @@ class UserController extends Controller
                             'server_filename' => $list['server_filename']
                         ];
                     } catch (GuzzleException $e) {
-                        return ResponseController::response(500, $e->getMessage());
+                        $cookie->state  = "死亡";
+                        $cookie->switch = 0;
+                        $cookie->save();
+                        return ResponseController::response(500, "账户可能被拉黑,账户id:" . $cookie['id'] . $e->getMessage());
                     }
                     sleep($sleepTime);
                 }
