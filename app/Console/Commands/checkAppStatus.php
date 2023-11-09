@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Http\Controllers\AdminController;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 
 class checkAppStatus extends Command
 {
@@ -31,6 +32,19 @@ class checkAppStatus extends Command
         }
         return '0.0.0';
     }
+
+    public function fixDotEnvFile($newEnvPath, $oldEnvPath)
+    {
+        $newEnv = collect(file($newEnvPath, FILE_IGNORE_NEW_LINES));
+        $oldEnv = collect(file($oldEnvPath, FILE_IGNORE_NEW_LINES));
+
+        $diff   = $newEnv->diffKeys($oldEnv);
+        $nowEnv = $oldEnv->merge($diff->all());
+
+        $content = implode("\n", $nowEnv->toArray());
+        File::put($oldEnvPath, $content);
+    }
+
 
     /**
      * 删除目录
@@ -180,6 +194,7 @@ class checkAppStatus extends Command
         $bakEnvPath = $bakPath . '/' . $env_name;
         unlink($local_env_path);
         copy($bakEnvPath, $local_env_path);
+        $this->fixDotEnvFile($latest_env_path, $local_env_path);
         AdminController::modifyEnv([
             '_94LIST_VERSION' => $latest_version
         ], $local_env_path);

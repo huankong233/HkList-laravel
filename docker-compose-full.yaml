@@ -56,24 +56,6 @@ services:
       # 登陆密码
       #- DB_PASSWORD=passwd
 
-      ### 邮箱配置
-      # 邮件服务器协议类型
-      #- MAIL_MAILER=smtp
-      # 邮件服务器地址
-      #- MAIL_HOST=smtp.qq.com
-      # 邮件服务器端口
-      #- MAIL_PORT=465
-      # 邮件服务器登陆账号
-      #- MAIL_USERNAME=hello@example.com
-      # 邮件服务器授权码（注意！非账号登陆密码）
-      #- MAIL_PASSWORD=passwd
-      # 邮件服务器加密类型（有效参数："SSL"、"TLS"）
-      #- MAIL_ENCRYPTION=SSL
-      # 发送人名字
-      #- MAIL_FROM_ADDRESS=hello@example.com
-      # 自定义用户名
-      #- MAIL_FROM_NAME=自定义用户名
-
   ####### 数据库 #######
 
   ### mysql数据库 ###
