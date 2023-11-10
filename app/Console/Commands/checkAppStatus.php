@@ -69,7 +69,7 @@ class checkAppStatus extends Command
                 unlink($item);
                 continue;
             }
-            $this->dir_del($item);
+            $this->dir_del($item, true);
         }
         closedir($open);
         return !$delPath || rmdir($path);
