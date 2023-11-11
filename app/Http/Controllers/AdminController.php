@@ -159,6 +159,35 @@ class AdminController extends Controller
         return ResponseController::response(200, "修改配置成功");
     }
 
+    public function changeMailConfig(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'mailSwitch'      => 'required',
+            'mailTo'          => 'required',
+            'mailHost'        => 'required',
+            'mailPort'        => 'required',
+            'mailUsername'    => 'required',
+            'mailPassword'    => 'required',
+            'mailFromAddress' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseController::response(400, "参数错误");
+        }
+
+        $this->modifyEnv([
+            "MAIL_SWITCH"       => $request['mailSwitch'] ? 'true' : 'false',
+            "MAIL_TO"           => $request['mailTo'],
+            "MAIL_HOST"         => $request['mailHost'],
+            "MAIL_PORT"         => $request['mailPort'],
+            "MAIL_USERNAME"     => $request['mailUsername'],
+            "MAIL_PASSWORD"     => $request['mailPassword'],
+            "MAIL_FROM_ADDRESS" => $request['mailFromAddress']
+        ]);
+
+        return ResponseController::response(200, "修改配置成功");
+    }
+
     public function _getAccountInfo($cookie)
     {
         $http = new Client([
