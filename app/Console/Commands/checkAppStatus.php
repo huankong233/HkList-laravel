@@ -33,7 +33,7 @@ class checkAppStatus extends Command
         return '0.0.0';
     }
 
-    public function fixDotEnvFile($newEnvPath, $oldEnvPath)
+    public function fixDotEnvFile($newEnvPath, $oldEnvPath): void
     {
         $newEnv = collect(file($newEnvPath, FILE_IGNORE_NEW_LINES));
         $oldEnv = collect(file($oldEnvPath, FILE_IGNORE_NEW_LINES));
@@ -49,6 +49,7 @@ class checkAppStatus extends Command
     /**
      * 删除目录
      * @param string $path
+     * @param bool $delPath
      * @return bool
      */
     public function dir_del(string $path, bool $delPath = false): bool
