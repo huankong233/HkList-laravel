@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
@@ -159,6 +160,21 @@ class AdminController extends Controller
         return ResponseController::response(200, "修改配置成功");
     }
 
+    public function getMailConfig()
+    {
+        $config = config("mail");
+        return ResponseController::response(200, "获取成功", [
+            'mailSwitch'      => $config['switch'],
+            'mailTo'          => $config['to'],
+            'mailHost'        => $config['mailers']['smtp']['host'],
+            'mailPort'        => $config['mailers']['smtp']['port'],
+            'mailUsername'    => $config['mailers']['smtp']['username'],
+            'mailPassword'    => $config['mailers']['smtp']['password'],
+            'mailFromName'    => $config['from']['name'],
+            'mailFromAddress' => $config['from']['address'],
+        ]);
+    }
+
     public function changeMailConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -168,6 +184,7 @@ class AdminController extends Controller
             'mailPort'        => 'required',
             'mailUsername'    => 'required',
             'mailPassword'    => 'required',
+            'mailFromName'    => 'required',
             'mailFromAddress' => 'required',
         ]);
 
@@ -182,10 +199,20 @@ class AdminController extends Controller
             "MAIL_PORT"         => $request['mailPort'],
             "MAIL_USERNAME"     => $request['mailUsername'],
             "MAIL_PASSWORD"     => $request['mailPassword'],
+            "MAIL_FROM_NAME"    => $request['mailFromName'],
             "MAIL_FROM_ADDRESS" => $request['mailFromAddress']
         ]);
 
         return ResponseController::response(200, "修改配置成功");
+    }
+
+    public function sendTestMsg()
+    {
+        Mail::raw('测试邮件发送成功~', function ($message) {
+            $to = config("mail.to");
+            $message->to($to)->subject('这有一条测试邮件发出了哦~');
+        });
+        return ResponseController::response(200, "发送成功");
     }
 
     public function _getAccountInfo($cookie)
