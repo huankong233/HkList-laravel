@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -136,24 +137,33 @@ class UserController extends Controller
     static public function getRandomCookie($vipType = ["超级会员"])
     {
         // 禁用不可用的账户
-        BdUser::query()
-              ->where('switch', '=', '1')
-              ->where('state', '!=', '死亡')
-              ->where('state', '!=', '会员过期')
-              ->where(function (Builder $query) use ($vipType) {
-                  foreach ($vipType as $item) {
-                      $query->orWhere("vip_type", $item);
-                  }
-              })
-              ->whereRaw(
-                  config("database.default") === 'sqlite'
-                      ? "\"svip_end_time\" < DATETIME('now', 'utc', '+16 hours')"
-                      : "`svip_end_time` < convert_tz(UTC_TIMESTAMP(), '+00:00', '+08:00')"
-              )
-              ->update([
-                  'switch' => '0',
-                  'state'  => '会员过期'
-              ]);
+        $banUsers = BdUser::query()
+                          ->where('switch', '=', '1')
+                          ->where('state', '!=', '死亡')
+                          ->where('state', '!=', '会员过期')
+                          ->where(function (Builder $query) use ($vipType) {
+                              foreach ($vipType as $item) {
+                                  $query->orWhere("vip_type", $item);
+                              }
+                          })
+                          ->whereRaw(
+                              config("database.default") === 'sqlite'
+                                  ? "\"svip_end_time\" < DATETIME('now', 'utc', '+16 hours')"
+                                  : "`svip_end_time` < convert_tz(UTC_TIMESTAMP(), '+00:00', '+08:00')"
+                          );
+
+        if ($banUsers->count() !== 0) {
+            if (config("mail.switch")) {
+                Mail::raw('有账户已过期,详见:<br>' . json_encode($banUsers->get("id")->toJson()), function ($message) {
+                    $to = config("mail.to");
+                    $message->to($to)->subject('有账户过期了~');
+                });
+            }
+            $banUsers->update([
+                'switch' => '0',
+                'state'  => '会员过期'
+            ]);
+        }
 
         return BdUser::query()
                      ->where('switch', '=', '1')
