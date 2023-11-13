@@ -36,9 +36,14 @@ class checkAppStatus extends Command
     public function getEnvFile($envPath)
     {
         return collect(file($envPath, FILE_IGNORE_NEW_LINES))
-            ->filter(fn($item) => $item !== '' && !str_starts_with($item, '#'))
-            ->map(fn($item) => explode('=', $item, 2))
-            ->mapWithKeys(fn(array $item) => [$item[0] => $item[1]]);
+            ->map(function ($item) {
+                if ($item === '' || str_starts_with($item, '#')) return $item;
+                return explode('=', $item, 2);
+            })
+            ->mapWithKeys(function ($item) {
+                if (gettype($item) === 'string') return [$item => $item];
+                return [$item[0] => $item[1]];
+            });
     }
 
     public function fixDotEnvFile($newEnvPath, $oldEnvPath): void
@@ -47,7 +52,11 @@ class checkAppStatus extends Command
         $oldEnv = $this->getEnvFile($oldEnvPath);
 
         $diff   = $newEnv->diffKeys($oldEnv);
-        $nowEnv = $oldEnv->merge($diff->all())->map(fn($value, $key) => $key . '=' . $value);
+        $nowEnv = $oldEnv->merge($diff->all())
+                         ->map(function ($value, $key) {
+                             if ($value === '' || str_starts_with($value, "#")) return $value;
+                             return $key . '=' . $value;
+                         });
 
         $content = implode("\n", $nowEnv->toArray());
         File::put($oldEnvPath, $content);
@@ -143,6 +152,7 @@ class checkAppStatus extends Command
         $old_html_path    = "/var/www/html_old";
         $latest_html_path = "/var/www/94list-laravel";
         $env_name         = ".env";
+
         # 生成.env文件的路径
         $local_env_path  = $local_html_path . "/" . $env_name;
         $latest_env_path = $latest_html_path . "/" . $env_name;
