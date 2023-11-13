@@ -33,13 +33,21 @@ class checkAppStatus extends Command
         return '0.0.0';
     }
 
+    public function getEnvFile($envPath)
+    {
+        return collect(file($envPath, FILE_IGNORE_NEW_LINES))
+            ->filter(fn($item) => $item !== '' && !str_starts_with($item, '#'))
+            ->map(fn($item) => explode('=', $item, 2))
+            ->mapWithKeys(fn(array $item) => [$item[0] => $item[1]]);
+    }
+
     public function fixDotEnvFile($newEnvPath, $oldEnvPath): void
     {
-        $newEnv = collect(file($newEnvPath, FILE_IGNORE_NEW_LINES));
-        $oldEnv = collect(file($oldEnvPath, FILE_IGNORE_NEW_LINES));
+        $newEnv = $this->getEnvFile($newEnvPath);
+        $oldEnv = $this->getEnvFile($oldEnvPath);
 
         $diff   = $newEnv->diffKeys($oldEnv);
-        $nowEnv = $oldEnv->merge($diff->all());
+        $nowEnv = $oldEnv->merge($diff->all())->map(fn($value, $key) => $key . '=' . $value);
 
         $content = implode("\n", $nowEnv->toArray());
         File::put($oldEnvPath, $content);
@@ -168,17 +176,16 @@ class checkAppStatus extends Command
         }
         $this->info("完成创建版本文件夹");
 
-
         # 备份老版本源码
         $this->info("开始备份老版本");
         $this->dir_copy($local_html_path, $bakPath);
-        # 清空 html 下所有内容
-        $this->dir_del($local_html_path);
-        $this->dir_mkdir($local_html_path);
         $this->info("完成备份老版本");
 
         # 复制新版本源码
         $this->info("开始导入容器版本源码");
+        # 清空 html 下所有内容
+        $this->dir_del($local_html_path);
+        $this->dir_mkdir($local_html_path);
         $this->dir_copy($latest_html_path, $local_html_path);
         $this->info("完成导入容器版本源码");
 
