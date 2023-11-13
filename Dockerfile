@@ -20,6 +20,12 @@ RUN echo "Asia/Shanghai" > /etc/timezone
 # 指定当前用户
 USER root
 
+# 补全环境
+RUN apk update && \
+    apk add tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
 # 复制项目源码
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
