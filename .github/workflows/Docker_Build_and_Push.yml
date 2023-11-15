@@ -23,15 +23,15 @@ on:
         default: 'none'
 
   # 自动触发
-  workflow_run:
-    workflows: 
+  #workflow_run:
+   # workflows: 
       # 指定要监听的工作流的名称
-      - Release_Branch
-    types: 
-      - completed
-    branches: 
+    #  - Release_Branch
+    #types: 
+    #  - completed
+    #branches: 
       # 指定要监听的分支
-      - dev 
+    #  - dev 
 
 # 保证同一时间只运行一个本工作流
 concurrency:
