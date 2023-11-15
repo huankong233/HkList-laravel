@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Http\Controllers\AdminController;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class checkAppStatus extends Command
 {
@@ -35,30 +36,34 @@ class checkAppStatus extends Command
 
     public function getEnvFile($envPath)
     {
-        return collect(file($envPath, FILE_IGNORE_NEW_LINES))
+        return collect(explode("\n", File::get($envPath)))
             ->map(function ($item) {
-                if ($item === '' || str_starts_with($item, '#')) return $item;
+                if ($item === '') return ["break" . Str::random(), $item];
+                if (str_starts_with($item, '#')) return [$item, $item];
                 return explode('=', $item, 2);
             })
-            ->mapWithKeys(function ($item) {
-                if (gettype($item) === 'string') return [$item => $item];
-                return [$item[0] => $item[1]];
-            });
+            ->mapWithKeys(fn($item) => [$item[0] => $item[1]]);
     }
 
-    public function fixDotEnvFile($newEnvPath, $oldEnvPath): void
+    public function fixDotEnvFile($oldEnvPath, $newEnvPath): void
     {
-        $newEnv = $this->getEnvFile($newEnvPath);
         $oldEnv = $this->getEnvFile($oldEnvPath);
+        $newEnv = $this->getEnvFile($newEnvPath);
 
-        $diff   = $newEnv->diffKeys($oldEnv);
-        $nowEnv = $oldEnv->merge($diff->all())
-                         ->map(function ($value, $key) {
-                             if ($value === '' || str_starts_with($value, "#")) return $value;
-                             return $key . '=' . $value;
-                         });
+        foreach ($newEnv as $key => $value) {
+            if (isset($oldEnv[$key])) {
+                $newEnv[$key] = $oldEnv[$key];
+            }
+        }
 
-        $content = implode("\n", $nowEnv->toArray());
+        $newEnv = $newEnv
+            ->map(function ($value, $key) {
+                if (str_starts_with($key, "break") || str_starts_with($key, "#")) return $value;
+                return $key . '=' . $value;
+            })
+            ->toArray();
+
+        $content = implode("\n", $newEnv);
         File::put($oldEnvPath, $content);
     }
 
@@ -151,11 +156,10 @@ class checkAppStatus extends Command
         $local_html_path  = "/var/www/html";
         $old_html_path    = "/var/www/html_old";
         $latest_html_path = "/var/www/94list-laravel";
-        $env_name         = ".env";
 
         # 生成.env文件的路径
-        $local_env_path  = $local_html_path . "/" . $env_name;
-        $latest_env_path = $latest_html_path . "/" . $env_name;
+        $local_env_path  = $local_html_path . "/.env";
+        $latest_env_path = $latest_html_path . "/.env.example";
 
         $local_version  = $this->getVersionString($local_env_path);
         $latest_version = $this->getVersionString($latest_env_path);
@@ -209,10 +213,7 @@ class checkAppStatus extends Command
         }
 
         # 更新版本号
-        $bakEnvPath = $bakPath . '/' . $env_name;
-        unlink($local_env_path);
-        copy($bakEnvPath, $local_env_path);
-        $this->fixDotEnvFile($latest_env_path, $local_env_path);
+        $this->fixDotEnvFile($local_env_path, $latest_env_path);
         AdminController::modifyEnv([
             '_94LIST_VERSION' => $latest_version
         ], $local_env_path);
