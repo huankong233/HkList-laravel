@@ -18,7 +18,7 @@ class UserController extends Controller
         return view("main");
     }
 
-    public function getConfig()
+    public function getConfig(Request $request)
     {
         $config = config("94list");
 
@@ -27,7 +27,7 @@ class UserController extends Controller
             'announceSwitch' => $config['announceSwitch'],
             'userAgent'      => $config['userAgent'],
             "debug"          => config("app.debug"),
-            "haveAccount"    => $this->getRandomCookie() !== null,
+            "haveAccount"    => $this->getRandomCookie($request) !== null,
             'havePassword'   => $config['passwordSwitch'],
             "haveLogin"      => Auth::check()
         ]);
@@ -134,7 +134,7 @@ class UserController extends Controller
         };
     }
 
-    static public function getRandomCookie($vipType = ["超级会员"])
+    static public function getRandomCookie(Request $request, $vipType = ["超级会员"])
     {
         // 禁用不可用的账户
         $banUsers = BdUser::query()
@@ -159,10 +159,16 @@ class UserController extends Controller
                     $message->to($to)->subject('有账户过期了~');
                 });
             }
-            $banUsers->update([
-                'switch' => '0',
-                'state'  => '会员过期'
-            ]);
+
+            // 更新账户状态
+            foreach ($banUsers->get() as $user) {
+                if (AdminController::updateAccount($request, $user) !== '更新账号信息成功') {
+                    $user->update([
+                        'switch' => '0',
+                        'state'  => '会员过期'
+                    ]);
+                }
+            }
         }
 
         return BdUser::query()
@@ -234,7 +240,7 @@ class UserController extends Controller
                 return ResponseController::response(400, '您没有权限指定下载的用户');
             }
         } else {
-            $cookie = $this->getRandomCookie();
+            $cookie = $this->getRandomCookie($request);
             if ($cookie === null) {
                 return ResponseController::response(400, '代理账号已用完');
             }

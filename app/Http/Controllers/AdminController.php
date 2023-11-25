@@ -215,7 +215,7 @@ class AdminController extends Controller
         return ResponseController::response(200, "发送成功");
     }
 
-    public function _getAccountInfo($cookie)
+    static public function _getAccountInfo($cookie)
     {
         $http = new Client([
             'headers' => [
@@ -240,7 +240,7 @@ class AdminController extends Controller
         ];
     }
 
-    public function _getSvipEndTime($cookie)
+    static public function _getSvipEndTime($cookie)
     {
         $http = new Client([
             'headers' => [
@@ -347,7 +347,8 @@ class AdminController extends Controller
             return ResponseController::response(400, '账号已存在');
         }
 
-        $svip_end_time = date("Y-m-d H:i:s");
+        $svip_end_time = date("Y-m-d H:i:s", 0);
+        $switch        = 0;
 
         if ($accountInfo['vip_type'] === '超级会员') {
             $svipEndTime = $this->_getSvipEndTime($request['cookie']);
@@ -358,6 +359,9 @@ class AdminController extends Controller
 
             $svipEndTime   = $svipEndTime['data'];
             $svip_end_time = date("Y-m-d H:i:s", $svipEndTime['currenttime'] + $svipEndTime['reminder']['svip']['leftseconds']);
+            if ($svip_end_time > date("Y-m-d H:i:s")) {
+                $switch = 1;
+            }
         }
 
         BdUser::query()->insert([
@@ -366,37 +370,41 @@ class AdminController extends Controller
             'cookie'        => $request['cookie'],
             'add_time'      => date("Y-m-d H:i:s"),
             'svip_end_time' => $svip_end_time,
-            'use'           => date("Y-m-d H:i:s"),
-            'state'         => "未使用",
-            'switch'        => 1,
+            'use'           => date("Y-m-d H:i:s", 0),
+            'state'         => $switch === 1 ? "未使用" : "会员过期",
+            'switch'        => $switch,
             'vip_type'      => $accountInfo['vip_type']
         ]);
 
         return ResponseController::response(200, '添加账号成功');
     }
 
-    public function updateAccount(Request $request)
+    static public function updateAccount(Request $request, $fromBan = false)
     {
-        $validator = Validator::make($request->all(), [
-            'account_id' => 'required'
-        ]);
+        if ($fromBan === false) {
+            $validator = Validator::make($request->all(), [
+                'account_id' => 'required'
+            ]);
 
-        if ($validator->fails()) {
-            return ResponseController::response(400, "参数错误");
-        }
+            if ($validator->fails()) {
+                return ResponseController::response(400, "参数错误");
+            }
 
-        $account = BdUser::query()->find($request['account_id']);
+            $account = BdUser::query()->find($request['account_id']);
 
-        if ($account == null) {
-            return ResponseController::response(400, "账号不存在");
+            if ($account == null) {
+                return ResponseController::response(400, "账号不存在");
+            }
+        } else {
+            $account = $fromBan;
         }
 
         $cookie = $account['cookie'];
 
-        $accountInfo = $this->_getAccountInfo($cookie);
+        $accountInfo = AdminController::_getAccountInfo($cookie);
 
         if ($accountInfo['type'] === 'failed') {
-            return ResponseController::response(400, '获取账户信息失败');
+            return $fromBan ? '获取账户信息失败' : ResponseController::response(400, '获取账户信息失败');
         }
 
         $accountInfo = $accountInfo['data'];
@@ -413,29 +421,33 @@ class AdminController extends Controller
                 break;
         }
 
-        $svip_end_time = date("Y-m-d H:i:s");
+        $svip_end_time = date("Y-m-d H:i:s", 0);
+        $switch        = 0;
 
         if ($accountInfo['vip_type'] === '超级会员') {
-            $svipEndTime = $this->_getSvipEndTime($cookie);
+            $svipEndTime = AdminController::_getSvipEndTime($cookie);
 
             if ($svipEndTime['type'] === 'failed') {
-                return ResponseController::response(400, '获取SVIP到期时间失败');
+                return $fromBan ? '获取SVIP到期时间失败' : ResponseController::response(400, '获取SVIP到期时间失败');
             }
 
             $svipEndTime   = $svipEndTime['data'];
             $svip_end_time = date("Y-m-d H:i:s", $svipEndTime['currenttime'] + $svipEndTime['reminder']['svip']['leftseconds']);
+            if ($svip_end_time > date("Y-m-d H:i:s")) {
+                $switch = 1;
+            }
         }
 
         $account->update([
             'netdisk_name'  => $accountInfo['netdisk_name'],
             'baidu_name'    => $accountInfo['baidu_name'],
             'svip_end_time' => $svip_end_time,
-            'state'         => "未使用",
-            'switch'        => 1,
+            'state'         => $switch === 1 ? "未使用" : "会员过期",
+            'switch'        => $switch,
             'vip_type'      => $accountInfo['vip_type']
         ]);
 
-        return ResponseController::response(200, '更新账号信息成功');
+        return $fromBan ? '更新账号信息成功' : ResponseController::response(200, '更新账号信息成功');
     }
 
     public function deleteAccount(Request $request)
