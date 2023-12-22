@@ -174,7 +174,7 @@ class checkAppStatus extends Command
 
         # 生成.env文件的路径
         $local_env_path  = $local_html_path . "/.env";
-        $latest_env_path = $latest_html_path . "/.env.example";
+        $latest_env_path = $latest_html_path . "/.env";
 
         $local_version  = $this->getVersionString($local_env_path);
         $latest_version = $this->getVersionString($latest_env_path);
