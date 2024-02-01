@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BdUser;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\RedirectMiddleware;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -72,21 +73,63 @@ class UserController extends Controller
                     'order'    => $request['order'] ?? 'filename'
                 ]
             ]);
-            $contents = json_decode($response->getBody()->getContents(), true);
+            $contents = json_decode($response->getBody()
+                                             ->getContents(), true);
         } catch (GuzzleException $e) {
-            $contents = json_decode($e->getResponse()->getBody()->getContents(), true);
+            $contents = json_decode($e->getResponse()
+                                      ->getBody()
+                                      ->getContents(), true);
         }
 
         return match ($contents['errno']) {
-            0 => ResponseController::response(200, '列表数据获取成功', [
+            0                     => ResponseController::response(200, '列表数据获取成功', [
                 'uk'      => $contents["data"]["uk"],
                 'shareid' => $contents["data"]["shareid"],
                 'randsk'  => $contents["data"]["seckey"],
                 'list'    => $contents['data']['list']
             ]),
-            9019 => ResponseController::response(400, "获取列表的Cookie失效"),
-            default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",可能链接已失效或是未提供正确的密码"),
+            "mis_105"             => ResponseController::response(400, "你所解析的文件不存在~"),
+            "mispw_9", "mispwd-9" => ResponseController::response(400, "提取码错误"),
+            "mis_2", "mis_4"      => ResponseController::response(400, "不存在此目录"),
+            5                     => ResponseController::response(400, "不存在此分享链接或提取码错误"),
+            3                     => ResponseController::response(400, "此链接分享内容可能因为涉及侵权、色情、反动、低俗等信息，无法访问！"),
+            10                    => ResponseController::response(400, "啊哦，来晚了，该分享文件已过期"),
+            8001                  => ResponseController::response(400, "普通账号可能被限制，请检查普通账号状态"),
+            9013                  => ResponseController::response(400, "普通账号被限制，请检查普通账号状态"),
+            9019                  => ResponseController::response(400, "获取列表的Cookie失效"),
+            default               => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",可能链接已失效或是未提供正确的密码"),
         };
+    }
+
+    static function _getSign($uk, $shareid)
+    {
+        $http = new Client([
+            'headers' => [
+                'Cookie' => config("94list.cookie")
+            ]
+        ]);
+
+        try {
+            $response = $http->get('https://pan.baidu.com/share/tplconfig', [
+                'query' => [
+                    'shareid'    => $shareid,
+                    'uk'         => $uk,
+                    'fields'     => 'sign,timestamp',
+                    'channel'    => 'chunlei',
+                    'web'        => 1,
+                    'app_id'     => 250528,
+                    'clienttype' => 0
+                ]
+            ]);
+            $contents = json_decode($response->getBody()
+                                             ->getContents(), true);
+        } catch (GuzzleException $e) {
+            $contents = json_decode($e->getResponse()
+                                      ->getBody()
+                                      ->getContents(), true);
+        }
+
+        return $contents;
     }
 
     public function getSign(Request $request)
@@ -102,34 +145,15 @@ class UserController extends Controller
 
         $user          = Auth::user();
         $checkPassword = self::checkPassword($user, $request['password']);
-        if ($checkPassword) return $checkPassword;
-
-        $http = new Client([
-            'headers' => [
-                'Cookie' => config("94list.cookie")
-            ]
-        ]);
-
-        try {
-            $response = $http->get('https://pan.baidu.com/share/tplconfig', [
-                'query' => [
-                    'shareid'    => $request['shareid'],
-                    'uk'         => $request['uk'],
-                    'fields'     => 'sign,timestamp',
-                    'channel'    => 'chunlei',
-                    'web'        => 1,
-                    'app_id'     => 250528,
-                    'clienttype' => 0
-                ]
-            ]);
-            $contents = json_decode($response->getBody()->getContents(), true);
-        } catch (GuzzleException $e) {
-            $contents = json_decode($e->getResponse()->getBody()->getContents(), true);
+        if ($checkPassword) {
+            return $checkPassword;
         }
 
+        $contents = self::_getSign($request['uk'], $request['shareid']);
+
         return match ($contents['errno']) {
-            0 => ResponseController::response(200, "获取签名成功", $contents['data']),
-            9019 => ResponseController::response(400, "获取列表签名的Cookie失效"),
+            0       => ResponseController::response(200, "获取签名成功", $contents['data']),
+            9019    => ResponseController::response(400, "获取列表签名的Cookie失效"),
             default => ResponseController::response(400, "异常错误:" . $contents['errno'] . ",获取签名信息失败"),
         };
     }
@@ -246,9 +270,25 @@ class UserController extends Controller
             }
         }
 
+        // check if the timestamp is valid
+        if (time() - $request['timestamp'] > 300) {
+            // try to get the timestamp and sign
+            $contents = self::_getSign($request['uk'], $request['shareid']);
+
+            if ($contents['errno'] === 0) {
+                $data                 = $contents['data'];
+                $request['sign']      = $data['sign'];
+                $request['timestamp'] = $data['timestamp'];
+            } else if ($contents['errno'] === 9019) {
+                return ResponseController::response(400, "获取列表签名的Cookie失效");
+            } else {
+                return ResponseController::response(400, "异常错误:" . $contents['errno'] . ",获取签名信息失败");
+            }
+        }
+
         $http = new Client([
             'headers' => [
-                'User-Agent' => config("94list.userAgent"),
+                'User-Agent' => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.69",
                 'Cookie'     => $cookie['cookie'],
                 "Referer"    => "https://pan.baidu.com/disk/home",
                 "Host"       => "pan.baidu.com",
@@ -290,17 +330,36 @@ class UserController extends Controller
                 $sleepTime    = count($contents['list']) > 1 ? config("94list.sleep") : 0;
                 $responseData = [];
 
+                $http = new Client([
+                    'headers' => [
+                        'User-Agent' => config("94list.userAgent"),
+                        'Cookie'     => $cookie['cookie'],
+                        "Referer"    => "https://pan.baidu.com/disk/home",
+                        "Host"       => "pan.baidu.com",
+                    ]
+                ]);
+
                 foreach ($contents['list'] as $list) {
                     $dlink = $list['dlink'];
                     try {
-                        $headResponse   = $http->head($dlink, [
+                        $headResponse  = $http->head($dlink, [
                             'allow_redirects' => [
                                 'follow_redirects' => false,
                                 'track_redirects'  => true,
                             ]
                         ]);
-                        $redirects      = $headResponse->getHeader(\GuzzleHttp\RedirectMiddleware::HISTORY_HEADER);
-                        $effective_url  = end($redirects) ?: $headResponse->getEffectiveUri();
+                        $redirects     = $headResponse->getHeader(RedirectMiddleware::HISTORY_HEADER);
+                        $effective_url = end($redirects) ?: $headResponse->getEffectiveUri();
+
+                        // 账号限速
+                        if (str_contains($effective_url, "qdall01") || !str_contains($effective_url, 'tsl=0')) {
+                            $cookie->state  = "死亡";
+                            $cookie->switch = 0;
+                            $cookie->save();
+
+                            return ResponseController::response(400, "账户被限速,请重新解析尝试!");
+                        }
+
                         $responseData[] = [
                             'dlink'           => $effective_url,
                             'server_filename' => $list['server_filename']
@@ -313,18 +372,36 @@ class UserController extends Controller
                     }
                     sleep($sleepTime);
                 }
-
                 return ResponseController::response(200, '获取成功', $responseData);
+            case -1:
+                return ResponseController::response(400, "文件违规禁止下载");
+            case -6:
+                return ResponseController::response(400, "账号未登陆,请检查获取列表账号");
+            case -9:
+                return ResponseController::response(400, "文件不存在");
+            case -20:
+                return ResponseController::response(400, "触发验证码了");
+            case 2:
+                return ResponseController::response(400, "下载失败");
+            case 110:
+                return ResponseController::response(400, "当前代理ip被封禁");
             case 112:
                 return ResponseController::response(400, "当前签名已过期,请刷新页面重新获取");
-            case '9019':
-            case '8001':
+            case 113:
+                return ResponseController::response(400, "参数错误");
+            case 116:
+                return ResponseController::response(400, "分享不存在");
+            case 118:
+                return ResponseController::response(400, "没有下载权限未传入sekey");
+            case 121:
+                return ResponseController::response(400, "操作的文件过多");
+            case 8001:
+            case 9013:
+            case 9019:
                 $cookie->state  = "死亡";
                 $cookie->switch = 0;
                 $cookie->save();
                 return ResponseController::response(400, "代理账号失效或者IP被封禁");
-            case '110':
-                return ResponseController::response(400, "当前代理ip被封禁");
             default:
                 return ResponseController::response(400, "未知错误代码：" . $contents['errno']);
         }
