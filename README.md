@@ -57,6 +57,7 @@
 - [laravel](https://laravel.com)
 - [94list](https://github.com/codehub666/94list)
 - [独角发卡](https://github.com/assimon/dujiaoka)
+- [baiduwp-php](https://github.com/yuantuo666/baiduwp-php)
 
 ### 贡献者
 
