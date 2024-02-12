@@ -15,6 +15,8 @@
 
 可以参考 [独角发卡](https://github.com/assimon/dujiaoka/wiki) 的安装教程
 
+但是不需要 **进程守护** !!!
+
 如果无法正常安装依赖可以尝试直接前往 [release](https://github.com/huankong233/94list-laravel/releases) 中下载安装好依赖的压缩包
 
 ### Docker 安装
