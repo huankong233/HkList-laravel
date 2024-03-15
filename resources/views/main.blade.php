@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="app_name" content="{{config("app.name")}}"/>
     <title>{{config("app.name")}}</title>
-    <script type="module" crossorigin src="/assets/js/index-607dfe2f.js"></script>
-    <link rel="stylesheet" href="/assets/css/index-e5387e95.css">
+    <script type="module" crossorigin src="/assets/js/index-DW4GyZFB.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/css/index-gGiiOCIV.css">
 </head>
 <body>
 <div id="app"></div>
