@@ -52,6 +52,10 @@
 - [x] 管理员账号密码修改
 - [x] 指定账号解析测试
 
+### tampermonkey
+
+[94list-laravel-tampermonkey](https://github.com/huankong233/94list-laravel-tampermonkey)
+
 ## 感谢
 
 ### 项目
