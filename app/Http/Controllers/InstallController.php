@@ -18,9 +18,9 @@ class InstallController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                "db_connection"      => "required",
-                "app_url"            => "required",
-                "admin_route_prefix" => "required",
+                "db_connection"      => "required|string",
+                "app_url"            => "required|string",
+                "admin_route_prefix" => "required|string",
             ]);
 
             if ($validator->fails()) return ResponseController::response(400, "参数不合法");
@@ -29,11 +29,11 @@ class InstallController extends Controller
             switch ($request['db_connection']) {
                 case 'mysql':
                     $validator = Validator::make($request->all(), [
-                        "db_host"     => "required",
-                        "db_port"     => "required",
-                        "db_database" => "required",
-                        "db_username" => "required",
-                        "db_password" => "required"
+                        "db_host"     => "required|string",
+                        "db_port"     => "required|string",
+                        "db_database" => "required|string",
+                        "db_username" => "required|string",
+                        "db_password" => "required|string"
                     ]);
 
                     if ($validator->fails()) return ResponseController::response(400, "参数不合法");
@@ -114,7 +114,7 @@ class InstallController extends Controller
             DB::unprepared(file_get_contents($installSql));
 
             // 添加用户
-            User::insert([
+            User::query()->insert([
                 'username' => 'admin',
                 'password' => Hash::make('admin'),
                 'is_admin' => 1,

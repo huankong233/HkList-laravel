@@ -18,8 +18,8 @@ class AdminController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'required',
-            'password' => 'required',
+            'username' => 'required|string',
+            'password' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -48,13 +48,13 @@ class AdminController extends Controller
     public function changeUserInfo(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nowPassword'     => 'required',
-            'newPassword'     => 'required',
-            'confirmPassword' => 'required',
-            'newUsername'     => 'unique:users,username'
+            'nowPassword'     => 'required|string',
+            'newPassword'     => 'required|string',
+            'confirmPassword' => 'required|string',
+            'newUsername'     => 'unique:users,username|string'
         ]);
 
-        $user = User::find(Auth::user()->id);
+        $user = User::query()->find(Auth::user()['id']);
 
         // 如果没有传入默认为当前用户名
         $request['newUsername'] = $request['newUsername'] ?? $user['username'];
@@ -71,8 +71,8 @@ class AdminController extends Controller
             return ResponseController::response(400, "两次密码不一致");
         }
 
-        $user->username = $request['newUsername'];
-        $user->password = Hash::make($request['newPassword']);
+        $user['username'] = $request['newUsername'];
+        $user['password'] = Hash::make($request['newPassword']);
         $user->save();
 
         $this->logout($request);
@@ -80,7 +80,7 @@ class AdminController extends Controller
         return ResponseController::response(200, "修改信息成功");
     }
 
-    static public function modifyEnv(array $data, $envPath = null)
+    public static function modifyEnv(array $data, $envPath = null)
     {
         if ($envPath === null) $envPath = base_path() . DIRECTORY_SEPARATOR . '.env';
 
@@ -116,15 +116,17 @@ class AdminController extends Controller
     public function changeConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'sleep'          => 'required',
-            'maxOnce'        => 'required',
-            'userAgent'      => 'required',
+            'announce'       => 'string',
             'announceSwitch' => 'required|boolean',
-            'cookie'         => 'required',
-            'debug'          => 'required',
-            'ssl'            => 'required',
-            'prefix'         => 'required',
+            'cookie'         => 'required|string',
+            'debug'          => 'required|boolean',
+            'maxOnce'        => 'required|numeric',
+            'password'       => 'string',
             'passwordSwitch' => 'required|boolean',
+            'prefix'         => 'required|string',
+            'sleep'          => 'required|numeric',
+            'ssl'            => 'required|boolean',
+            'userAgent'      => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -178,30 +180,51 @@ class AdminController extends Controller
     public function changeMailConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'mailSwitch'      => 'required',
-            'mailTo'          => 'required',
-            'mailHost'        => 'required',
-            'mailPort'        => 'required',
-            'mailUsername'    => 'required',
-            'mailPassword'    => 'required',
-            'mailFromName'    => 'required',
-            'mailFromAddress' => 'required',
+            'mailSwitch'      => 'required|boolean',
+            'mailTo'          => 'string',
+            'mailHost'        => 'string',
+            'mailPort'        => 'string',
+            'mailUsername'    => 'string',
+            'mailPassword'    => 'string',
+            'mailFromName'    => 'string',
+            'mailFromAddress' => 'string',
         ]);
 
         if ($validator->fails()) {
             return ResponseController::response(400, "参数错误");
         }
 
-        $this->modifyEnv([
-            "MAIL_SWITCH"       => $request['mailSwitch'] ? 'true' : 'false',
-            "MAIL_TO"           => $request['mailTo'],
-            "MAIL_HOST"         => $request['mailHost'],
-            "MAIL_PORT"         => $request['mailPort'],
-            "MAIL_USERNAME"     => $request['mailUsername'],
-            "MAIL_PASSWORD"     => $request['mailPassword'],
-            "MAIL_FROM_NAME"    => $request['mailFromName'],
-            "MAIL_FROM_ADDRESS" => $request['mailFromAddress']
-        ]);
+        if (!$request['mailSwitch']) {
+            $this->modifyEnv([
+                "MAIL_SWITCH" => 'false',
+            ]);
+
+        } else {
+            $validator = Validator::make($request->all(), [
+                'mailTo'          => 'required',
+                'mailHost'        => 'required',
+                'mailPort'        => 'required',
+                'mailUsername'    => 'required',
+                'mailPassword'    => 'required',
+                'mailFromName'    => 'required',
+                'mailFromAddress' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return ResponseController::response(400, "参数错误");
+            }
+
+            $this->modifyEnv([
+                "MAIL_SWITCH"       => $request['mailSwitch'] ? 'true' : 'false',
+                "MAIL_TO"           => $request['mailTo'],
+                "MAIL_HOST"         => $request['mailHost'],
+                "MAIL_PORT"         => $request['mailPort'],
+                "MAIL_USERNAME"     => $request['mailUsername'],
+                "MAIL_PASSWORD"     => $request['mailPassword'],
+                "MAIL_FROM_NAME"    => $request['mailFromName'],
+                "MAIL_FROM_ADDRESS" => $request['mailFromAddress']
+            ]);
+        }
 
         return ResponseController::response(200, "修改配置成功");
     }
@@ -215,7 +238,7 @@ class AdminController extends Controller
         return ResponseController::response(200, "发送成功");
     }
 
-    static public function _getAccountInfo($cookie)
+    public static function _getAccountInfo($cookie)
     {
         $http = new Client([
             'headers' => [
@@ -240,7 +263,7 @@ class AdminController extends Controller
         ];
     }
 
-    static public function _getSvipEndTime($cookie)
+    public static function _getSvipEndTime($cookie)
     {
         $http = new Client([
             'headers' => [
@@ -268,7 +291,7 @@ class AdminController extends Controller
     public function getAccountInfo(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'cookie' => 'required'
+            'cookie' => 'required|string'
         ]);
 
         if ($validator->fails()) {
@@ -315,7 +338,7 @@ class AdminController extends Controller
     public function addAccount(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'cookie' => 'required'
+            'cookie' => 'required|string'
         ]);
 
         if ($validator->fails()) {
@@ -379,11 +402,11 @@ class AdminController extends Controller
         return ResponseController::response(200, '添加账号成功');
     }
 
-    static public function updateAccount(Request $request, $fromBan = false)
+    public static function updateAccount(Request $request, $fromBan = false)
     {
         if ($fromBan === false) {
             $validator = Validator::make($request->all(), [
-                'account_id' => 'required'
+                'account_id' => 'required|numeric'
             ]);
 
             if ($validator->fails()) {
@@ -453,7 +476,7 @@ class AdminController extends Controller
     public function deleteAccount(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'account_id' => 'required'
+            'account_id' => 'required|numeric'
         ]);
 
         if ($validator->fails()) {
@@ -474,7 +497,7 @@ class AdminController extends Controller
     public function switchAccount(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'account_id' => 'required'
+            'account_id' => 'required|numeric'
         ]);
 
         if ($validator->fails()) {
@@ -487,12 +510,13 @@ class AdminController extends Controller
             return ResponseController::response(400, "账号不存在");
         }
 
-        $account->switch = $account['switch'] === 1 ? 0 : 1;
+        $account['switch'] = $account['switch'] === 1 ? 0 : 1;
         if ($account['state'] !== "未使用" && $account['state'] !== '会员过期') {
             if ($account['switch'] === 1) {
-                $account->state = "能用";
-            } else if ($account['switch'] === 0 && $account['state'] === "死亡") {
-                $account->state = "死亡";
+                $account['state'] = "能用";
+            }
+            if ($account['switch'] === 0 && $account['state'] === "死亡") {
+                $account['state'] = "死亡";
             }
         }
 
