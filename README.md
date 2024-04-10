@@ -13,6 +13,10 @@
 
 ![tip.jpg](./tip.jpg)
 
+## 项目文档
+
+[跳转👉](https://blog.huankong.top/docs/94list-laravel)
+
 ## 安装方法
 
 ### 普通安装（宝塔等环境）
@@ -71,4 +75,4 @@
 
 ### 贡献者
 
-- [Aqr-K](https://github.com/Aqr-K)
+![contribs](https://contrib.rocks/image?repo=huankong233/94list-laravel)
