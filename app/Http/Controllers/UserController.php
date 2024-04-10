@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\BdUser;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\RedirectMiddleware;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +13,7 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    public function view(Request $request)
+    public function view()
     {
         return view("main");
     }
@@ -37,7 +36,7 @@ class UserController extends Controller
     public function getFileList(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'url' => 'required'
+            'url' => 'required|string'
         ]);
 
         if ($validator->fails()) {
@@ -50,7 +49,13 @@ class UserController extends Controller
 
         preg_match("/s\/([a-zA-Z0-9_-]+)/", trim($request['url']), $shortUrl);
         if (!$shortUrl) {
-            return ResponseController::response(400, 'url格式错误');
+            //https://pan.baidu.com/share/init?surl=u3S_U0Z3aoL80Lk1e45Lhg&pwd=963u
+            preg_match("/surl=([a-zA-Z0-9_-]+)/", trim($request['url']), $shortUrl);
+            if ($shortUrl) {
+                $shortUrl = '1' . $shortUrl[1];
+            } else {
+                return ResponseController::response(400, 'url格式错误');
+            }
         } else {
             $shortUrl = $shortUrl[1];
         }
@@ -101,7 +106,7 @@ class UserController extends Controller
         };
     }
 
-    static function _getSign($uk, $shareid)
+    public static function _getSign($uk, $shareid)
     {
         $http = new Client([
             'headers' => [
@@ -135,8 +140,8 @@ class UserController extends Controller
     public function getSign(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'uk'      => 'required',
-            'shareid' => 'required'
+            'uk'      => 'required|numeric',
+            'shareid' => 'required|numeric'
         ]);
 
         if ($validator->fails()) {
@@ -158,7 +163,7 @@ class UserController extends Controller
         };
     }
 
-    static public function getRandomCookie(Request $request, $vipType = ["超级会员"])
+    public static function getRandomCookie(Request $request, $vipType = ["超级会员"])
     {
         // 禁用不可用的账户
         $banUsers = BdUser::query()
@@ -208,7 +213,7 @@ class UserController extends Controller
                      ->first();
     }
 
-    static function checkPassword($user, $password)
+    public static function checkPassword($user, $password)
     {
         // 判断是否启用了密码
         if (config("94list.passwordSwitch")) {
@@ -231,12 +236,12 @@ class UserController extends Controller
     public function downloadFiles(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fs_ids'    => 'required',
-            'timestamp' => 'required',
-            'uk'        => 'required',
-            'sign'      => 'required',
-            'randsk'    => 'required',
-            'shareid'   => 'required'
+            'fs_ids.*'  => 'required|numeric|string',
+            'randsk'    => 'required|string',
+            'shareid'   => 'required|numeric',
+            'timestamp' => 'required|numeric',
+            'uk'        => 'required|numeric',
+            'sign'      => 'required|string'
         ]);
 
         if ($validator->fails()) {
@@ -270,16 +275,16 @@ class UserController extends Controller
             }
         }
 
-        // check if the timestamp is valid
+        // 检查 时间戳 是否有效
         if (time() - $request['timestamp'] > 300) {
-            // try to get the timestamp and sign
+            // 重新获取
             $contents = self::_getSign($request['uk'], $request['shareid']);
 
             if ($contents['errno'] === 0) {
                 $data                 = $contents['data'];
                 $request['sign']      = $data['sign'];
                 $request['timestamp'] = $data['timestamp'];
-            } else if ($contents['errno'] === 9019) {
+            } elseif ($contents['errno'] === 9019) {
                 return ResponseController::response(400, "获取列表签名的Cookie失效");
             } else {
                 return ResponseController::response(400, "异常错误:" . $contents['errno'] . ",获取签名信息失败");
@@ -348,8 +353,10 @@ class UserController extends Controller
                                 'track_redirects'  => true,
                             ]
                         ]);
-                        $redirects     = $headResponse->getHeader(RedirectMiddleware::HISTORY_HEADER);
-                        $effective_url = end($redirects) ?: $headResponse->getEffectiveUri();
+
+                        // 获取最后一个重定向的 URL
+                        $redirectUrls = $headResponse->getHeader('X-Guzzle-Redirect-History');
+                        $effective_url = end($redirectUrls);
 
                         // 账号限速
                         if (str_contains($effective_url, "qdall01") || !str_contains($effective_url, 'tsl=0')) {

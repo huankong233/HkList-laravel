@@ -46,7 +46,7 @@ class InstallCheck
                                 $bakPath = $dbConfig['DB_DATABASE'] . '.bak';
                                 if (file_exists($bakPath)) unlink($bakPath);
                                 rename($dbConfig['DB_DATABASE'], $bakPath);
-                            };
+                            }
 
                             file_put_contents($dbConfig['DB_DATABASE'], '');
                         }
