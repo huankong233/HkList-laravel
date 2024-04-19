@@ -236,7 +236,7 @@ class UserController extends Controller
     public function downloadFiles(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fs_ids.*'  => 'required|numeric|string',
+            'fs_ids.*'  => 'required|numeric',
             'randsk'    => 'required|string',
             'shareid'   => 'required|numeric',
             'timestamp' => 'required|numeric',
@@ -347,7 +347,7 @@ class UserController extends Controller
                 foreach ($contents['list'] as $list) {
                     $dlink = $list['dlink'];
                     try {
-                        $headResponse  = $http->head($dlink, [
+                        $headResponse = $http->head($dlink, [
                             'allow_redirects' => [
                                 'follow_redirects' => false,
                                 'track_redirects'  => true,
@@ -355,7 +355,7 @@ class UserController extends Controller
                         ]);
 
                         // 获取最后一个重定向的 URL
-                        $redirectUrls = $headResponse->getHeader('X-Guzzle-Redirect-History');
+                        $redirectUrls  = $headResponse->getHeader('X-Guzzle-Redirect-History');
                         $effective_url = end($redirectUrls);
 
                         // 账号限速
@@ -381,36 +381,36 @@ class UserController extends Controller
                 }
                 return ResponseController::response(200, '获取成功', $responseData);
             case -1:
-                return ResponseController::response(400, "文件违规禁止下载");
+                return ResponseController::response(400, "文件违规禁止下载,code:" . $contents["errno"]);
             case -6:
-                return ResponseController::response(400, "账号未登陆,请检查获取列表账号");
+                return ResponseController::response(400, "账号未登陆,请检查获取列表账号,code:" . $contents["errno"]);
             case -9:
-                return ResponseController::response(400, "文件不存在");
+                return ResponseController::response(400, "文件不存在,code:" . $contents["errno"]);
             case -20:
-                return ResponseController::response(400, "触发验证码了");
+                return ResponseController::response(400, "触发验证码了,code:" . $contents["errno"]);
             case 2:
-                return ResponseController::response(400, "下载失败");
+                return ResponseController::response(400, "下载失败,code:" . $contents["errno"]);
             case 110:
-                return ResponseController::response(400, "当前代理ip被封禁");
+                return ResponseController::response(400, "当前代理ip被封禁,code:" . $contents["errno"]);
             case 112:
-                return ResponseController::response(400, "当前签名已过期,请刷新页面重新获取");
+                return ResponseController::response(400, "当前签名已过期,请刷新页面重新获取,code:" . $contents["errno"]);
             case 113:
-                return ResponseController::response(400, "参数错误");
+                return ResponseController::response(400, "参数错误,code:" . $contents["errno"]);
             case 116:
-                return ResponseController::response(400, "分享不存在");
+                return ResponseController::response(400, "分享不存在,code:" . $contents["errno"]);
             case 118:
-                return ResponseController::response(400, "没有下载权限未传入sekey");
+                return ResponseController::response(400, "没有下载权限未传入sekey,code:" . $contents["errno"]);
             case 121:
-                return ResponseController::response(400, "操作的文件过多");
+                return ResponseController::response(400, "操作的文件过多,code:" . $contents["errno"]);
             case 8001:
             case 9013:
             case 9019:
                 $cookie->state  = "死亡";
                 $cookie->switch = 0;
                 $cookie->save();
-                return ResponseController::response(400, "代理账号失效或者IP被封禁");
+                return ResponseController::response(400, "代理账号失效或者IP被封禁,code:" . $contents["errno"]);
             default:
-                return ResponseController::response(400, "未知错误代码：" . $contents['errno']);
+                return ResponseController::response(400, "未知错误代码,code:" . $contents["errno"]);
         }
     }
 }
