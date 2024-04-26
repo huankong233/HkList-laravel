@@ -44,7 +44,7 @@ class UserController extends Controller
         }
 
         $user          = Auth::user();
-        $checkPassword = self::checkPassword($user, $request['password']);
+        $checkPassword = $this->checkPassword($user, $request['password']);
         if ($checkPassword) return $checkPassword;
 
         preg_match("/s\/([a-zA-Z0-9_-]+)/", trim($request['url']), $shortUrl);
@@ -149,12 +149,12 @@ class UserController extends Controller
         }
 
         $user          = Auth::user();
-        $checkPassword = self::checkPassword($user, $request['password']);
+        $checkPassword = $this->checkPassword($user, $request['password']);
         if ($checkPassword) {
             return $checkPassword;
         }
 
-        $contents = self::_getSign($request['uk'], $request['shareid']);
+        $contents = $this->_getSign($request['uk'], $request['shareid']);
 
         return match ($contents['errno']) {
             0       => ResponseController::response(200, "获取签名成功", $contents['data']),
@@ -254,7 +254,7 @@ class UserController extends Controller
 
         $user = Auth::user();
 
-        $checkPassword = self::checkPassword($user, $request['password']);
+        $checkPassword = $this->checkPassword($user, $request['password']);
         if ($checkPassword) return $checkPassword;
 
         // 判断是否指定了某个账户
@@ -278,7 +278,7 @@ class UserController extends Controller
         // 检查 时间戳 是否有效
         if (time() - $request['timestamp'] > 300) {
             // 重新获取
-            $contents = self::_getSign($request['uk'], $request['shareid']);
+            $contents = $this->_getSign($request['uk'], $request['shareid']);
 
             if ($contents['errno'] === 0) {
                 $data                 = $contents['data'];
