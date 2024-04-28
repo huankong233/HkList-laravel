@@ -21,7 +21,7 @@ class checkAppStatus extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = '检查程序状态并在需要时更新';
 
     public function getVersionString($filePath): string
     {
@@ -200,7 +200,7 @@ class checkAppStatus extends Command
         if (!file_exists($bakPath)) {
             $this->dir_mkdir($bakPath);
         } else {
-            $this->warn($bakPath . "已存在，清空文件夹并开始重新备份");
+            $this->warn($bakPath . "已存在备份，清空文件夹并开始重新备份");
             $this->dir_del($bakPath, true);
         }
         $this->dir_copy($local_html_path, $bakPath);

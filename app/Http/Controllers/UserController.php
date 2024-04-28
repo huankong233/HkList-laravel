@@ -44,7 +44,7 @@ class UserController extends Controller
         }
 
         $user          = Auth::user();
-        $checkPassword = self::checkPassword($user, $request['password']);
+        $checkPassword = $this->checkPassword($user, $request['password']);
         if ($checkPassword) return $checkPassword;
 
         preg_match("/s\/([a-zA-Z0-9_-]+)/", trim($request['url']), $shortUrl);
@@ -149,12 +149,12 @@ class UserController extends Controller
         }
 
         $user          = Auth::user();
-        $checkPassword = self::checkPassword($user, $request['password']);
+        $checkPassword = $this->checkPassword($user, $request['password']);
         if ($checkPassword) {
             return $checkPassword;
         }
 
-        $contents = self::_getSign($request['uk'], $request['shareid']);
+        $contents = $this->_getSign($request['uk'], $request['shareid']);
 
         return match ($contents['errno']) {
             0       => ResponseController::response(200, "获取签名成功", $contents['data']),
@@ -254,7 +254,7 @@ class UserController extends Controller
 
         $user = Auth::user();
 
-        $checkPassword = self::checkPassword($user, $request['password']);
+        $checkPassword = $this->checkPassword($user, $request['password']);
         if ($checkPassword) return $checkPassword;
 
         // 判断是否指定了某个账户
@@ -278,7 +278,7 @@ class UserController extends Controller
         // 检查 时间戳 是否有效
         if (time() - $request['timestamp'] > 300) {
             // 重新获取
-            $contents = self::_getSign($request['uk'], $request['shareid']);
+            $contents = $this->_getSign($request['uk'], $request['shareid']);
 
             if ($contents['errno'] === 0) {
                 $data                 = $contents['data'];
@@ -345,9 +345,8 @@ class UserController extends Controller
                 ]);
 
                 foreach ($contents['list'] as $list) {
-                    $dlink = $list['dlink'];
                     try {
-                        $headResponse = $http->head($dlink, [
+                        $headResponse = $http->head($list['dlink'], [
                             'allow_redirects' => [
                                 'follow_redirects' => false,
                                 'track_redirects'  => true,
@@ -383,11 +382,11 @@ class UserController extends Controller
             case -1:
                 return ResponseController::response(400, "文件违规禁止下载,code:" . $contents["errno"]);
             case -6:
-                return ResponseController::response(400, "账号未登陆,请检查获取列表账号,code:" . $contents["errno"]);
+                return ResponseController::response(400, "账号获取dlink失败,code:" . $contents["errno"]);
             case -9:
                 return ResponseController::response(400, "文件不存在,code:" . $contents["errno"]);
             case -20:
-                return ResponseController::response(400, "触发验证码了,code:" . $contents["errno"]);
+                return ResponseController::response(400, "触发验证码,code:" . $contents["errno"]);
             case 2:
                 return ResponseController::response(400, "下载失败,code:" . $contents["errno"]);
             case 110:
@@ -399,16 +398,16 @@ class UserController extends Controller
             case 116:
                 return ResponseController::response(400, "分享不存在,code:" . $contents["errno"]);
             case 118:
-                return ResponseController::response(400, "没有下载权限未传入sekey,code:" . $contents["errno"]);
+                return ResponseController::response(400, "参数错误或未传入sekey,code:" . $contents["errno"]);
             case 121:
                 return ResponseController::response(400, "操作的文件过多,code:" . $contents["errno"]);
             case 8001:
-            case 9013:
-            case 9019:
                 $cookie->state  = "死亡";
                 $cookie->switch = 0;
                 $cookie->save();
-                return ResponseController::response(400, "代理账号失效或者IP被封禁,code:" . $contents["errno"]);
+            case 9013:
+            case 9019:
+                return ResponseController::response(400, "账号获取dlink失败,code:" . $contents["errno"]);
             default:
                 return ResponseController::response(400, "未知错误代码,code:" . $contents["errno"]);
         }

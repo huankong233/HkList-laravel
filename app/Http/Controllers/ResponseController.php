@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 class ResponseController extends Controller
 {
-    static public function response($code, $message, $data = null)
+    public static function response($code, $message, $data = null)
     {
         return response()->json([
             'code'    => $code,
