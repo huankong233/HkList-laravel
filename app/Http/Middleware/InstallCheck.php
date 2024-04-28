@@ -25,14 +25,6 @@ class InstallCheck
     {
         $installLock       = base_path() . DIRECTORY_SEPARATOR . 'install.lock';
         $installLockExists = file_exists($installLock);
-        $updateLock        = base_path() . DIRECTORY_SEPARATOR . 'update.lock';
-        $updateLockExists  = file_exists($updateLock);
-
-        if ($updateLockExists) {
-            // 执行需要的更新操作
-            $this->updateThings(file_get_contents($updateLock));
-            unlink($updateLock);
-        }
 
         if ($need === 'haveInstall') {
             if (!$installLockExists && !$request->is('install')) {
@@ -97,10 +89,5 @@ class InstallCheck
         }
 
         return $next($request);
-    }
-
-    function updateThings($now_version)
-    {
-
     }
 }
