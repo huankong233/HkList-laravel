@@ -30,18 +30,7 @@ class IsInstall
             $dbFile = database_path('database.sqlite');
 
             // 如果不存在则自动创建
-            if (file_exists($dbFile)) {
-                $bakFile = $dbFile . '.bak';
-                if (file_exists($bakFile)) unlink($bakFile);
-                copy($dbFile, $dbFile . '.bak');
-                $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table';");
-                foreach ($tables as $table) {
-                    if ($table->name === 'sqlite_sequence') break;
-                    DB::delete("DELETE FROM sqlite_master WHERE name='{$table->name}';");
-                }
-            } else {
-                file_put_contents($dbFile, '');
-            }
+            if (!file_exists($dbFile)) file_put_contents($dbFile, '');
 
             $key = 'base64:' . base64_encode(Encrypter::generateKey(config('app.cipher')));
 
@@ -65,7 +54,7 @@ class IsInstall
                 'username' => 'admin',
                 'password' => Hash::make('admin'),
                 'role'     => 'admin',
-                'group'    => 0
+                'group_id' => 0
             ]);
 
             // 写入安装锁

@@ -15,7 +15,13 @@ Route::middleware(['IsInstall'])->group(function () {
     Route::prefix('/admin')->middleware('RoleFilter:admin')->group(function () {
         Route::prefix('/account')->group(function () {
             Route::post('/add', [\App\Http\Controllers\UserController::class, 'addAccount']);
+            Route::post('/update', [\App\Http\Controllers\UserController::class, 'updateAccount']);
             Route::post('/remove', [\App\Http\Controllers\UserController::class, 'removeAccount']);
+        });
+        Route::prefix('/group')->group(function () {
+            Route::post('/add', [\App\Http\Controllers\GroupController::class, 'addGroup']);
+            Route::post('/update', [\App\Http\Controllers\GroupController::class, 'updateGroup']);
+            Route::post('/remove', [\App\Http\Controllers\GroupController::class, 'removeGroup']);
         });
     });
 

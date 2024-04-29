@@ -30,7 +30,7 @@ class ResponseController extends Controller
 
     public static function accountExists()
     {
-        return self::response(10002, 409, '账户已存在');
+        return self::response(10002, 409, '账户名称已存在');
     }
 
     public static function accountNotExists()
@@ -55,6 +55,21 @@ class ResponseController extends Controller
 
     public static function captchaError()
     {
-        return self::response(10007, 403, '验证码校验失败');
+        return self::response(10007, 400, '验证码校验失败');
+    }
+
+    public static function roleNotExists()
+    {
+        return self::response(10008, 400, '角色不存在');
+    }
+
+    public static function groupNotExists()
+    {
+        return self::response(10009, 400, '分组不存在');
+    }
+
+    public static function groupExists()
+    {
+        return self::response(10010, 409, '分组名称已存在');
     }
 }
