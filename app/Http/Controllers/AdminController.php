@@ -309,15 +309,7 @@ class AdminController extends Controller
             }
 
             if ($e->hasResponse()) {
-                if ($request['check']) {
-                    if ($error['errmsg'] === "Invalid Bduss") {
-                        return ResponseController::response(200, "cookie校验成功");
-                    } else {
-                        return ResponseController::response(500, $error['errmsg']);
-                    }
-                } else {
-                    return ResponseController::response(500, $error['errmsg']);
-                }
+                return ResponseController::response(500, $error['errmsg']);
             } else {
                 return ResponseController::response(500, $e->getMessage());
             }

@@ -62,7 +62,7 @@ class UserController extends Controller
 
         $http = new Client([
             'headers' => [
-                'Cookie' => config("94list.cookie")
+                'Cookie' => "csrfToken=g9xUHDEoA7Pxc6CRSKEgRGiL; newlogin=1; BAIDUID=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1; BAIDUID_BFESS=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1"
             ]
         ]);
 
@@ -110,7 +110,7 @@ class UserController extends Controller
     {
         $http = new Client([
             'headers' => [
-                'Cookie' => config("94list.cookie")
+                'Cookie' => "csrfToken=g9xUHDEoA7Pxc6CRSKEgRGiL; newlogin=1; BAIDUID=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1; BAIDUID_BFESS=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1"
             ]
         ]);
 
@@ -294,7 +294,7 @@ class UserController extends Controller
         $http = new Client([
             'headers' => [
                 'User-Agent' => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.69",
-                'Cookie'     => $cookie['cookie'],
+                'Cookie'     => config("94list.cookie"),
                 "Referer"    => "https://pan.baidu.com/disk/home",
                 "Host"       => "pan.baidu.com",
             ]
@@ -381,8 +381,6 @@ class UserController extends Controller
                 return ResponseController::response(200, '获取成功', $responseData);
             case -1:
                 return ResponseController::response(400, "文件违规禁止下载,code:" . $contents["errno"]);
-            case -6:
-                return ResponseController::response(400, "账号获取dlink失败,code:" . $contents["errno"]);
             case -9:
                 return ResponseController::response(400, "文件不存在,code:" . $contents["errno"]);
             case -20:
@@ -407,6 +405,7 @@ class UserController extends Controller
                 $cookie->save();
             case 9013:
             case 9019:
+            case -6:
                 return ResponseController::response(400, "账号获取dlink失败,code:" . $contents["errno"]);
             default:
                 return ResponseController::response(400, "未知错误代码,code:" . $contents["errno"]);
