@@ -62,7 +62,7 @@ class UserController extends Controller
 
         $http = new Client([
             'headers' => [
-                'Cookie' => "csrfToken=g9xUHDEoA7Pxc6CRSKEgRGiL; newlogin=1; BAIDUID=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1; BAIDUID_BFESS=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1"
+                'Cookie' => config("94list.cookie")
             ]
         ]);
 
@@ -110,7 +110,7 @@ class UserController extends Controller
     {
         $http = new Client([
             'headers' => [
-                'Cookie' => "csrfToken=g9xUHDEoA7Pxc6CRSKEgRGiL; newlogin=1; BAIDUID=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1; BAIDUID_BFESS=7A4FB79EA7BCED9674B87CB0BD6691A4:FG=1"
+                'Cookie' => config("94list.cookie")
             ]
         ]);
 
@@ -233,6 +233,17 @@ class UserController extends Controller
         return false;
     }
 
+    public static function getSubstr($str, string $leftStr, string $rightStr): string
+    {
+        if (empty($str)) return "";
+        $left = strpos($str, $leftStr);
+        if ($left === false) return "";
+        $left  += strlen($leftStr);
+        $right = strpos($str, $rightStr, $left);
+        if ($right === false) return "";
+        return substr($str, $left, $right - $left);
+    }
+
     public function downloadFiles(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -294,15 +305,16 @@ class UserController extends Controller
         $http = new Client([
             'headers' => [
                 'User-Agent' => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.69",
-                'Cookie'     => config("94list.cookie"),
-                "Referer"    => "https://pan.baidu.com/disk/home",
-                "Host"       => "pan.baidu.com",
+                'Cookie'     => $cookie['cookie'],
+                "Referer"    => "https://pan.baidu.com/disk/home"
             ]
         ]);
 
         try {
+            if (str_contains($request['randsk'], "%")) $request['randsk'] = urldecode($request['randsk']);
             $response = $http->post('https://pan.baidu.com/api/sharedownload', [
                 'query' => [
+                    "app_id"     => 250528,
                     "channel"    => "chunlei",
                     "clienttype" => 12,
                     "sign"       => $request['sign'],
@@ -311,7 +323,7 @@ class UserController extends Controller
                 ],
                 "body"  => join("&", [
                     "encrypt=0",
-                    "extra=" . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
+                    "extra=" . urlencode('{"sekey":"' . $request['randsk'] . '"}'),
                     "fid_list=[" . join(",", $request['fs_ids']) . "]",
                     "primaryid=" . $request['shareid'],
                     "uk=" . $request["uk"],
@@ -338,7 +350,7 @@ class UserController extends Controller
                 $http = new Client([
                     'headers' => [
                         'User-Agent' => config("94list.userAgent"),
-                        'Cookie'     => $cookie['cookie'],
+                        'Cookie'     => self::getSubstr($cookie['cookie'], 'BDUSS=', ';'),
                         "Referer"    => "https://pan.baidu.com/disk/home",
                         "Host"       => "pan.baidu.com",
                     ]
