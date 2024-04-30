@@ -8,6 +8,18 @@ use Illuminate\Support\Facades\Validator;
 
 class GroupController extends Controller
 {
+    public function getGroup(Request $request, $group_id = null)
+    {
+        if ($group_id !== null) {
+            $group = Group::query()->find($group_id);
+            if (!$group) return ResponseController::groupNotExists();
+            return ResponseController::success(['group' => $group]);
+        }
+
+        $groups = Group::query()->get();
+        return ResponseController::success(['groups' => $groups]);
+    }
+
     public function addGroup(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -30,17 +42,17 @@ class GroupController extends Controller
         return ResponseController::success();
     }
 
-    public function updateGroup(Request $request)
+    public function updateGroup(Request $request, $group_id)
     {
         $validator = Validator::make($request->all(), [
-            'id'    => 'required|numeric',
+            'name'  => 'string',
             'count' => 'numeric',
             'size'  => 'numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $group = Group::query()->find($request['id']);
+        $group = Group::query()->find($group_id);
         if (!$group) return ResponseController::groupNotExists();
 
         $update = [];
@@ -58,18 +70,13 @@ class GroupController extends Controller
         return ResponseController::success();
     }
 
-    public function removeGroup(Request $request)
+    public function removeGroup(Request $request, $group_id)
     {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) return ResponseController::paramsError();
-
-        $group = Group::query()->find($request['id']);
+        $group = Group::query()->find($group_id);
         if (!$group) return ResponseController::groupNotExists();
 
         $group->delete();
+
         return ResponseController::success();
     }
 }

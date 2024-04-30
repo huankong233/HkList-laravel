@@ -2,6 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('/{any}', "App")
-//     ->middleware("installCheck:haveInstall")
-     ->where('any', '.*');
+Route::get('/{any}', fn() => view('App'))
+     ->middleware("IsInstall")
+     ->where('any', '[^/api].*');

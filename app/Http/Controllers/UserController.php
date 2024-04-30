@@ -21,13 +21,11 @@ class UserController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $user = User::query()->firstWhere('username', $request['username']);
-        if (!$user) return ResponseController::accountNotExists();
-        if (!Hash::check($request['password'], $user['password'])) return ResponseController::accountPasswordError();
-        if (!Auth::attempt(['username' => $request['username'], 'password' => $request['password']])) return ResponseController::accountPasswordError();
+        if (!Auth::attempt(['username' => $request['username'], 'password' => $request['password']])) return ResponseController::userPasswordError();
 
         $request->session()->regenerate();
-        return ResponseController::success(['role' => $user['role']]);
+
+        return ResponseController::success(['role' => Auth::user()['role']]);
     }
 
     public function register(Request $request)
@@ -40,7 +38,7 @@ class UserController extends Controller
         if ($validator->fails()) return ResponseController::paramsError();
 
         $user = User::query()->firstWhere('username', $request['username']);
-        if ($user) return ResponseController::accountExists();
+        if ($user) return ResponseController::userExists();
 
         User::query()->create([
             'username' => $request['username'],
@@ -54,26 +52,38 @@ class UserController extends Controller
 
     public function logout(Request $request)
     {
-        if (!Auth::user()) return ResponseController::userNotLogin();
+        if (!Auth::check()) return ResponseController::userNotLogin();
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return ResponseController::success();
     }
 
-    public function addAccount(Request $request)
+    public function getUser(Request $request, $user_id = null)
+    {
+        if ($user_id !== null) {
+            $user = User::query()->find($user_id);
+            if (!$user) return ResponseController::userNotExists();
+            return ResponseController::success(['user' => $user]);
+        }
+
+        $users = User::query()->get();
+        return ResponseController::success(['users' => $users]);
+    }
+
+    public function addUser(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
             'group_id' => 'required|numeric',
-            'role'     => ['required', Rule::in(['user', 'admin'])]
+            'role'     => ['required', Rule::in(['admin', 'user'])]
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
         $user = User::query()->firstWhere('username', $request['username']);
-        if ($user) return ResponseController::accountExists();
+        if ($user) return ResponseController::userExists();
 
         $group = Group::query()->find($request['group_id']);
         if (!$group) return ResponseController::groupNotExists();
@@ -88,57 +98,47 @@ class UserController extends Controller
         return ResponseController::success();
     }
 
-    public function updateAccount(Request $request)
+    public function updateUser(Request $request, $user_id)
     {
         $validator = Validator::make($request->all(), [
-            'id'       => 'required|numeric',
             'group_id' => 'numeric',
             'username' => 'string',
             'password' => 'string',
-            'role'     => Rule::in(['user', 'admin'])
+            'role'     => Rule::in(['admin', 'user'])
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $user = User::query()->find($request['id']);
-        if (!$user) return ResponseController::accountNotExists();
+        $user = User::query()->find($user_id);
+        if (!$user) return ResponseController::userNotExists();
 
         $update = [];
 
         if ($request['group_id']) {
-            $group = Group::query()->find($request['group_id']);
-            if (!$group) return ResponseController::groupNotExists();
+            if (!Group::query()->find($request['group_id'])) return ResponseController::groupNotExists();
             $update['group_id'] = $request['group_id'];
         }
 
         if ($request['username']) {
-            if (User::query()->firstWhere('username', $request['username'])) return ResponseController::accountExists();
+            if (User::query()->firstWhere('username', $request['username'])) return ResponseController::userExists();
             $update['username'] = $request['username'];
         }
 
         if ($request['password']) $update['password'] = Hash::make($request['password']);
-
-        if ($request['role']) {
-            if (!in_array($request['role'], ['admin', 'user'])) return ResponseController::roleNotExists();
-            $update['role'] = $request['role'];
-        }
+        if ($request['role']) $update['role'] = $request['role'];
 
         $user->update($update);
+
         return ResponseController::success();
     }
 
-    public function removeAccount(Request $request)
+    public function removeUser(Request $request, $user_id)
     {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) return ResponseController::paramsError();
-
-        $user = User::query()->find($request['id']);
-        if (!$user) return ResponseController::accountNotExists();
+        $user = User::query()->find($user_id);
+        if (!$user) return ResponseController::userNotExists();
 
         $user->delete();
+
         return ResponseController::success();
     }
 }

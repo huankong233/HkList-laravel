@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\ResponseController;
 use App\Models\Group;
 use App\Models\User;
 use Closure;
@@ -30,7 +31,8 @@ class IsInstall
             $dbFile = database_path('database.sqlite');
 
             // 如果不存在则自动创建
-            if (!file_exists($dbFile)) file_put_contents($dbFile, '');
+            if (file_exists($dbFile)) return ResponseController::dbFileExists();
+            file_put_contents($dbFile, '');
 
             $key = 'base64:' . base64_encode(Encrypter::generateKey(config('app.cipher')));
 

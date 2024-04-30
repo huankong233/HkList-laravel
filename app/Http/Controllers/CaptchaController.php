@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -13,7 +14,7 @@ class CaptchaController extends Controller
     {
         return match (config('94list.captcha.use')) {
             'VAPTCHA' => self::VAPTCHA($request),
-            default   => false,
+            default   => ResponseController::unknownCaptcha(),
         };
     }
 
@@ -29,12 +30,12 @@ class CaptchaController extends Controller
             'token'  => 'required|string'
         ]);
 
-        if ($validator->fails()) return false;
+        if ($validator->fails()) return ResponseController::paramsError();
 
         $http = new Client();
 
         try {
-            $data     = $http->post($request['server'], [
+            $res      = $http->post($request['server'], [
                 'json' => [
                     'id'        => $id,
                     'secretkey' => $secretkey,
@@ -43,11 +44,13 @@ class CaptchaController extends Controller
                     'ip'        => $ip
                 ]
             ]);
-            $response = json_decode($data->getBody()->getContents(), true);
+            $response = json_decode($res->getBody()->getContents(), true);
         } catch (RequestException $e) {
-            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents()) : null;
+            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+        } catch (GuzzleException $e) {
+            return ResponseController::networkError("校验验证码");
         }
 
-        return $response && $response['success'] === 1;
+        return $response && $response['success'] === 1 ? ResponseController::captchaSuccess() : ResponseController::captchaFailed();
     }
 }

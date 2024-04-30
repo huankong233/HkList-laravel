@@ -17,7 +17,12 @@ class CheckCaptcha
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('94list.captcha.use') !== '' && !CaptchaController::check($request)) return ResponseController::captchaError();
+        if (config('94list.captcha.use') !== '') {
+            $response = CaptchaController::check($request);
+            $data     = $response->getData(true);
+            if ($data['code'] !== 200) return $response;
+        }
+
         return $next($request);
     }
 }
