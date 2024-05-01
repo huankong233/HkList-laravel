@@ -8,13 +8,5 @@ return [
     'maxOnce'   => (int)env('_94LIST_MAX_ONCE', "20"),
     'password'  => env('_94LIST_PASSWORD', ''),
     'announce'  => env('_94LIST_ANNOUNCE', '公告'),
-    'userAgent' => env('_94LIST_USER_AGENT', 'LogStatistic'),
-    'captcha'   => [
-        'use'     => env('_94LIST_CAPTCHA_USE', ''),
-        'VAPTCHA' => [
-            'vid'   => env('_94LIST_CAPTCHA_VAPTCHA_VID', ''),
-            'key'   => env('_94LIST_CAPTCHA_VAPTCHA_KEY', ''),
-            'scene' => (int)env('_94LIST_CAPTCHA_VAPTCHA_SCENE', "0"),
-        ]
-    ],
+    'userAgent' => env('_94LIST_USER_AGENT', 'LogStatistic')
 ];

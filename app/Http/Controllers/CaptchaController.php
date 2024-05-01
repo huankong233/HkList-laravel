@@ -10,23 +10,31 @@ use Illuminate\Support\Facades\Validator;
 
 class CaptchaController extends Controller
 {
-    public static function check(Request $request)
+    public static function verify(Request $request)
     {
-        return match (config('94list.captcha.use')) {
-            'VAPTCHA' => self::VAPTCHA($request),
+        return match (config('captcha.use')) {
+            'VAPTCHA' => self::VAPTCHA_verify($request),
             default   => ResponseController::unknownCaptcha(),
         };
     }
 
-    public static function VAPTCHA(Request $request)
+    public static function updateConfig($use, Request $request)
     {
-        $id        = config('94list.captcha.VAPTCHA.vid');
-        $secretkey = config('94list.captcha.VAPTCHA.key');
-        $scene     = config('94list.captcha.VAPTCHA.scene');
+        return match ($use) {
+            'VAPTCHA' => self::VAPTCHA_updateConfig($request),
+            default   => ResponseController::unknownCaptcha(),
+        };
+    }
+
+    public function VAPTCHA_verify(Request $request)
+    {
+        $id        = config('captcha.VAPTCHA.vid');
+        $secretkey = config('captcha.VAPTCHA.key');
+        $scene     = config('captcha.VAPTCHA.scene');
         $ip        = $request->ip();
 
         $validator = Validator::make($request->all(), [
-            'server' => ['required', 'regex:/https:\/\/.*\.vaptcha\.(com|net)/i'],
+            'server' => ['required', 'string', 'regex:/https:\/\/.*\.vaptcha\.(com|net)/i'],
             'token'  => 'required|string'
         ]);
 
@@ -52,5 +60,24 @@ class CaptchaController extends Controller
         }
 
         return $response && $response['success'] === 1 ? ResponseController::captchaSuccess() : ResponseController::captchaFailed();
+    }
+
+    public function VAPTCHA_updateConfig(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'vaptcha_vid'   => 'string',
+            'vaptcha_key'   => 'string',
+            'vaptcha_scene' => 'numeric',
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        $update = [];
+
+        if ($request['vaptcha_vid']) $update['_94LIST_CAPTCHA_VAPTCHA_VID'] = $request['vaptcha_vid'];
+        if ($request['vaptcha_key']) $update['_94LIST_CAPTCHA_VAPTCHA_KEY'] = $request['vaptcha_key'];
+        if ($request['vaptcha_scene']) $update['_94LIST_CAPTCHA_VAPTCHA_SCENE'] = $request['vaptcha_scene'];
+
+        return ResponseController::success($update);
     }
 }

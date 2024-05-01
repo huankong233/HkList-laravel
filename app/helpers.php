@@ -27,8 +27,11 @@ if (!function_exists('updateEnv')) {
             return $item;
         });
 
-        foreach ($data as $key => $value) {
-            $contentArray->put($key, $value);
+        if (count($data) !== 0) {
+            $contentArray->add('');
+            foreach ($data as $key => $value) {
+                $contentArray->add($key . '=' . $value);
+            }
         }
 
         $content = implode("\n", $contentArray->toArray());

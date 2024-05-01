@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\config\CaptchaConfigController;
+use App\Http\Controllers\config\ConfigController;
+use App\Http\Controllers\config\MailConfigController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RecordController;
 use App\Http\Controllers\UserController;
@@ -47,23 +50,25 @@ Route::middleware(['IsInstall'])->group(function () {
                 Route::patch('/{account_id}', [AccountController::class, 'updateAccount']);
                 Route::delete('/{account_id}', [AccountController::class, 'removeAccount']);
             });
+
+            Route::prefix('/config')->group(function () {
+                Route::get('/', [ConfigController::class, 'getConfig']);
+                Route::patch('/', [ConfigController::class, 'updateConfig']);
+            });
+
+            Route::prefix('/mail')->group(function () {
+                Route::get('/', [MailConfigController::class, 'getMailConfig']);
+                Route::post('/', [MailConfigController::class, 'sendTestMail']);
+                Route::patch('/', [MailConfigController::class, 'updateMailConfig']);
+            });
+
+            Route::prefix('/captcha')->group(function () {
+                Route::get('/', [CaptchaConfigController::class, 'getCaptchaConfig']);
+                Route::post('/', [CaptchaConfigController::class, 'sendCaptchaVerify']);
+                Route::patch('/', [CaptchaConfigController::class, 'updateCaptchaConfig']);
+            });
         });
     });
-
-
-//            Route::post('/getConfig', [\App\Http\Controllers\AdminController::class, 'getConfig']);
-//            Route::post('/changeConfig', [\App\Http\Controllers\AdminController::class, 'changeConfig']);
-//            Route::post('/getMailConfig', [\App\Http\Controllers\AdminController::class, 'getMailConfig']);
-//            Route::post('/changeMailConfig', [\App\Http\Controllers\AdminController::class, 'changeMailConfig']);
-//            Route::post('/sendTestMsg', [\App\Http\Controllers\AdminController::class, 'sendTestMsg']);
-//            Route::post('/getAccountInfo', [\App\Http\Controllers\AdminController::class, 'getAccountInfo']);
-//            Route::post('/addAccount', [\App\Http\Controllers\AdminController::class, 'addAccount']);
-//            Route::post('/updateAccount', [\App\Http\Controllers\AdminController::class, 'updateAccount']);
-//            Route::post('/deleteAccount', [\App\Http\Controllers\AdminController::class, 'deleteAccount']);
-//            Route::post('/switchAccount', [\App\Http\Controllers\AdminController::class, 'switchAccount']);
-//            Route::post('/getAccounts', [\App\Http\Controllers\AdminController::class, 'getAccounts']);
-//            Route::post('/changeUserInfo', [\App\Http\Controllers\AdminController::class, 'changeUserInfo']);
-
 
 //    Route::prefix('/user')->group(function () {
 //        Route::post('/getConfig', [\App\Http\Controllers\UserController::class, 'getConfig']);

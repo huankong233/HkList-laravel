@@ -107,4 +107,9 @@ class ResponseController extends Controller
     {
         return self::response(10015, 404, '获取SVIP到期时间失败');
     }
+
+    public static function sendMailFailed($message = '')
+    {
+        return self::response(10016, 500, '发送邮件失败,原因:' . $message);
+    }
 }
