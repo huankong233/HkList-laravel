@@ -56,7 +56,7 @@ class CaptchaController extends Controller
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
         } catch (GuzzleException $e) {
-            return ResponseController::networkError("校验验证码");
+            return ResponseController::networkError('校验验证码');
         }
 
         return $response && $response['success'] === 1 ? ResponseController::captchaSuccess() : ResponseController::captchaFailed();

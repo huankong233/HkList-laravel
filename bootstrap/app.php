@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckCaptcha;
 use App\Http\Middleware\IsInstall;
+use App\Http\Middleware\NeedPassword;
 use App\Http\Middleware\RoleFilter;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,7 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
                       $middleware->alias([
                           'CheckCaptcha' => CheckCaptcha::class,
                           'IsInstall'    => IsInstall::class,
-                          'RoleFilter'   => RoleFilter::class
+                          'RoleFilter'   => RoleFilter::class,
+                          'NeedPassword' => NeedPassword::class,
                       ]);
                       $middleware->api(prepend: [
                           StartSession::class,

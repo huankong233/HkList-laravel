@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\config;
 
-use App\Mail\TestMail;
 use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -13,13 +12,15 @@ class MailConfigController extends Controller
 {
     public function getMailConfig(Request $request)
     {
-        return ResponseController::success(['mailConfig' => config("mail")]);
+        return ResponseController::success(config('mail'));
     }
 
     public function sendTestMail(Request $request)
     {
         try {
-            Mail::to(config("mail.to.address"))->send(new TestMail());
+            Mail::raw('亲爱的 ' . config('mail.to.name') . ':\n\t这是一封来自' . config('app.name') . '的连通性测试邮件,请查收!', function ($message) {
+                $message->to(config('mail.to.address'))->subject('测试邮件');
+            });
         } catch (Exception $e) {
             return ResponseController::sendMailFailed($e->getMessage());
         }

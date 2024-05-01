@@ -26,7 +26,7 @@ class IsInstall
         // 检查是否存在 .lock 文件
         if (!file_exists($installLock)) {
             // 复制 .env 文件
-            if (!file_exists(base_path(".env"))) copy(base_path('.env.example'), base_path('.env'));
+            if (!file_exists(base_path('.env'))) copy(base_path('.env.example'), base_path('.env'));
 
             $dbFile = database_path('database.sqlite');
 
@@ -37,7 +37,7 @@ class IsInstall
             $key = 'base64:' . base64_encode(Encrypter::generateKey(config('app.cipher')));
 
             // 写入key
-            updateEnv("APP_KEY", $key);
+            updateEnv('APP_KEY', $key);
             config(['APP_KEY' => $key]);
 
             // 导入sql

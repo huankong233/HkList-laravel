@@ -13,11 +13,11 @@ class GroupController extends Controller
         if ($group_id !== null) {
             $group = Group::query()->find($group_id);
             if (!$group) return ResponseController::groupNotExists();
-            return ResponseController::success(['group' => $group]);
+            return ResponseController::success($group);
         }
 
         $groups = Group::query()->get();
-        return ResponseController::success(['groups' => $groups]);
+        return ResponseController::success($groups);
     }
 
     public function addGroup(Request $request)

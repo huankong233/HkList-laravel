@@ -5,6 +5,7 @@ use App\Http\Controllers\config\CaptchaConfigController;
 use App\Http\Controllers\config\ConfigController;
 use App\Http\Controllers\config\MailConfigController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\ParseController;
 use App\Http\Controllers\RecordController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -68,12 +69,12 @@ Route::middleware(['IsInstall'])->group(function () {
                 Route::patch('/', [CaptchaConfigController::class, 'updateCaptchaConfig']);
             });
         });
-    });
 
-//    Route::prefix('/user')->group(function () {
-//        Route::post('/getConfig', [\App\Http\Controllers\UserController::class, 'getConfig']);
-//        Route::post('/getFileList', [\App\Http\Controllers\UserController::class, 'getFileList']);
-//        Route::post('/getSign', [\App\Http\Controllers\UserController::class, 'getSign']);
-//        Route::post('/downloadFiles', [\App\Http\Controllers\UserController::class, 'downloadFiles']);
-//    });
+        Route::prefix('/parse')->middleware('NeedPassword')->group(function () {
+            Route::get('/config', [ParseController::class, 'getConfig']);
+            Route::get('/fileList', [ParseController::class, 'getFileList']);
+            Route::get('/sign', [ParseController::class, 'getSign']);
+            Route::post('/downloadFiles', [ParseController::class, 'downloadFiles']);
+        });
+    });
 });

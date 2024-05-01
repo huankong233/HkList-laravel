@@ -64,11 +64,11 @@ class UserController extends Controller
         if ($user_id !== null) {
             $user = User::query()->find($user_id);
             if (!$user) return ResponseController::userNotExists();
-            return ResponseController::success(['user' => $user]);
+            return ResponseController::success($user);
         }
 
         $users = User::query()->get();
-        return ResponseController::success(['users' => $users]);
+        return ResponseController::success($users);
     }
 
     public function addUser(Request $request)

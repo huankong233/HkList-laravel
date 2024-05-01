@@ -14,11 +14,11 @@ class RecordController extends Controller
         if ($record_id !== null) {
             $record = Record::query()->find($record_id);
             if (!$record) return ResponseController::recordNotExists();
-            return ResponseController::success(['record' => $record]);
+            return ResponseController::success($record);
         }
 
         $records = Record::query()->get();
-        return ResponseController::success(['records' => $records]);
+        return ResponseController::success($records);
     }
 
     public static function addRecord($data)

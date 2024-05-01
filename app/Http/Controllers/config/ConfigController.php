@@ -10,7 +10,7 @@ class ConfigController extends Controller
 {
     public function getConfig(Request $request)
     {
-        return ResponseController::success(['config' => config('94list')]);
+        return ResponseController::success(config('94list'));
     }
 
     public function updateConfig(Request $request)

@@ -2,6 +2,7 @@
 
 return [
     'fakeUserAgent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'fakeCookie'    => 'BAIDUID=A4FDFAE43DDBF7E6956B02F6EF715373:FG=1; BAIDUID_BFESS=A4FDFAE43DDBF7E6956B02F6EF715373:FG=1; newlogin=1',
 
     'version'   => env('_94LIST_VERSION', '0.0.0'),
     'sleep'     => (int)env('_94LIST_SLEEP', "3"),

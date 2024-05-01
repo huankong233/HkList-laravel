@@ -10,7 +10,7 @@
  Target Server Version : 3035005 (3.35.5)
  File Encoding         : 65001
 
- Date: 01/05/2024 03:38:48
+ Date: 02/05/2024 03:17:36
 */
 
 PRAGMA foreign_keys = false;
@@ -26,7 +26,7 @@ CREATE TABLE "accounts" (
   "cookie" text NOT NULL,
   "vip_type" text NOT NULL,
   "switch" integer NOT NULL,
-  "status" text NOT NULL,
+  "reason" text,
   "svip_end_at" text NOT NULL,
   "last_use_at" text NOT NULL,
   "created_at" text NOT NULL,
@@ -91,7 +91,7 @@ CREATE TABLE "users" (
 -- ----------------------------
 -- Auto increment value for accounts
 -- ----------------------------
-UPDATE "sqlite_sequence" SET seq = 1 WHERE name = 'accounts';
+UPDATE "sqlite_sequence" SET seq = 3 WHERE name = 'accounts';
 
 -- ----------------------------
 -- Auto increment value for groups

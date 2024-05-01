@@ -11,7 +11,7 @@ class CaptchaConfigController extends Controller
 {
     public function getCaptchaConfig()
     {
-        return ResponseController::success(['captchaConfig' => config("captcha")]);
+        return ResponseController::success(config('captcha'));
     }
 
     public function sendCaptchaVerify(Request $request)
@@ -25,9 +25,9 @@ class CaptchaConfigController extends Controller
 
         if ($request['use']) $update['_94LIST_CAPTCHA_USE'] = $request['use'];
 
-        $updateItems     = CaptchaController::updateConfig($request['use'] ?: config('captcha.use'), $request);
-        $updateItemsData = $updateItems->getData(true);
-        if ($updateItemsData['code'] !== 200) return $updateItems;
+        $updateItemsRes     = CaptchaController::updateConfig($request['use'] ?? config('captcha.use'), $request);
+        $updateItemsData = $updateItemsRes->getData(true);
+        if ($updateItemsData['code'] !== 200) return $updateItemsRes;
         $update = array_merge($update, $updateItemsData['data']);
 
         if (count($update) === 0) ResponseController::paramsError();

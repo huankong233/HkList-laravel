@@ -16,24 +16,24 @@ class AccountController extends Controller
         if ($account_id !== null) {
             $account = Account::query()->find($account_id);
             if (!$account) return ResponseController::accountNotExists();
-            return ResponseController::success(['account' => $account]);
+            return ResponseController::success($account);
         }
 
         $accounts = Account::query()->get();
-        return ResponseController::success(['accounts' => $accounts]);
+        return ResponseController::success($accounts);
     }
 
     public static function _getAccountInfo($cookie)
     {
         $http = new Client([
             'headers' => [
-                'User-Agent' => config("94list.fakeUserAgent"),
+                'User-Agent' => config('94list.fakeUserAgent'),
                 'cookie'     => $cookie
             ]
         ]);
 
         try {
-            $res      = $http->get("https://pan.baidu.com/rest/2.0/xpan/nas", [
+            $res      = $http->get('https://pan.baidu.com/rest/2.0/xpan/nas', [
                 'query' => [
                     'method' => 'uinfo'
                 ]
@@ -42,7 +42,7 @@ class AccountController extends Controller
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
         } catch (GuzzleException $e) {
-            return ResponseController::networkError("获取百度账户信息");
+            return ResponseController::networkError('获取百度账户信息');
         }
 
         return $response ? ResponseController::success($response) : ResponseController::getAccountInfoFailed();
@@ -52,7 +52,7 @@ class AccountController extends Controller
     {
         $http = new Client([
             'headers' => [
-                'User-Agent' => config("94list.fakeUserAgent"),
+                'User-Agent' => config('94list.fakeUserAgent'),
                 'Cookie'     => $cookie
             ]
         ]);
@@ -70,7 +70,7 @@ class AccountController extends Controller
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
         } catch (GuzzleException $e) {
-            return ResponseController::networkError("获取SVIP到期时间");
+            return ResponseController::networkError('获取SVIP到期时间');
         }
 
         return $response ? ResponseController::success($response) : ResponseController::getSvipEndTimeFailed();
@@ -86,24 +86,24 @@ class AccountController extends Controller
 
         $response = [];
 
-        $accountInfoResponse = self::_getAccountInfo($request['cookie']);
-        $accountInfoData     = $accountInfoResponse->getData(true);
-        if ($accountInfoData['code'] !== 200) return $accountInfoResponse;
-        $response['uinfo'] = $accountInfoData;
+        $accountInfoRes  = self::_getAccountInfo($request['cookie']);
+        $accountInfoData = $accountInfoRes->getData(true);
+        if ($accountInfoData['code'] !== 200) return $accountInfoRes;
+        $response['uinfo'] = $accountInfoData['data'];
 
-        $svipEndAtResponse = self::_getSvipEndAt($request['cookie']);
-        $svipEndAtData     = $svipEndAtResponse->getData(true);
-        if ($svipEndAtData['code'] !== 200) return $svipEndAtResponse;
-        $response['query'] = $svipEndAtData;
+        $svipEndAtRes  = self::_getSvipEndAt($request['cookie']);
+        $svipEndAtData = $svipEndAtRes->getData(true);
+        if ($svipEndAtData['code'] !== 200) return $svipEndAtRes;
+        $response['query'] = $svipEndAtData['data'];
 
         return ResponseController::success($response);
     }
 
-    public function _getAccountItems($cookie)
+    public static function _getAccountItems($cookie)
     {
-        $accountInfoResponse = self::_getAccountInfo($cookie);
-        $accountInfoData     = $accountInfoResponse->getData(true);
-        if ($accountInfoData['code'] !== 200) return $accountInfoResponse;
+        $accountInfoRes  = self::_getAccountInfo($cookie);
+        $accountInfoData = $accountInfoRes->getData(true);
+        if ($accountInfoData['code'] !== 200) return $accountInfoRes;
 
         $vip_type = match ($accountInfoData['data']['vip_type']) {
             0 => '普通用户',
@@ -112,15 +112,15 @@ class AccountController extends Controller
         };
 
         $switch      = 1;
-        $svip_end_at = date("Y-m-d H:i:s", 0);
+        $svip_end_at = date('Y-m-d H:i:s', 0);
 
         if ($vip_type === '超级会员') {
-            $svipEndAtResponse = self::_getSvipEndAt($cookie);
-            $svipEndAtData     = $svipEndAtResponse->getData(true);
-            if ($svipEndAtData['code'] !== 200) return $svipEndAtResponse;
+            $svipEndAtRes  = self::_getSvipEndAt($cookie);
+            $svipEndAtData = $svipEndAtRes->getData(true);
+            if ($svipEndAtData['code'] !== 200) return $svipEndAtRes;
 
-            $svip_end_at = date("Y-m-d H:i:s", $svipEndAtData['data']['currenttime'] + $svipEndAtData['data']['reminder']['svip']['leftseconds']);
-            if ($svip_end_at < date("Y-m-d H:i:s")) $switch = 0;
+            $svip_end_at = date('Y-m-d H:i:s', $svipEndAtData['data']['currenttime'] + $svipEndAtData['data']['reminder']['svip']['leftseconds']);
+            if ($svip_end_at < date('Y-m-d H:i:s')) $switch = 0;
         }
 
         return ResponseController::success([
@@ -129,9 +129,9 @@ class AccountController extends Controller
             'cookie'       => $cookie,
             'vip_type'     => $vip_type,
             'switch'       => $switch,
-            'status'       => $switch === 1 ? '未使用' : '会员过期',
+            'reason'       => '',
             'svip_end_at'  => $svip_end_at,
-            'last_use_at'  => date("Y-m-d H:i:s", 0)
+            'last_use_at'  => date('Y-m-d H:i:s', 0)
         ]);
     }
 
@@ -143,24 +143,24 @@ class AccountController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $accountItems     = self::_getAccountItems($request['cookie']);
-        $accountItemsData = $accountItems->getData(true);
-        if ($accountItemsData['code'] !== 200) return $accountItemsData;
+        $accountItemsRes  = self::_getAccountItems($request['cookie']);
+        $accountItemsData = $accountItemsRes->getData(true);
+        if ($accountItemsData['code'] !== 200) return $accountItemsRes;
 
         Account::query()->create($accountItemsData['data']);
 
         return ResponseController::success();
     }
 
-    public function updateAccount(Request $request, $account_id)
+    public static function updateAccount(Request $request, $account_id)
     {
         $account = Account::query()->find($account_id);
         if (!$account) return ResponseController::accountNotExists();
         $cookie = $account['cookie'];
 
-        $accountItems     = self::_getAccountItems($cookie);
-        $accountItemsData = $accountItems->getData(true);
-        if ($accountItemsData['code'] !== 200) return $accountItemsData;
+        $accountItemsRes  = self::_getAccountItems($cookie);
+        $accountItemsData = $accountItemsRes->getData(true);
+        if ($accountItemsData['code'] !== 200) return $accountItemsRes;
 
         $account->update($accountItemsData['data']);
 

@@ -17,7 +17,7 @@ class Account extends Model
         'cookie',
         'vip_type',
         'switch',
-        'status',
+        'reason',
         'svip_end_at',
         'last_use_at'
     ];

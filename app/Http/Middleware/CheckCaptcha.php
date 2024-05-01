@@ -18,9 +18,9 @@ class CheckCaptcha
     public function handle(Request $request, Closure $next): Response
     {
         if (config('captcha.use') !== '') {
-            $response = CaptchaController::verify($request);
-            $data     = $response->getData(true);
-            if ($data['code'] !== 200) return $response;
+            $captchaRes  = CaptchaController::verify($request);
+            $captchaData = $captchaRes->getData(true);
+            if ($captchaData['code'] !== 200) return $captchaRes;
         }
 
         return $next($request);
