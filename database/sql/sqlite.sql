@@ -10,7 +10,7 @@
  Target Server Version : 3035005 (3.35.5)
  File Encoding         : 65001
 
- Date: 02/05/2024 03:17:36
+ Date: 03/05/2024 01:23:30
 */
 
 PRAGMA foreign_keys = false;
@@ -48,19 +48,33 @@ CREATE TABLE "groups" (
 );
 
 -- ----------------------------
+-- Table structure for inv_codes
+-- ----------------------------
+DROP TABLE IF EXISTS "inv_codes";
+CREATE TABLE "inv_codes" (
+  "id" integer NOT NULL,
+  "name" text NOT NULL,
+  "use_count" integer NOT NULL,
+  "can_count" integer NOT NULL,
+  "created_at" text NOT NULL,
+  "updated_at" text NOT NULL,
+  PRIMARY KEY ("id")
+);
+
+-- ----------------------------
 -- Table structure for records
 -- ----------------------------
 DROP TABLE IF EXISTS "records";
 CREATE TABLE "records" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "ip" text NOT NULL,
-  "action_name" text NOT NULL,
-  "link" text NOT NULL,
-  "md5" text,
-  "size" integer,
-  "ua" text,
-  "user_id" integer,
-  "account_id" integer,
+  "fs_id" text NOT NULL,
+  "filename" text NOT NULL,
+  "size" integer NOT NULL,
+  "url" text NOT NULL,
+  "ua" text NOT NULL,
+  "user_id" integer NOT NULL,
+  "account_id" integer NOT NULL,
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL
 );
@@ -100,6 +114,7 @@ UPDATE "sqlite_sequence" SET seq = 3 WHERE name = 'accounts';
 -- ----------------------------
 -- Auto increment value for records
 -- ----------------------------
+UPDATE "sqlite_sequence" SET seq = 2 WHERE name = 'records';
 
 -- ----------------------------
 -- Auto increment value for users
