@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Middleware\CheckCaptcha;
-use App\Http\Middleware\IsInstall;
+use App\Http\Middleware\NeedCaptcha;
+use App\Http\Middleware\NeedInstall;
 use App\Http\Middleware\NeedPassword;
 use App\Http\Middleware\RoleFilter;
 use Illuminate\Foundation\Application;
@@ -19,9 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
                   )
                   ->withMiddleware(function (Middleware $middleware) {
                       $middleware->alias([
-                          'CheckCaptcha' => CheckCaptcha::class,
-                          'IsInstall'    => IsInstall::class,
                           'RoleFilter'   => RoleFilter::class,
+                          'NeedCaptcha'  => NeedCaptcha::class,
+                          'NeedInstall'  => NeedInstall::class,
                           'NeedPassword' => NeedPassword::class,
                       ]);
                       $middleware->api(prepend: [

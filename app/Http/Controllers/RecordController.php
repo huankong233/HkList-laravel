@@ -24,14 +24,13 @@ class RecordController extends Controller
     public static function addRecord($data)
     {
         $validator = Validator::make($data, [
-            'ip'          => 'required|string',
-            'action_name' => ['required', Rule::in(['getList', 'getSign', 'downloadFiles'])],
-            'link'        => 'required|string',
-            'md5'         => 'string',
-            'size'        => 'numeric',
-            'ua'          => 'string',
-            'user_id'     => 'numeric',
-            'account_id'  => 'numeric'
+            'ip'         => 'required|string',
+            'fs_id'      => 'required|numeric',
+            'user_id'    => 'required|numeric',
+            'account_id' => 'required|numeric',
+            'size'       => 'required|numeric',
+            'ua'         => 'required|string',
+            'url'        => 'required|string'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -41,7 +40,7 @@ class RecordController extends Controller
         return ResponseController::success();
     }
 
-    public function deleteRecord(Request $request, $record_id)
+    public function removeRecord(Request $request, $record_id)
     {
         $record = Record::query()->find($record_id);
         if (!$record) return ResponseController::recordNotExists();

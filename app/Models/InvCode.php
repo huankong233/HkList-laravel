@@ -5,17 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Record extends Model
+class InvCode extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'ip',
-        'fs_id',
-        'size',
-        'ua',
-        'user_id',
-        'account_id',
-        'url'
+        'name',
+        'can_count',
+        'use_count'
     ];
 }

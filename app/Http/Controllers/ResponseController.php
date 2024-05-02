@@ -217,4 +217,14 @@ class ResponseController extends Controller
     {
         return self::response(10037, 500, '操作的文件过多');
     }
+
+    public static function invCodeNotExists()
+    {
+        return self::response(10038, 404, '邀请码不存在');
+    }
+
+    public static function invCodeExists()
+    {
+        return self::response(10039, 409, '邀请码名称已存在');
+    }
 }

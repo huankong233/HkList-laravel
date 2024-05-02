@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsInstall
+class NeedInstall
 {
     /**
      * Handle an incoming request.
@@ -38,7 +38,7 @@ class IsInstall
 
             // 写入key
             updateEnv('APP_KEY', $key);
-            config(['APP_KEY' => $key]);
+            config(['app.key' => $key]);
 
             // 导入sql
             $installSql = database_path('sql/sqlite.sql');
@@ -48,6 +48,13 @@ class IsInstall
                 'id'    => 0,
                 'name'  => '默认分组',
                 'count' => 10,
+                'size'  => 20
+            ]);
+
+            Group::query()->create([
+                'id'    => -1,
+                'name'  => '游客分组',
+                'count' => 5,
                 'size'  => 20
             ]);
 

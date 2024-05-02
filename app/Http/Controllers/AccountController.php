@@ -27,7 +27,7 @@ class AccountController extends Controller
     {
         $http = new Client([
             'headers' => [
-                'User-Agent' => config('94list.fakeUserAgent'),
+                'User-Agent' => config('94list.fake_user_agent'),
                 'cookie'     => $cookie
             ]
         ]);
@@ -52,7 +52,7 @@ class AccountController extends Controller
     {
         $http = new Client([
             'headers' => [
-                'User-Agent' => config('94list.fakeUserAgent'),
+                'User-Agent' => config('94list.fake_user_agent'),
                 'Cookie'     => $cookie
             ]
         ]);

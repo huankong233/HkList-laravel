@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Record;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -19,12 +20,15 @@ class ParseController extends Controller
         $config = config('94list');
 
         return ResponseController::success([
-            'announce'     => $config['announce'],
-            'userAgent'    => $config['userAgent'],
-            'debug'        => config('app.debug'),
-            'haveAccount'  => self::getRandomCookie($request)->getData(true)['data'] !== null,
-            'havePassword' => $config['password'] !== '',
-            'haveLogin'    => Auth::check()
+            'announce'      => $config['announce'],
+            'user_agent'    => $config['user_agent'],
+            'debug'         => config('app.debug'),
+            'max_once'      => $config['max_once'],
+            'have_account'  => self::getRandomCookie($request)->getData(true)['data'] !== null,
+            'have_login'    => Auth::check(),
+            'need_inv_code' => $config['need_inv_code'],
+            'need_password' => $config['password'] !== '',
+            'need_captcha'  => config("captcha.use") !== '',
         ]);
     }
 
@@ -35,15 +39,15 @@ class ParseController extends Controller
             $banAccounts = Account::query()
                                   ->where([
                                       'switch'   => '1',
-                                      'vip_type' => '超级会员'
+                                      'vip_type' => '超级会员',
+                                      ['svip_end_at', '<', "DATETIME('now', 'utc', '+16 hours')"]
                                   ])
-                                  ->whereRaw('"svip_end_at" < DATETIME("now", "utc", "+16 hours")')
                                   ->get();
 
             if ($banAccounts->count() !== 0) {
                 if (config('mail.switch')) {
-                    Mail::raw('有账户已过期,详见:<br>' . json_encode($banAccounts->toJson()), function ($message) {
-                        $message->to(config('mail.to'))->subject('有账户过期了~');
+                    Mail::raw('亲爱的' . config('mail.to.name') . ':\n\t有账户已过期,详见:' . json_encode($banAccounts->toJson()), function ($message) {
+                        $message->to(config('mail.to.address'))->subject('有账户过期了~');
                     });
                 }
 
@@ -62,13 +66,18 @@ class ParseController extends Controller
             }
         }
 
+        $vipType = is_array($vipType) ? $vipType : [$vipType];
 
         $account = Account::query()
                           ->orderByRaw('RANDOM()')
                           ->firstWhere([
-                              'switch'   => '1',
-                              'vip_type' => $vipType
-                          ]);
+                              'switch' => '1'
+                          ])
+                          ->where(function (Builder $query) use ($vipType) {
+                              foreach ($vipType as $item) {
+                                  $query->orWhere("vip_type", $item);
+                              }
+                          })->first();
 
         return ResponseController::success($account);
     }
@@ -90,7 +99,7 @@ class ParseController extends Controller
             $http     = new Client([
                 'headers' => [
                     'User-Agent' => 'netdisk',
-                    'Cookie'     => config('94list.fakeCookie'),
+                    'Cookie'     => config('94list.fake_cookie'),
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
             ]);
@@ -151,7 +160,7 @@ class ParseController extends Controller
             $http = new Client([
                 'headers' => [
                     'User-Agent' => 'netdisk',
-                    'Cookie'     => config('94list.fakeCookie'),
+                    'Cookie'     => config('94list.fake_cookie'),
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
             ]);
@@ -201,9 +210,9 @@ class ParseController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        if (count($request['fs_ids']) > config('94list.maxOnce')) return ResponseController::linksOverloaded();
+        if (count($request['fs_ids']) > config('94list.max_once')) return ResponseController::linksOverloaded();
 
-        $normalCookieRes  = self::getRandomCookie($request, '普通用户');
+        $normalCookieRes  = self::getRandomCookie($request, ['普通用户', '普通会员']);
         $normalCookieData = $normalCookieRes->getData(true);
         if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
 
@@ -217,10 +226,32 @@ class ParseController extends Controller
             $request['timestamp'] = $signData['data']['timestamp'];
         }
 
+        $responseData = [];
+
+        // 读取缓存
+        foreach ($request['fs_ids'] as $index => $fs_id) {
+            $record = Record::query()
+                            ->where([
+                                'fs_id' => $fs_id,
+                                ['created_at', '<', "DATETIME('now', 'utc', '+24 hours')"],
+                            ])
+                            ->get()
+                            ->last();
+
+            if ($record) {
+                $responseData[]    = [
+                    'filename' => $record['filename'],
+                    'url'      => $record['url'],
+                    'ua'       => $record['ua']
+                ];
+                $request['fs_ids'] = array_slice($request['fs_ids'], $index + 1, count($request['fs_ids']) - 1);
+            }
+        }
+
         try {
             $http = new Client([
                 'headers' => [
-                    'User-Agent' => config('94list.fakeUserAgent'),
+                    'User-Agent' => config('94list.fake_user_agent'),
                     'Cookie'     => $normalCookieData['data']['cookie'],
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
@@ -256,8 +287,7 @@ class ParseController extends Controller
             case 0:
                 // 如果就一个文件就不睡
                 // 有多个文件就每个睡一觉
-                $sleepTime    = count($response['list']) > 1 ? config('94list.sleep') : 0;
-                $responseData = [];
+                $sleepTime = count($response['list']) > 1 ? config('94list.sleep') : 0;
 
                 foreach ($response['list'] as $list) {
                     $svipCookieRes  = self::getRandomCookie($request);
@@ -272,7 +302,7 @@ class ParseController extends Controller
 
                     $http = new Client([
                         'headers' => [
-                            'User-Agent' => config('94list.userAgent'),
+                            'User-Agent' => config('94list.user_agent'),
                             'Cookie'     => $svipCookieData['data']['cookie'],
                             'Referer'    => 'https://pan.baidu.com/disk/home',
                             'Host'       => 'pan.baidu.com',
@@ -314,9 +344,19 @@ class ParseController extends Controller
                         }
 
                         $responseData[] = [
-                            'dlink'           => $effective_url,
-                            'server_filename' => $list['server_filename']
+                            'url'      => $effective_url,
+                            'filename' => $list['server_filename']
                         ];
+
+                        RecordController::addRecord([
+                            'ip'         => $request->ip(),
+                            'fs_id'      => $list['fs_id'],
+                            'user_id'    => Auth::user()['id'] ?? -1,
+                            'account_id' => $svipCookieData['data']['id'],
+                            'size'       => $list['size'],
+                            'ua'         => config('94list.user_agent'),
+                            'url'        => $effective_url
+                        ]);
                     } catch (GuzzleException $e) {
                         return ResponseController::getRealLinkError();
                     }

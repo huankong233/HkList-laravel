@@ -41,10 +41,10 @@ class MailConfigController extends Controller
             if (!in_array($request['encryption'], ['ssl', 'tls'])) return ResponseController::paramsError();
             $update['MAIL_ENCRYPTION'] = $request['encryption'];
         }
-        if ($request['fromAddress']) $update['MAIL_FROM_ADDRESS'] = $request['fromAddress'];
-        if ($request['fromName']) $update['MAIL_FROM_NAME'] = $request['fromName'];
-        if ($request['toAddress']) $update['MAIL_TO_ADDRESS'] = $request['toAddress'];
-        if ($request['toName']) $update['MAIL_TO_NAME'] = $request['toName'];
+        if ($request['from_address']) $update['MAIL_FROM_ADDRESS'] = $request['from_address'];
+        if ($request['from_name']) $update['MAIL_FROM_NAME'] = $request['from_name'];
+        if ($request['to_address']) $update['MAIL_TO_ADDRESS'] = $request['to_address'];
+        if ($request['to_name']) $update['MAIL_TO_NAME'] = $request['to_name'];
 
         if (count($update) === 0) ResponseController::paramsError();
 

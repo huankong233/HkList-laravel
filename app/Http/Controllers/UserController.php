@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use App\Models\InvCode;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,21 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
+
+        if (config("94list.need_inv_code")) {
+            $validator = Validator::make($request->all(), [
+                'invCode' => 'required|string'
+            ]);
+
+            if ($validator->fails()) return ResponseController::paramsError();
+
+            $invCode = InvCode::query()->firstWhere('name', $request['invCode']);
+            if (!$invCode) return ResponseController::InvCodeNotExists();
+
+            if ($invCode['use_count'] === $invCode['can_count']) return ResponseController::InvCodeNotExists();
+
+            $invCode->increment('use_count');
+        }
 
         $user = User::query()->firstWhere('username', $request['username']);
         if ($user) return ResponseController::userExists();

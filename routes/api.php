@@ -5,19 +5,27 @@ use App\Http\Controllers\config\CaptchaConfigController;
 use App\Http\Controllers\config\ConfigController;
 use App\Http\Controllers\config\MailConfigController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\InvCodeController;
 use App\Http\Controllers\ParseController;
 use App\Http\Controllers\RecordController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['IsInstall'])->group(function () {
+Route::middleware('NeedInstall')->group(function () {
     Route::prefix('/v1')->group(function () {
         Route::prefix('/user')->group(function () {
-            Route::middleware('CheckCaptcha')->group(function () {
-                Route::get('/login', [UserController::class, 'login']);
-                Route::post('/register', [UserController::class, 'register']);
+            Route::middleware('NeedCaptcha')->group(function () {
+                Route::get('/', [UserController::class, 'login']);
+                Route::post('/', [UserController::class, 'register']);
             });
             Route::delete('/', [UserController::class, 'logout']);
+        });
+
+        Route::prefix('/parse')->middleware('NeedPassword')->group(function () {
+            Route::get('/config', [ParseController::class, 'getConfig']);
+            Route::get('/fileList', [ParseController::class, 'getFileList']);
+            Route::get('/sign', [ParseController::class, 'getSign']);
+            Route::middleware('NeedCaptcha')->post('/downloadFiles', [ParseController::class, 'downloadFiles']);
         });
 
         Route::prefix('/admin')->middleware('RoleFilter:admin')->group(function () {
@@ -52,6 +60,13 @@ Route::middleware(['IsInstall'])->group(function () {
                 Route::delete('/{account_id}', [AccountController::class, 'removeAccount']);
             });
 
+            Route::prefix('/invCode')->group(function () {
+                Route::get('/{inv_code?}', [InvCodeController::class, 'getInvCode']);
+                Route::post('/', [InvCodeController::class, 'addInvCode']);
+                Route::patch('/{inv_code}', [InvCodeController::class, 'updateInvCode']);
+                Route::delete('/{inv_code}', [InvCodeController::class, 'removeInvCode']);
+            });
+
             Route::prefix('/config')->group(function () {
                 Route::get('/', [ConfigController::class, 'getConfig']);
                 Route::patch('/', [ConfigController::class, 'updateConfig']);
@@ -68,13 +83,6 @@ Route::middleware(['IsInstall'])->group(function () {
                 Route::post('/', [CaptchaConfigController::class, 'sendCaptchaVerify']);
                 Route::patch('/', [CaptchaConfigController::class, 'updateCaptchaConfig']);
             });
-        });
-
-        Route::prefix('/parse')->middleware('NeedPassword')->group(function () {
-            Route::get('/config', [ParseController::class, 'getConfig']);
-            Route::get('/fileList', [ParseController::class, 'getFileList']);
-            Route::get('/sign', [ParseController::class, 'getSign']);
-            Route::post('/downloadFiles', [ParseController::class, 'downloadFiles']);
         });
     });
 });
