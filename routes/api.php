@@ -6,6 +6,7 @@ use App\Http\Controllers\config\ConfigController;
 use App\Http\Controllers\config\MailConfigController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\InvCodeController;
+use App\Http\Controllers\IpController;
 use App\Http\Controllers\ParseController;
 use App\Http\Controllers\RecordController;
 use App\Http\Controllers\UserController;
@@ -21,7 +22,7 @@ Route::middleware('NeedInstall')->group(function () {
             Route::delete('/', [UserController::class, 'logout']);
         });
 
-        Route::prefix('/parse')->middleware('NeedPassword')->group(function () {
+        Route::prefix('/parse')->middleware(['NeedPassword', 'IpFilter'])->group(function () {
             Route::get('/config', [ParseController::class, 'getConfig']);
             Route::get('/fileList', [ParseController::class, 'getFileList']);
             Route::get('/sign', [ParseController::class, 'getSign']);
@@ -65,6 +66,13 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::post('/', [InvCodeController::class, 'addInvCode']);
                 Route::patch('/{inv_code}', [InvCodeController::class, 'updateInvCode']);
                 Route::delete('/{inv_code}', [InvCodeController::class, 'removeInvCode']);
+            });
+
+            Route::prefix('/ip')->group(function () {
+                Route::get('/{ip?}', [IpController::class, 'getIp']);
+                Route::post('/', [IpController::class, 'addIp']);
+                Route::patch('/{ip}', [IpController::class, 'updateIp']);
+                Route::delete('/{ip}', [IpController::class, 'removeIp']);
             });
 
             Route::prefix('/config')->group(function () {

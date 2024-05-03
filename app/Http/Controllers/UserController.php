@@ -143,6 +143,8 @@ class UserController extends Controller
         if ($request['password']) $update['password'] = Hash::make($request['password']);
         if ($request['role']) $update['role'] = $request['role'];
 
+        if (count($update) === 0) return ResponseController::paramsError();
+
         $user->update($update);
 
         return ResponseController::success();

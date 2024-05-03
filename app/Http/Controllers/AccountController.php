@@ -45,6 +45,8 @@ class AccountController extends Controller
             return ResponseController::networkError('获取百度账户信息');
         }
 
+        if ($response['errmsg'] === 'Invalid Bduss') return ResponseController::accountExpired();
+
         return $response ? ResponseController::success($response) : ResponseController::getAccountInfoFailed();
     }
 

@@ -90,6 +90,8 @@ class InvCodeController extends Controller
         if ($request['use_count']) $update['use_count'] = $request['use_count'];
         if ($request['can_count']) $update['can_count'] = $request['can_count'];
 
+        if (count($update) === 0) return ResponseController::paramsError();
+
         $invCode->update($update);
 
         return ResponseController::success();

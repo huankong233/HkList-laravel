@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Group;
 use App\Models\Record;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -38,10 +39,11 @@ class ParseController extends Controller
             // 禁用不可用的账户
             $banAccounts = Account::query()
                                   ->where([
-                                      'switch'   => '1',
+                                      'switch'   => 1,
                                       'vip_type' => '超级会员',
-                                      ['svip_end_at', '<', "DATETIME('now', 'utc', '+16 hours')"]
                                   ])
+                                  ->whereDate('svip_end_at', '<', now())
+                                  ->whereTime('svip_end_at', '<', now())
                                   ->get();
 
             if ($banAccounts->count() !== 0) {
@@ -70,8 +72,8 @@ class ParseController extends Controller
 
         $account = Account::query()
                           ->orderByRaw('RANDOM()')
-                          ->firstWhere([
-                              'switch' => '1'
+                          ->where([
+                              'switch' => 1
                           ])
                           ->where(function (Builder $query) use ($vipType) {
                               foreach ($vipType as $item) {
@@ -226,6 +228,15 @@ class ParseController extends Controller
             $request['timestamp'] = $signData['data']['timestamp'];
         }
 
+        // 获取今日解析数量
+        $group   = Group::query()->find(Auth::check() ? Auth::user()['group_id'] : -1);
+        $records = Record::query()
+                         ->where('ip', $request['ip'])
+                         ->whereDate('created_at', now())
+                         ->whereTime('created_at', now())
+                         ->get();
+        if ($records->count() >= $group['count'] || $records->sum('size') >= $group['size']) return ResponseController::groupQuotaHasBeenUsedUp();
+
         $responseData = [];
 
         // 读取缓存
@@ -233,19 +244,30 @@ class ParseController extends Controller
             $record = Record::query()
                             ->where([
                                 'fs_id' => $fs_id,
-                                ['created_at', '<', "DATETIME('now', 'utc', '+24 hours')"],
+                                ['account_id', '!=', -1]
                             ])
+                            ->whereDate('created_at', now())
+                            ->whereTime('created_at', now()->addHours(8))
                             ->get()
                             ->last();
 
-            if ($record) {
-                $responseData[]    = [
-                    'filename' => $record['filename'],
-                    'url'      => $record['url'],
-                    'ua'       => $record['ua']
-                ];
-                $request['fs_ids'] = array_slice($request['fs_ids'], $index + 1, count($request['fs_ids']) - 1);
-            }
+            if (!$record) continue;
+
+            $responseData[]    = [
+                'filename' => $record['filename'],
+                'url'      => $record['url'],
+                'ua'       => $record['ua']
+            ];
+            $request['fs_ids'] = array_slice($request['fs_ids'], $index + 1, count($request['fs_ids']) - 1);
+            RecordController::addRecord([
+                'ip'         => $request->ip(),
+                'fs_id'      => $fs_id,
+                'user_id'    => Auth::check() ? Auth::user()['id'] : -1,
+                'account_id' => -1,
+                'size'       => $record['size'],
+                'ua'         => $record['ua'],
+                'url'        => $record['url']
+            ]);
         }
 
         try {
@@ -382,9 +404,24 @@ class ParseController extends Controller
                 return ResponseController::linkIsOutDate();
             case 121:
                 return ResponseController::processFilesTooMuch();
+            case 4:
+                Account::query()
+                       ->find($normalCookieData['data']['id'])
+                       ->update([
+                           'switch' => 0,
+                           'reason' => 'cookie已失效'
+                       ]);
+                return ResponseController::accountExpired();
+            case 9019:
+                Account::query()
+                       ->find($normalCookieData['data']['id'])
+                       ->update([
+                           'switch' => 0,
+                           'reason' => '触发验证码'
+                       ]);
+                return ResponseController::hitCaptcha();
             case 8001:
             case 9013:
-            case 9019:
             case -6:
                 Account::query()
                        ->find($normalCookieData['data']['id'])

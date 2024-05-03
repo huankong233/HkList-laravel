@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\ResponseController;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class MailConfigController extends Controller
 {
@@ -30,6 +32,21 @@ class MailConfigController extends Controller
 
     public function updateMailConfig(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'switch'       => 'bool',
+            'host'         => 'string',
+            'port'         => 'numeric',
+            'username'     => 'string',
+            'password'     => 'string',
+            'encryption'   => Rule::in(['tls', 'ssl']),
+            'from_address' => 'string',
+            'from_name'    => 'string',
+            'to_address'   => 'string',
+            'to_name'      => 'string'
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
         $update = [];
 
         if ($request['switch']) $update['MAIL_SWITCH'] = $request['switch'];
@@ -37,10 +54,7 @@ class MailConfigController extends Controller
         if ($request['port']) $update['MAIL_PORT'] = $request['port'];
         if ($request['username']) $update['MAIL_USERNAME'] = $request['username'];
         if ($request['password']) $update['MAIL_PASSWORD'] = $request['password'];
-        if ($request['encryption']) {
-            if (!in_array($request['encryption'], ['ssl', 'tls'])) return ResponseController::paramsError();
-            $update['MAIL_ENCRYPTION'] = $request['encryption'];
-        }
+        if ($request['encryption']) $update['MAIL_ENCRYPTION'] = $request['encryption'];
         if ($request['from_address']) $update['MAIL_FROM_ADDRESS'] = $request['from_address'];
         if ($request['from_name']) $update['MAIL_FROM_NAME'] = $request['from_name'];
         if ($request['to_address']) $update['MAIL_TO_ADDRESS'] = $request['to_address'];

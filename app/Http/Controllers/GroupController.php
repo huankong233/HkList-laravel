@@ -65,6 +65,8 @@ class GroupController extends Controller
         if ($request['count']) $update['count'] = $request['count'];
         if ($request['size']) $update['count'] = $request['size'];
 
+        if (count($update) === 0) return ResponseController::paramsError();
+
         $group->update($update);
 
         return ResponseController::success();

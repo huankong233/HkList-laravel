@@ -227,4 +227,34 @@ class ResponseController extends Controller
     {
         return self::response(10039, 409, '邀请码名称已存在');
     }
+
+    public static function notInWhiteList()
+    {
+        return self::response(10040, 403, '您不在白名单中!');
+    }
+
+    public static function inBlackList()
+    {
+        return self::response(10041, 403, '您在黑名单中!');
+    }
+
+    public static function IpNotExists()
+    {
+        return self::response(10042, 404, 'ip不存在');
+    }
+
+    public static function IpExists()
+    {
+        return self::response(10043, 409, 'ip名称已存在');
+    }
+
+    public static function groupQuotaHasBeenUsedUp()
+    {
+        return self::response(10044, 403, '用户组配额已用完');
+    }
+
+    public static function accountExpired()
+    {
+        return self::response(10045, 403, '账户cookie已失效');
+    }
 }
