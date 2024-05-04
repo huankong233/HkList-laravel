@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AccountController;
-use App\Http\Controllers\config\CaptchaConfigController;
 use App\Http\Controllers\config\ConfigController;
 use App\Http\Controllers\config\MailConfigController;
 use App\Http\Controllers\GroupController;
@@ -15,10 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('NeedInstall')->group(function () {
     Route::prefix('/v1')->group(function () {
         Route::prefix('/user')->group(function () {
-            Route::middleware('NeedCaptcha')->group(function () {
-                Route::post('/login', [UserController::class, 'login']);
-                Route::post('/register', [UserController::class, 'register']);
-            });
+            Route::post('/login', [UserController::class, 'login']);
+            Route::post('/register', [UserController::class, 'register']);
             Route::delete('/', [UserController::class, 'logout']);
         });
 
@@ -26,7 +23,7 @@ Route::middleware('NeedInstall')->group(function () {
             Route::get('/config', [ParseController::class, 'getConfig']);
             Route::post('/fileList', [ParseController::class, 'getFileList']);
             Route::post('/sign', [ParseController::class, 'getSign']);
-            Route::middleware('NeedCaptcha')->post('/downloadFiles', [ParseController::class, 'downloadFiles']);
+            Route::post('/downloadFiles', [ParseController::class, 'downloadFiles']);
         });
 
         Route::prefix('/admin')->middleware('RoleFilter:admin')->group(function () {
@@ -87,12 +84,6 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::get('/', [MailConfigController::class, 'getMailConfig']);
                 Route::post('/', [MailConfigController::class, 'sendTestMail']);
                 Route::patch('/', [MailConfigController::class, 'updateMailConfig']);
-            });
-
-            Route::prefix('/captcha')->group(function () {
-                Route::get('/', [CaptchaConfigController::class, 'getCaptchaConfig']);
-                Route::post('/', [CaptchaConfigController::class, 'sendCaptchaVerify']);
-                Route::patch('/', [CaptchaConfigController::class, 'updateCaptchaConfig']);
             });
         });
     });

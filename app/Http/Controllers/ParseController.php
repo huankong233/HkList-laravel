@@ -18,7 +18,7 @@ class ParseController extends Controller
 {
     public function getConfig(Request $request)
     {
-        $config = config('94list');
+        $config  = config('94list');
 
         return ResponseController::success([
             'announce'      => $config['announce'],
@@ -28,8 +28,7 @@ class ParseController extends Controller
             'have_account'  => self::getRandomCookie($request)->getData(true)['data'] !== null,
             'have_login'    => Auth::check(),
             'need_inv_code' => $config['need_inv_code'],
-            'need_password' => $config['password'] !== '',
-            'need_captcha'  => config("captcha.use") !== '',
+            'need_password' => $config['password'] !== ''
         ]);
     }
 

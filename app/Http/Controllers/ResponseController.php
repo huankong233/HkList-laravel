@@ -78,24 +78,9 @@ class ResponseController extends Controller
         return self::response(10011, 404, '账户不存在');
     }
 
-    public static function unknownCaptcha()
-    {
-        return self::response(10012, 500, '未知验证码驱动器');
-    }
-
     public static function networkError($query)
     {
         return self::response(10013, 500, '在进行{$query}时出现网络错误,检查服务器网络状态');
-    }
-
-    public static function captchaSuccess()
-    {
-        return self::success();
-    }
-
-    public static function captchaFailed()
-    {
-        return self::response(10014, 400, '验证码校验失败');
     }
 
     public static function getAccountInfoFailed()

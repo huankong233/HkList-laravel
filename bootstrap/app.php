@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\IpFilter;
-use App\Http\Middleware\NeedCaptcha;
 use App\Http\Middleware\NeedInstall;
 use App\Http\Middleware\NeedPassword;
 use App\Http\Middleware\RoleFilter;
@@ -22,7 +21,6 @@ return Application::configure(basePath: dirname(__DIR__))
                       $middleware->alias([
                           'RoleFilter'   => RoleFilter::class,
                           'IpFilter'     => IpFilter::class,
-                          'NeedCaptcha'  => NeedCaptcha::class,
                           'NeedInstall'  => NeedInstall::class,
                           'NeedPassword' => NeedPassword::class,
                       ]);
