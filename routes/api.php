@@ -61,18 +61,21 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::delete('/{account_id}', [AccountController::class, 'removeAccount']);
             });
 
+            Route::pattern('inv_code_id', '[0-9]+');
             Route::prefix('/invCode')->group(function () {
-                Route::get('/{inv_code?}', [InvCodeController::class, 'getInvCode']);
+                Route::get('/{inv_code_id?}', [InvCodeController::class, 'getInvCode']);
                 Route::post('/', [InvCodeController::class, 'addInvCode']);
-                Route::patch('/{inv_code}', [InvCodeController::class, 'updateInvCode']);
-                Route::delete('/{inv_code}', [InvCodeController::class, 'removeInvCode']);
+                Route::post('/generate', [InvCodeController::class, 'generateInvCode']);
+                Route::patch('/{inv_code_id}', [InvCodeController::class, 'updateInvCode']);
+                Route::delete('/{inv_code_id}', [InvCodeController::class, 'removeInvCode']);
             });
 
+            Route::pattern('ip_id', '[0-9]+');
             Route::prefix('/ip')->group(function () {
-                Route::get('/{ip?}', [IpController::class, 'getIp']);
+                Route::get('/{ip_id?}', [IpController::class, 'getIp']);
                 Route::post('/', [IpController::class, 'addIp']);
-                Route::patch('/{ip}', [IpController::class, 'updateIp']);
-                Route::delete('/{ip}', [IpController::class, 'removeIp']);
+                Route::patch('/{ip_id}', [IpController::class, 'updateIp']);
+                Route::delete('/{ip_id}', [IpController::class, 'removeIp']);
             });
 
             Route::prefix('/config')->group(function () {

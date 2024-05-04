@@ -60,10 +60,11 @@ class NeedInstall
 
             // 添加用户
             User::query()->create([
-                'username' => 'admin',
-                'password' => Hash::make('admin'),
-                'role'     => 'admin',
-                'group_id' => 0
+                'username'    => 'admin',
+                'password'    => Hash::make('admin'),
+                'role'        => 'admin',
+                'group_id'    => 0,
+                'inv_code_id' => -1
             ]);
 
             // 写入安装锁

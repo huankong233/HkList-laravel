@@ -9,10 +9,10 @@ use Illuminate\Support\Str;
 
 class InvCodeController extends Controller
 {
-    public function getInvCode(Request $request, $inv_code = null)
+    public function getInvCode(Request $request, $inv_code_id = null)
     {
-        if ($inv_code !== null) {
-            $invCode = InvCode::query()->find($inv_code);
+        if ($inv_code_id !== null) {
+            $invCode = InvCode::query()->find($inv_code_id);
             if (!$invCode) return ResponseController::invCodeNotExists();
             return ResponseController::success($invCode);
         }
@@ -24,50 +24,55 @@ class InvCodeController extends Controller
     public function addInvCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'      => 'string',
-            'can_count' => 'required|numeric',
-            'count'     => 'numeric'
+            'name'      => 'required|string',
+            'can_count' => 'required|numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        if ($request['count']) {
-            $names = [];
-            for ($i = 0; $i < $request['count']; $i++) {
-                $name    = Str::random();
-                $invCode = InvCode::query()->firstWhere('name', $name);
-                if ($invCode) {
-                    $i--;
-                    continue;
-                }
+        $invCode = InvCode::query()->firstWhere('name', $request['name']);
+        if ($invCode) return ResponseController::invCodeExists();
 
-                InvCode::query()->create([
-                    'name'      => $name,
-                    'use_count' => 0,
-                    'can_count' => $request['can_count']
-                ]);
+        InvCode::query()->create([
+            'name'      => $request['name'],
+            'use_count' => 0,
+            'can_count' => $request['can_count']
+        ]);
 
-                $names[] = $name;
+        return ResponseController::success();
+    }
+
+    public function generateInvCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'can_count' => 'required|numeric',
+            'count'     => 'required|numeric'
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        $names = [];
+        for ($i = 0; $i < $request['count']; $i++) {
+            $name    = Str::random();
+            $invCode = InvCode::query()->firstWhere('name', $name);
+            if ($invCode) {
+                $i--;
+                continue;
             }
 
-            return ResponseController::success($names);
-        } else if ($request['name']) {
-            $invCode = InvCode::query()->firstWhere('name', $request['name']);
-            if ($invCode) return ResponseController::invCodeExists();
-
             InvCode::query()->create([
-                'name'      => $request['name'],
+                'name'      => $name,
                 'use_count' => 0,
                 'can_count' => $request['can_count']
             ]);
 
-            return ResponseController::success();
-        } else {
-            return ResponseController::paramsError();
+            $names[] = $name;
         }
+
+        return ResponseController::success($names);
     }
 
-    public function updateInvCode(Request $request, $inv_code)
+    public function updateInvCode(Request $request, $inv_code_id)
     {
         $validator = Validator::make($request->all(), [
             'name'      => 'string',
@@ -77,7 +82,7 @@ class InvCodeController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $invCode = InvCode::query()->firstWhere('name', $inv_code);
+        $invCode = InvCode::query()->find($inv_code_id);
         if (!$invCode) return ResponseController::invCodeNotExists();
 
         $update = [];
@@ -97,9 +102,9 @@ class InvCodeController extends Controller
         return ResponseController::success();
     }
 
-    public function removeInvCode(Request $request, $inv_code)
+    public function removeInvCode(Request $request, $inv_code_id)
     {
-        $invCode = InvCode::query()->firstWhere('name', $inv_code);
+        $invCode = InvCode::query()->find($inv_code_id);
         if (!$invCode) return ResponseController::invCodeNotExists();
 
         $invCode->delete();

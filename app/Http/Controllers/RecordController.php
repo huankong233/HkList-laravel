@@ -25,11 +25,12 @@ class RecordController extends Controller
         $validator = Validator::make($data, [
             'ip'         => 'required|string',
             'fs_id'      => 'required|numeric',
+            'filename'   => 'required|string',
+            'size'       => 'required|numeric',
+            'url'        => 'required|string',
+            'ua'         => 'required|string',
             'user_id'    => 'required|numeric',
             'account_id' => 'required|numeric',
-            'size'       => 'required|numeric',
-            'ua'         => 'required|string',
-            'url'        => 'required|string'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();

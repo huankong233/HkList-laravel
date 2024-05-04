@@ -57,10 +57,11 @@ class UserController extends Controller
         if ($user) return ResponseController::userExists();
 
         User::query()->create([
-            'username' => $request['username'],
-            'password' => Hash::make($request['password']),
-            'role'     => 'user',
-            'group_id' => 0
+            'username'    => $request['username'],
+            'password'    => Hash::make($request['password']),
+            'role'        => 'user',
+            'group_id'    => 0,
+            'inv_code_id' => isset($invCode) ? $invCode['id'] : 0
         ]);
 
         return ResponseController::success();
@@ -105,10 +106,11 @@ class UserController extends Controller
         if (!$group) return ResponseController::groupNotExists();
 
         User::query()->create([
-            'username' => $request['username'],
-            'password' => Hash::make($request['password']),
-            'role'     => $request['role'],
-            'group_id' => $request['group_id']
+            'username'    => $request['username'],
+            'password'    => Hash::make($request['password']),
+            'role'        => $request['role'],
+            'group_id'    => $request['group_id'],
+            'inv_code_id' => -1
         ]);
 
         return ResponseController::success();

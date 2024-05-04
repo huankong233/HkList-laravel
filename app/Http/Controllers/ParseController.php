@@ -46,13 +46,9 @@ class ParseController extends Controller
                                   ->whereTime('svip_end_at', '<', now())
                                   ->get();
 
-            if ($banAccounts->count() !== 0) {
-                if (config('mail.switch')) {
-                    Mail::raw('亲爱的' . config('mail.to.name') . ':\n\t有账户已过期,详见:' . json_encode($banAccounts->toJson()), function ($message) {
-                        $message->to(config('mail.to.address'))->subject('有账户过期了~');
-                    });
-                }
+            $updateFailedAccounts = [];
 
+            if ($banAccounts->count() !== 0) {
                 // 更新账户状态
                 foreach ($banAccounts as $account) {
                     $updateRes  = AccountController::updateAccount($request, $account['id']);
@@ -62,8 +58,15 @@ class ParseController extends Controller
                             'switch' => 0,
                             'reason' => $updateData['message']
                         ]);
+                        $updateFailedAccounts[] = $account->toJson();
                     }
                     sleep(0.3);
+                }
+
+                if (config('mail.switch')) {
+                    Mail::raw('亲爱的' . config('mail.to.name') . ':\n\t有账户已过期,详见:' . json_encode($updateFailedAccounts), function ($message) {
+                        $message->to(config('mail.to.address'))->subject('有账户过期了~');
+                    });
                 }
             }
         }
@@ -71,15 +74,10 @@ class ParseController extends Controller
         $vipType = is_array($vipType) ? $vipType : [$vipType];
 
         $account = Account::query()
-                          ->orderByRaw('RANDOM()')
-                          ->where([
-                              'switch' => 1
-                          ])
-                          ->where(function (Builder $query) use ($vipType) {
-                              foreach ($vipType as $item) {
-                                  $query->orWhere("vip_type", $item);
-                              }
-                          })->first();
+                          ->where('switch', 1)
+                          ->orWhere($vipType)
+                          ->inRandomOrder()
+                          ->first();
 
         return ResponseController::success($account);
     }
@@ -87,12 +85,12 @@ class ParseController extends Controller
     public function getFileList(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'url'   => 'required|string',
-            'dir'   => 'string',
-            'root'  => 'boolean',
-            'pwd'   => 'string',
-            'num'   => 'numeric',
-            'order' => 'string'
+            'shorturl' => 'required|string',
+            'dir'      => 'required|string',
+            'pwd'      => 'string',
+            'page'     => 'numeric',
+            'num'      => 'numeric',
+            'order'    => 'string'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -100,7 +98,7 @@ class ParseController extends Controller
         try {
             $http     = new Client([
                 'headers' => [
-                    'User-Agent' => 'netdisk',
+                    'User-Agent' => 'Mozilla/5.0 (Linux; Android 7.1.1; MI 6 Build/NMF26X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/043807 Mobile Safari/537.36 MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN miniProgram',
                     'Cookie'     => config('94list.fake_cookie'),
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
@@ -114,12 +112,12 @@ class ParseController extends Controller
                     'qq-pf-to'   => 'pcqq.c2c'
                 ],
                 'form_params' => [
-                    'shorturl' => $request['url'],
-                    'dir'      => $request['dir'] ?? null,
-                    'root'     => $request['dir'] === '' || $request['dir'] === null || $request['dir'] === '/' ? 1 : 0,
-                    'pwd'      => trim($request['pwd']) ?? '',
+                    'shorturl' => $request['shorturl'],
+                    'dir'      => $request['dir'],
+                    'root'     => $request['dir'] === '/' ? 1 : 0,
+                    'pwd'      => $request['pwd'] ?? '',
                     'page'     => $request['page'] ?? 1,
-                    'num'      => $request['num'] ?? 9999,
+                    'num'      => $request['num'] ?? 1000,
                     'order'    => $request['order'] ?? 'filename'
                 ]
             ]);
@@ -161,7 +159,7 @@ class ParseController extends Controller
         try {
             $http = new Client([
                 'headers' => [
-                    'User-Agent' => 'netdisk',
+                    'User-Agent' => config("94list.fake_user_agent"),
                     'Cookie'     => config('94list.fake_cookie'),
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
@@ -271,14 +269,13 @@ class ParseController extends Controller
         }
 
         try {
-            $http = new Client([
+            $http     = new Client([
                 'headers' => [
                     'User-Agent' => config('94list.fake_user_agent'),
                     'Cookie'     => $normalCookieData['data']['cookie'],
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
             ]);
-            if (str_contains($request['randsk'], '%')) $request['randsk'] = urldecode($request['randsk']);
             $res      = $http->post('https://pan.baidu.com/api/sharedownload', [
                 'query' => [
                     'app_id'     => 250528,
@@ -290,7 +287,7 @@ class ParseController extends Controller
                 ],
                 'body'  => join('&', [
                     'encrypt=0',
-                    'extra=' . urlencode('{"sekey":"' . $request['randsk'] . '"}'),
+                    'extra=' . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
                     'fid_list=[' . join(',', $request['fs_ids']) . ']',
                     'primaryid=' . $request['shareid'],
                     'uk=' . $request['uk'],

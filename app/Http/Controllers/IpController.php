@@ -9,10 +9,10 @@ use Illuminate\Validation\Rule;
 
 class IpController extends Controller
 {
-    public function getIp(Request $request, $ip = null)
+    public function getIp(Request $request, $ip_id = null)
     {
-        if ($ip !== null) {
-            $Ip = Ip::query()->find($ip);
+        if ($ip_id !== null) {
+            $Ip = Ip::query()->find($ip_id);
             if (!$Ip) return ResponseController::IpNotExists();
             return ResponseController::success($Ip);
         }
@@ -41,7 +41,7 @@ class IpController extends Controller
         return ResponseController::success();
     }
 
-    public function updateIp(Request $request, $ip)
+    public function updateIp(Request $request, $ip_id)
     {
         $validator = Validator::make($request->all(), [
             'ip'   => 'string',
@@ -50,7 +50,7 @@ class IpController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $Ip = Ip::query()->firstWhere('ip', $ip);
+        $Ip = Ip::query()->find($ip_id);
         if (!$Ip) return ResponseController::IpNotExists();
 
         $update = [];
@@ -69,9 +69,9 @@ class IpController extends Controller
         return ResponseController::success();
     }
 
-    public function removeIp(Request $request, $ip)
+    public function removeIp(Request $request, $ip_id)
     {
-        $Ip = Ip::query()->firstWhere('ip', $ip);
+        $Ip = Ip::query()->find($ip_id);
         if (!$Ip) return ResponseController::IpNotExists();
 
         $Ip->delete();
