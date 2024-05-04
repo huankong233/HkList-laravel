@@ -10,7 +10,7 @@
  Target Server Version : 3035005 (3.35.5)
  File Encoding         : 65001
 
- Date: 03/05/2024 01:23:30
+ Date: 04/05/2024 12:03:22
 */
 
 PRAGMA foreign_keys = false;
@@ -44,7 +44,8 @@ CREATE TABLE "groups" (
   "count" integer NOT NULL DEFAULT 0,
   "size" integer NOT NULL DEFAULT 0,
   "created_at" text NOT NULL,
-  "updated_at" text NOT NULL
+  "updated_at" text NOT NULL,
+  "deleted_at" text
 );
 
 -- ----------------------------
@@ -58,7 +59,20 @@ CREATE TABLE "inv_codes" (
   "can_count" integer NOT NULL,
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL,
+  "deleted_at" text,
   PRIMARY KEY ("id")
+);
+
+-- ----------------------------
+-- Table structure for ips
+-- ----------------------------
+DROP TABLE IF EXISTS "ips";
+CREATE TABLE "ips" (
+  "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "ip" text NOT NULL,
+  "mode" integer NOT NULL,
+  "created_at" text NOT NULL,
+  "updated_at" text NOT NULL
 );
 
 -- ----------------------------
@@ -95,20 +109,26 @@ DROP TABLE IF EXISTS "users";
 CREATE TABLE "users" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "group_id" integer NOT NULL DEFAULT 0,
+  "inv_code_id" integer NOT NULL,
   "username" text NOT NULL COLLATE BINARY,
   "password" text NOT NULL,
   "role" text NOT NULL DEFAULT user,
   "created_at" text NOT NULL,
-  "updated_at" text NOT NULL
+  "updated_at" text NOT NULL,
+  "deleted_at" text
 );
 
 -- ----------------------------
 -- Auto increment value for accounts
 -- ----------------------------
-UPDATE "sqlite_sequence" SET seq = 3 WHERE name = 'accounts';
+UPDATE "sqlite_sequence" SET seq = 4 WHERE name = 'accounts';
 
 -- ----------------------------
 -- Auto increment value for groups
+-- ----------------------------
+
+-- ----------------------------
+-- Auto increment value for ips
 -- ----------------------------
 
 -- ----------------------------
