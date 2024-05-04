@@ -16,16 +16,16 @@ Route::middleware('NeedInstall')->group(function () {
     Route::prefix('/v1')->group(function () {
         Route::prefix('/user')->group(function () {
             Route::middleware('NeedCaptcha')->group(function () {
-                Route::get('/', [UserController::class, 'login']);
-                Route::post('/', [UserController::class, 'register']);
+                Route::post('/login', [UserController::class, 'login']);
+                Route::post('/register', [UserController::class, 'register']);
             });
             Route::delete('/', [UserController::class, 'logout']);
         });
 
         Route::prefix('/parse')->middleware(['NeedPassword', 'IpFilter'])->group(function () {
             Route::get('/config', [ParseController::class, 'getConfig']);
-            Route::get('/fileList', [ParseController::class, 'getFileList']);
-            Route::get('/sign', [ParseController::class, 'getSign']);
+            Route::post('/fileList', [ParseController::class, 'getFileList']);
+            Route::post('/sign', [ParseController::class, 'getSign']);
             Route::middleware('NeedCaptcha')->post('/downloadFiles', [ParseController::class, 'downloadFiles']);
         });
 
