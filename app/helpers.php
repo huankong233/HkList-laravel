@@ -21,6 +21,7 @@ if (!function_exists('updateEnv')) {
             foreach ($data as $key => $value) {
                 if (str_starts_with($item, $key . '=')) {
                     unset($data[$key]);
+                    if (is_bool($value)) return $key . '=' . ($value ? 'true' : 'false');
                     return $key . '=' . $value;
                 }
             }

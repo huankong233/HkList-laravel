@@ -76,14 +76,16 @@ Route::middleware('NeedInstall')->group(function () {
             });
 
             Route::prefix('/config')->group(function () {
-                Route::get('/', [ConfigController::class, 'getConfig']);
-                Route::patch('/', [ConfigController::class, 'updateConfig']);
-            });
+                Route::prefix('/main')->group(function () {
+                    Route::get('/', [ConfigController::class, 'getConfig']);
+                    Route::patch('/', [ConfigController::class, 'updateConfig']);
+                });
 
-            Route::prefix('/mail')->group(function () {
-                Route::get('/', [MailConfigController::class, 'getMailConfig']);
-                Route::post('/', [MailConfigController::class, 'sendTestMail']);
-                Route::patch('/', [MailConfigController::class, 'updateMailConfig']);
+                Route::prefix('/mail')->group(function () {
+                    Route::get('/', [MailConfigController::class, 'getMailConfig']);
+                    Route::post('/', [MailConfigController::class, 'sendTestMail']);
+                    Route::patch('/', [MailConfigController::class, 'updateMailConfig']);
+                });
             });
         });
     });

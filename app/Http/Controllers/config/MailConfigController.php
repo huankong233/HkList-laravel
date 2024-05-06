@@ -33,32 +33,32 @@ class MailConfigController extends Controller
     public function updateMailConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'switch'       => 'bool',
-            'host'         => 'string',
-            'port'         => 'numeric',
-            'username'     => 'string',
-            'password'     => 'string',
-            'encryption'   => Rule::in(['tls', 'ssl']),
-            'from_address' => 'string',
-            'from_name'    => 'string',
-            'to_address'   => 'string',
-            'to_name'      => 'string'
+            'switch'       => 'nullable|bool',
+            'host'         => 'nullable|string',
+            'port'         => 'nullable|numeric',
+            'username'     => 'nullable|string',
+            'password'     => 'nullable|string',
+            'encryption'   => ['nullable', Rule::in(['tls', 'ssl'])],
+            'from_address' => 'nullable|string',
+            'from_name'    => 'nullable|string',
+            'to_address'   => 'nullable|string',
+            'to_name'      => 'nullable|string'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
         $update = [];
 
-        if ($request['switch']) $update['MAIL_SWITCH'] = $request['switch'];
-        if ($request['host']) $update['MAIL_HOST'] = $request['host'];
-        if ($request['port']) $update['MAIL_PORT'] = $request['port'];
-        if ($request['username']) $update['MAIL_USERNAME'] = $request['username'];
-        if ($request['password']) $update['MAIL_PASSWORD'] = $request['password'];
-        if ($request['encryption']) $update['MAIL_ENCRYPTION'] = $request['encryption'];
-        if ($request['from_address']) $update['MAIL_FROM_ADDRESS'] = $request['from_address'];
-        if ($request['from_name']) $update['MAIL_FROM_NAME'] = $request['from_name'];
-        if ($request['to_address']) $update['MAIL_TO_ADDRESS'] = $request['to_address'];
-        if ($request['to_name']) $update['MAIL_TO_NAME'] = $request['to_name'];
+        if ($request['switch'] !== null) $update['MAIL_SWITCH'] = $request['switch'];
+        if ($request['host'] !== null) $update['MAIL_HOST'] = $request['host'];
+        if ($request['port'] !== null) $update['MAIL_PORT'] = $request['port'];
+        if ($request['username'] !== null) $update['MAIL_USERNAME'] = $request['username'];
+        if ($request['password'] !== null) $update['MAIL_PASSWORD'] = $request['password'];
+        if ($request['encryption'] !== null) $update['MAIL_ENCRYPTION'] = $request['encryption'];
+        if ($request['from_address'] !== null) $update['MAIL_FROM_ADDRESS'] = $request['from_address'];
+        if ($request['from_name'] !== null) $update['MAIL_FROM_NAME'] = $request['from_name'];
+        if ($request['to_address'] !== null) $update['MAIL_TO_ADDRESS'] = $request['to_address'];
+        if ($request['to_name'] !== null) $update['MAIL_TO_NAME'] = $request['to_name'];
 
         if (count($update) === 0) ResponseController::paramsError();
 

@@ -11,11 +11,15 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
+/**
+ * inv_code:
+ * -1 表示后端直接创建
+ * 0 表示创建时不需要使用邀请码
+ */
 class UserController extends Controller
 {
     public function login(Request $request)
     {
-        sleep(3);
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string'
@@ -41,12 +45,12 @@ class UserController extends Controller
 
         if (config("94list.need_inv_code")) {
             $validator = Validator::make($request->all(), [
-                'invCode' => 'required|string'
+                'inv_code' => 'required|string'
             ]);
 
             if ($validator->fails()) return ResponseController::paramsError();
 
-            $invCode = InvCode::query()->firstWhere('name', $request['invCode']);
+            $invCode = InvCode::query()->firstWhere('name', $request['inv_code']);
             if (!$invCode) return ResponseController::InvCodeNotExists();
 
             if ($invCode['use_count'] === $invCode['can_count']) return ResponseController::InvCodeNotExists();
@@ -120,10 +124,10 @@ class UserController extends Controller
     public function updateUser(Request $request, $user_id)
     {
         $validator = Validator::make($request->all(), [
-            'group_id' => 'numeric',
-            'username' => 'string',
-            'password' => 'string',
-            'role'     => Rule::in(['admin', 'user'])
+            'username' => 'nullable|string',
+            'password' => 'nullable|string',
+            'group_id' => 'nullable|numeric',
+            'role'     => ['nullable', Rule::in(['admin', 'user'])]
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -133,18 +137,18 @@ class UserController extends Controller
 
         $update = [];
 
-        if ($request['group_id']) {
+        if ($request['group_id'] !== null) {
             if (!Group::query()->find($request['group_id'])) return ResponseController::groupNotExists();
             $update['group_id'] = $request['group_id'];
         }
 
-        if ($request['username']) {
+        if ($request['username'] !== null) {
             if (User::query()->firstWhere('username', $request['username'])) return ResponseController::userExists();
             $update['username'] = $request['username'];
         }
 
-        if ($request['password']) $update['password'] = Hash::make($request['password']);
-        if ($request['role']) $update['role'] = $request['role'];
+        if ($request['password'] !== null) $update['password'] = Hash::make($request['password']);
+        if ($request['role'] !== null) $update['role'] = $request['role'];
 
         if (count($update) === 0) return ResponseController::paramsError();
 

@@ -18,7 +18,7 @@ class ParseController extends Controller
 {
     public function getConfig(Request $request)
     {
-        $config  = config('94list');
+        $config = config('94list');
 
         return ResponseController::success([
             'announce'      => $config['announce'],
@@ -86,10 +86,10 @@ class ParseController extends Controller
         $validator = Validator::make($request->all(), [
             'shorturl' => 'required|string',
             'dir'      => 'required|string',
-            'pwd'      => 'string',
-            'page'     => 'numeric',
-            'num'      => 'numeric',
-            'order'    => 'string'
+            'pwd'      => 'nullable|string',
+            'page'     => 'nullable|numeric',
+            'num'      => 'nullable|numeric',
+            'order'    => 'nullable|string'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -228,13 +228,19 @@ class ParseController extends Controller
         // 获取今日解析数量
         $group   = Group::query()->find(Auth::check() ? Auth::user()['group_id'] : -1);
         $records = Record::query()
-                         ->where('ip', $request['ip'])
+                         ->where('ip', $request->ip())
                          ->whereDate('created_at', now())
                          ->whereTime('created_at', now())
                          ->get();
+
         if ($records->count() >= $group['count'] || $records->sum('size') >= $group['size']) return ResponseController::groupQuotaHasBeenUsedUp();
 
         $responseData = [];
+
+        /**
+         * account_id -1表示读取缓存的记录
+         * user_id -1表示游客
+         */
 
         // 读取缓存
         foreach ($request['fs_ids'] as $index => $fs_id) {

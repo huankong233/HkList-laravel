@@ -45,9 +45,9 @@ class GroupController extends Controller
     public function updateGroup(Request $request, $group_id)
     {
         $validator = Validator::make($request->all(), [
-            'name'  => 'string',
-            'count' => 'numeric',
-            'size'  => 'numeric'
+            'name'  => 'nullable|string',
+            'count' => 'nullable|numeric',
+            'size'  => 'nullable|numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -57,13 +57,13 @@ class GroupController extends Controller
 
         $update = [];
 
-        if ($request['name']) {
+        if ($request['name'] !== null) {
             if (Group::query()->firstWhere('name', $request['name'])) return ResponseController::groupExists();
             $update['name'] = $request['name'];
         }
 
-        if ($request['count']) $update['count'] = $request['count'];
-        if ($request['size']) $update['count'] = $request['size'];
+        if ($request['count'] !== null) $update['count'] = $request['count'];
+        if ($request['size'] !== null) $update['count'] = $request['size'];
 
         if (count($update) === 0) return ResponseController::paramsError();
 

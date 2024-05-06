@@ -75,9 +75,9 @@ class InvCodeController extends Controller
     public function updateInvCode(Request $request, $inv_code_id)
     {
         $validator = Validator::make($request->all(), [
-            'name'      => 'string',
-            'use_count' => 'numeric',
-            'can_count' => 'numeric'
+            'name'      => 'nullable|string',
+            'use_count' => 'nullable|numeric',
+            'can_count' => 'nullable|numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -87,13 +87,13 @@ class InvCodeController extends Controller
 
         $update = [];
 
-        if ($request['name']) {
+        if ($request['name'] !== null) {
             if (InvCode::query()->firstWhere('name', $request['name'])) return ResponseController::invCodeExists();
             $update['name'] = $request['name'];
         }
 
-        if ($request['use_count']) $update['use_count'] = $request['use_count'];
-        if ($request['can_count']) $update['can_count'] = $request['can_count'];
+        if ($request['use_count'] !== null) $update['use_count'] = $request['use_count'];
+        if ($request['can_count'] !== null) $update['can_count'] = $request['can_count'];
 
         if (count($update) === 0) return ResponseController::paramsError();
 
