@@ -16,7 +16,7 @@ class RecordController extends Controller
             return ResponseController::success($record);
         }
 
-        $records = Record::query()->get();
+        $records = Record::query()->paginate($request['size']);
         return ResponseController::success($records);
     }
 

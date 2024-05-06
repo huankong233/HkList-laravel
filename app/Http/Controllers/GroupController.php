@@ -16,7 +16,7 @@ class GroupController extends Controller
             return ResponseController::success($group);
         }
 
-        $groups = Group::query()->get();
+        $groups = Group::query()->paginate($request['size']);
         return ResponseController::success($groups);
     }
 
@@ -58,7 +58,8 @@ class GroupController extends Controller
         $update = [];
 
         if ($request['name'] !== null) {
-            if (Group::query()->firstWhere('name', $request['name'])) return ResponseController::groupExists();
+            $Group = Group::query()->firstWhere('name', $request['name']);
+            if ($group['id'] !== $Group['id']) return ResponseController::groupExists();
             $update['name'] = $request['name'];
         }
 

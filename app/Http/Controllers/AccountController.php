@@ -19,7 +19,7 @@ class AccountController extends Controller
             return ResponseController::success($account);
         }
 
-        $accounts = Account::query()->get();
+        $accounts = Account::query()->paginate($request['size']);
         return ResponseController::success($accounts);
     }
 

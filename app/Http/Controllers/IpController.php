@@ -12,13 +12,13 @@ class IpController extends Controller
     public function getIp(Request $request, $ip_id = null)
     {
         if ($ip_id !== null) {
-            $Ip = Ip::query()->find($ip_id);
-            if (!$Ip) return ResponseController::IpNotExists();
-            return ResponseController::success($Ip);
+            $ip = Ip::query()->find($ip_id);
+            if (!$ip) return ResponseController::IpNotExists();
+            return ResponseController::success($ip);
         }
 
-        $Ips = Ip::query()->get();
-        return ResponseController::success($Ips);
+        $ips = Ip::query()->paginate($request['size']);
+        return ResponseController::success($ips);
     }
 
     public function addIp(Request $request)
@@ -50,13 +50,14 @@ class IpController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $Ip = Ip::query()->find($ip_id);
-        if (!$Ip) return ResponseController::IpNotExists();
+        $ip = Ip::query()->find($ip_id);
+        if (!$ip) return ResponseController::IpNotExists();
 
         $update = [];
 
         if ($request['ip'] !== null) {
-            if (Ip::query()->firstWhere('ip', $request['ip'])) return ResponseController::IpExists();
+            $Ip = Ip::query()->firstWhere('ip', $request['ip']);
+            if ($ip['id'] !== $Ip['id']) return ResponseController::IpExists();
             $update['ip'] = $request['ip'];
         }
 
@@ -64,17 +65,17 @@ class IpController extends Controller
 
         if (count($update) === 0) return ResponseController::paramsError();
 
-        $Ip->update($update);
+        $ip->update($update);
 
         return ResponseController::success();
     }
 
     public function removeIp(Request $request, $ip_id)
     {
-        $Ip = Ip::query()->find($ip_id);
-        if (!$Ip) return ResponseController::IpNotExists();
+        $ip = Ip::query()->find($ip_id);
+        if (!$ip) return ResponseController::IpNotExists();
 
-        $Ip->delete();
+        $ip->delete();
 
         return ResponseController::success();
     }

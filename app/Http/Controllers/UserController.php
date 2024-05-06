@@ -89,7 +89,7 @@ class UserController extends Controller
             return ResponseController::success($user);
         }
 
-        $users = User::query()->get();
+        $users = User::query()->paginate($request['size']);
         return ResponseController::success($users);
     }
 
@@ -143,7 +143,8 @@ class UserController extends Controller
         }
 
         if ($request['username'] !== null) {
-            if (User::query()->firstWhere('username', $request['username'])) return ResponseController::userExists();
+            $User = User::query()->firstWhere('username', $request['username']);
+            if ($user['id'] !== $User['id']) return ResponseController::userExists();
             $update['username'] = $request['username'];
         }
 

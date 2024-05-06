@@ -17,7 +17,7 @@ class InvCodeController extends Controller
             return ResponseController::success($invCode);
         }
 
-        $InvCodes = InvCode::query()->get();
+        $InvCodes = InvCode::query()->paginate($request['size']);
         return ResponseController::success($InvCodes);
     }
 
@@ -88,7 +88,8 @@ class InvCodeController extends Controller
         $update = [];
 
         if ($request['name'] !== null) {
-            if (InvCode::query()->firstWhere('name', $request['name'])) return ResponseController::invCodeExists();
+            $InvCode = InvCode::query()->firstWhere('name', $request['name']);
+            if ($invCode['id'] !== $InvCode['id']) return ResponseController::invCodeExists();
             $update['name'] = $request['name'];
         }
 
