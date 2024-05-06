@@ -10,7 +10,7 @@
  Target Server Version : 3035005 (3.35.5)
  File Encoding         : 65001
 
- Date: 04/05/2024 12:03:22
+ Date: 07/05/2024 00:05:37
 */
 
 PRAGMA foreign_keys = false;
@@ -118,27 +118,5 @@ CREATE TABLE "users" (
   "deleted_at" text
 );
 
--- ----------------------------
--- Auto increment value for accounts
--- ----------------------------
-UPDATE "sqlite_sequence" SET seq = 4 WHERE name = 'accounts';
-
--- ----------------------------
--- Auto increment value for groups
--- ----------------------------
-
--- ----------------------------
--- Auto increment value for ips
--- ----------------------------
-
--- ----------------------------
--- Auto increment value for records
--- ----------------------------
-UPDATE "sqlite_sequence" SET seq = 2 WHERE name = 'records';
-
--- ----------------------------
--- Auto increment value for users
--- ----------------------------
-UPDATE "sqlite_sequence" SET seq = 1 WHERE name = 'users';
 
 PRAGMA foreign_keys = true;

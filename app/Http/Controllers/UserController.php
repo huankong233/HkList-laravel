@@ -98,7 +98,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
-            'group_id' => 'required|numeric',
+            'group_id' => 'nullable|numeric',
             'role'     => ['required', Rule::in(['admin', 'user'])]
         ]);
 
@@ -107,14 +107,16 @@ class UserController extends Controller
         $user = User::query()->firstWhere('username', $request['username']);
         if ($user) return ResponseController::userExists();
 
-        $group = Group::query()->find($request['group_id']);
-        if (!$group) return ResponseController::groupNotExists();
+        if ($request['group_id'] !== null) {
+            $group = Group::query()->find($request['group_id']);
+            if (!$group) return ResponseController::groupNotExists();
+        }
 
         User::query()->create([
             'username'    => $request['username'],
             'password'    => Hash::make($request['password']),
             'role'        => $request['role'],
-            'group_id'    => $request['group_id'],
+            'group_id'    => $request['group_id'] ?? 0,
             'inv_code_id' => -1
         ]);
 
