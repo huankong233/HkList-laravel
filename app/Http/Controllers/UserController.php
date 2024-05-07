@@ -150,7 +150,7 @@ class UserController extends Controller
             $update['username'] = $request['username'];
         }
 
-        if ($request['password'] !== null) $update['password'] = Hash::make($request['password']);
+        if ($request['password'] !== null && !Hash::isHashed($request['password'])) $update['password'] = Hash::make($request['password']);
         if ($request['role'] !== null) $update['role'] = $request['role'];
 
         if (count($update) === 0) return ResponseController::paramsError();
