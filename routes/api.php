@@ -21,9 +21,9 @@ Route::middleware('NeedInstall')->group(function () {
 
         Route::prefix('/parse')->middleware(['NeedPassword', 'IpFilter'])->group(function () {
             Route::get('/config', [ParseController::class, 'getConfig']);
-            Route::post('/fileList', [ParseController::class, 'getFileList']);
+            Route::post('/file_list', [ParseController::class, 'getFileList']);
             Route::post('/sign', [ParseController::class, 'getSign']);
-            Route::post('/downloadFiles', [ParseController::class, 'downloadFiles']);
+            Route::post('/download_files', [ParseController::class, 'downloadFiles']);
         });
 
         Route::prefix('/admin')->middleware('RoleFilter:admin')->group(function () {
@@ -59,7 +59,7 @@ Route::middleware('NeedInstall')->group(function () {
             });
 
             Route::pattern('inv_code_id', '[0-9]+');
-            Route::prefix('/invCode')->group(function () {
+            Route::prefix('/inv_code')->group(function () {
                 Route::get('/{inv_code_id?}', [InvCodeController::class, 'getInvCode']);
                 Route::post('/', [InvCodeController::class, 'addInvCode']);
                 Route::post('/generate', [InvCodeController::class, 'generateInvCode']);

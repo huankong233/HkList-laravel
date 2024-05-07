@@ -51,7 +51,6 @@ class InvCodeController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $names = [];
         for ($i = 0; $i < $request['count']; $i++) {
             $name    = Str::random();
             $invCode = InvCode::query()->firstWhere('name', $name);
@@ -65,11 +64,9 @@ class InvCodeController extends Controller
                 'use_count' => 0,
                 'can_count' => $request['can_count']
             ]);
-
-            $names[] = $name;
         }
 
-        return ResponseController::success($names);
+        return ResponseController::success();
     }
 
     public function updateInvCode(Request $request, $inv_code_id)
