@@ -178,4 +178,21 @@ class AccountController extends Controller
 
         return ResponseController::success();
     }
+
+    public function removeAccounts(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'account_ids.*' => 'numeric'
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        foreach ($request['account_ids'] as $account_id) {
+            $account = Account::query()->find($account_id);
+            if (!$account) return ResponseController::accountNotExists();
+            $account->delete();
+        }
+
+        return ResponseController::success();
+    }
 }

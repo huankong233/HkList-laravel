@@ -60,12 +60,12 @@ class ResponseController extends Controller
 
     public static function groupNotExists()
     {
-        return self::response(10008, 404, '分组不存在');
+        return self::response(10008, 404, '用户组不存在');
     }
 
     public static function groupExists()
     {
-        return self::response(10009, 409, '分组名称已存在');
+        return self::response(10009, 409, '用户组名称已存在');
     }
 
     public static function recordNotExists()
@@ -80,7 +80,7 @@ class ResponseController extends Controller
 
     public static function networkError($query)
     {
-        return self::response(10013, 500, '在进行{$query}时出现网络错误,检查服务器网络状态');
+        return self::response(10013, 500, '在进行' . $query . '时出现网络错误,检查服务器网络状态');
     }
 
     public static function getAccountInfoFailed()
@@ -93,9 +93,9 @@ class ResponseController extends Controller
         return self::response(10015, 404, '获取SVIP到期时间失败');
     }
 
-    public static function sendMailFailed($reason = '')
+    public static function sendMailFailed($reason)
     {
-        return self::response(10016, 500, '发送邮件失败,原因:' . $reason);
+        return self::response(10016, 500, '发送邮件失败' . ($reason ? ',原因:' . $reason : ''));
     }
 
     public static function parsePasswordError()

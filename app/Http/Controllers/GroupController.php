@@ -64,7 +64,7 @@ class GroupController extends Controller
         }
 
         if ($request['count'] !== null) $update['count'] = $request['count'];
-        if ($request['size'] !== null) $update['count'] = $request['size'];
+        if ($request['size'] !== null) $update['size'] = $request['size'];
 
         if (count($update) === 0) return ResponseController::paramsError();
 
@@ -79,6 +79,23 @@ class GroupController extends Controller
         if (!$group) return ResponseController::groupNotExists();
 
         $group->delete();
+
+        return ResponseController::success();
+    }
+
+    public function removeGroups(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'group_ids.*' => 'numeric'
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        foreach ($request['group_ids'] as $group_id) {
+            $group = Group::query()->find($group_id);
+            if (!$group) return ResponseController::groupNotExists();
+            $group->delete();
+        }
 
         return ResponseController::success();
     }

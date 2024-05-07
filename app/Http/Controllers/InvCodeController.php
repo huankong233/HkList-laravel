@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InvCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 
 class InvCodeController extends Controller
@@ -106,6 +107,23 @@ class InvCodeController extends Controller
         if (!$invCode) return ResponseController::invCodeNotExists();
 
         $invCode->delete();
+
+        return ResponseController::success();
+    }
+
+    public function removeInvCodes(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'inv_code_ids.*' => 'numeric'
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        foreach ($request['inv_code_ids'] as $inv_code_id) {
+            $invCode = InvCode::query()->find($inv_code_id);
+            if (!$invCode) return ResponseController::invCodeNotExists();
+            $invCode->delete();
+        }
 
         return ResponseController::success();
     }

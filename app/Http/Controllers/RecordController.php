@@ -47,4 +47,21 @@ class RecordController extends Controller
         $record->delete();
         return ResponseController::success();
     }
+
+    public function removeRecords(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'record_ids.*' => 'numeric'
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        foreach ($request['record_ids'] as $record_id) {
+            $record = Record::query()->find($record_id);
+            if (!$record) return ResponseController::recordNotExists();
+            $record->delete();
+        }
+
+        return ResponseController::success();
+    }
 }

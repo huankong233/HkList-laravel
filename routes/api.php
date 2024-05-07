@@ -33,6 +33,7 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::post('/', [UserController::class, 'addUser']);
                 Route::patch('/{user_id}', [UserController::class, 'updateUser']);
                 Route::delete('/{user_id}', [UserController::class, 'removeUser']);
+                Route::delete('/', [UserController::class, 'removeUsers']);
             });
 
             Route::pattern('group_id', '[0-9]+');
@@ -41,12 +42,14 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::post('/', [GroupController::class, 'addGroup']);
                 Route::patch('/{group_id}', [GroupController::class, 'updateGroup']);
                 Route::delete('/{group_id}', [GroupController::class, 'removeGroup']);
+                Route::delete('/', [GroupController::class, 'removeGroups']);
             });
 
             Route::pattern('record_id', '[0-9]+');
             Route::prefix('/record')->group(function () {
                 Route::get('/{record_id?}', [RecordController::class, 'getRecord']);
                 Route::delete('/{record_id}', [RecordController::class, 'removeRecord']);
+                Route::delete('/', [RecordController::class, 'removeRecords']);
             });
 
             Route::pattern('account_id', '[0-9]+');
@@ -56,6 +59,7 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::post('/', [AccountController::class, 'addAccount']);
                 Route::patch('/{account_id}', [AccountController::class, 'updateAccount']);
                 Route::delete('/{account_id}', [AccountController::class, 'removeAccount']);
+                Route::delete('/', [AccountController::class, 'removeAccounts']);
             });
 
             Route::pattern('inv_code_id', '[0-9]+');
@@ -65,6 +69,7 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::post('/generate', [InvCodeController::class, 'generateInvCode']);
                 Route::patch('/{inv_code_id}', [InvCodeController::class, 'updateInvCode']);
                 Route::delete('/{inv_code_id}', [InvCodeController::class, 'removeInvCode']);
+                Route::delete('/', [InvCodeController::class, 'removeInvCodes']);
             });
 
             Route::pattern('ip_id', '[0-9]+');
@@ -73,6 +78,7 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::post('/', [IpController::class, 'addIp']);
                 Route::patch('/{ip_id}', [IpController::class, 'updateIp']);
                 Route::delete('/{ip_id}', [IpController::class, 'removeIp']);
+                Route::delete('/', [IpController::class, 'removeIps']);
             });
 
             Route::prefix('/config')->group(function () {
