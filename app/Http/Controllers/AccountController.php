@@ -140,16 +140,21 @@ class AccountController extends Controller
     public function addAccount(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'cookie' => 'required|string'
+            'cookie' => 'required'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $accountItemsRes  = self::_getAccountItems($request['cookie']);
-        $accountItemsData = $accountItemsRes->getData(true);
-        if ($accountItemsData['code'] !== 200) return $accountItemsRes;
+        $request['cookie'] = is_array($request['cookie']) ? $request['cookie'] : [$request['cookie']];
 
-        Account::query()->create($accountItemsData['data']);
+        foreach ($request['cookie'] as $cookie) {
+            if (!$cookie) continue;
+            $accountItemsRes  = self::_getAccountItems($cookie);
+            $accountItemsData = $accountItemsRes->getData(true);
+            if ($accountItemsData['code'] !== 200) return $accountItemsRes;
+            Account::query()->create($accountItemsData['data']);
+            sleep(1);
+        }
 
         return ResponseController::success();
     }
@@ -165,6 +170,31 @@ class AccountController extends Controller
         if ($accountItemsData['code'] !== 200) return $accountItemsRes;
 
         $account->update($accountItemsData['data']);
+
+        return ResponseController::success();
+    }
+
+    public static function updateAccounts(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'account_ids.*' => 'numeric'
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        foreach ($request['account_ids'] as $account_id) {
+            $account = Account::query()->find($account_id);
+            if (!$account) return ResponseController::accountNotExists();
+            $cookie = $account['cookie'];
+
+            $accountItemsRes  = self::_getAccountItems($cookie);
+            $accountItemsData = $accountItemsRes->getData(true);
+            if ($accountItemsData['code'] !== 200) return $accountItemsRes;
+
+            $account->update($accountItemsData['data']);
+
+            sleep(1);
+        }
 
         return ResponseController::success();
     }
