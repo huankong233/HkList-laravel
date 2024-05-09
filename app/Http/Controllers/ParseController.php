@@ -20,12 +20,20 @@ class ParseController extends Controller
     {
         $config = config('94list');
 
+        $have_account = true;
+
+        if (
+            self::getRandomCookie($request)->getData(true)['data'] === null ||
+            self::getRandomCookie($request, ['普通用户', '普通会员'])->getData(true)['data'] === null
+        )
+            $have_account = false;
+
         return ResponseController::success([
             'announce'      => $config['announce'],
             'user_agent'    => $config['user_agent'],
             'debug'         => config('app.debug'),
             'max_once'      => $config['max_once'],
-            'have_account'  => self::getRandomCookie($request)->getData(true)['data'] !== null,
+            'have_account'  => $have_account,
             'have_login'    => Auth::check(),
             'need_inv_code' => $config['need_inv_code'],
             'need_password' => $config['password'] !== ''
@@ -264,6 +272,7 @@ class ParseController extends Controller
             RecordController::addRecord([
                 'ip'         => $request->ip(),
                 'fs_id'      => $fs_id,
+                'filename'   => $record['filename'],
                 'user_id'    => Auth::check() ? Auth::user()['id'] : -1,
                 'account_id' => -1,
                 'size'       => $record['size'],
@@ -273,6 +282,24 @@ class ParseController extends Controller
         }
 
         $userAgent = config('94list.user_agent');
+
+        $bodyArr = [
+            'encrypt=0',
+            'extra=' . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
+            'fid_list=[' . join(',', $request['fs_ids']) . ']',
+            'primaryid=' . $request['shareid'],
+            'uk=' . $request['uk'],
+            'product=share',
+            'type=nolimit'
+        ];
+
+        // 验证码处理
+        if (isset($request['vcode_str'])) {
+            if (!isset($request['vcode_input'])) return ResponseController::paramsError();
+            $bodyArr['vcode_str']   = $request['vcode_str'];
+            $bodyArr['vcode_input'] = $request['vcode_input'];
+        }
+        $body = join('&', $bodyArr);
 
         try {
             $http     = new Client([
@@ -291,15 +318,7 @@ class ParseController extends Controller
                     'timestamp'  => $request['timestamp'],
                     'web'        => 1
                 ],
-                'body'  => join('&', [
-                    'encrypt=0',
-                    'extra=' . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
-                    'fid_list=[' . join(',', $request['fs_ids']) . ']',
-                    'primaryid=' . $request['shareid'],
-                    'uk=' . $request['uk'],
-                    'product=share',
-                    'type=nolimit'
-                ])
+                'body'  => $body
             ]);
             $response = json_decode($res->getBody()->getContents(), true);
         } catch (RequestException $e) {
@@ -377,10 +396,11 @@ class ParseController extends Controller
                         RecordController::addRecord([
                             'ip'         => $request->ip(),
                             'fs_id'      => $list['fs_id'],
+                            'filename'   => $list['server_filename'],
                             'user_id'    => Auth::user()['id'] ?? -1,
                             'account_id' => $svipCookieData['data']['id'],
                             'size'       => $list['size'],
-                            'ua'         => config('94list.user_agent'),
+                            'ua'         => $userAgent,
                             'url'        => $effective_url
                         ]);
                     } catch (GuzzleException $e) {
@@ -393,8 +413,6 @@ class ParseController extends Controller
                 return ResponseController::linkNotValid();
             case -9:
                 return ResponseController::fileNotExists();
-            case -20:
-                return ResponseController::hitCaptcha();
             case 2:
                 return ResponseController::downloadError();
             case 110:
@@ -416,13 +434,14 @@ class ParseController extends Controller
                            'reason' => 'cookie已失效'
                        ]);
                 return ResponseController::accountExpired();
+            case -20:
             case 9019:
-                Account::query()
-                       ->find($normalCookieData['data']['id'])
-                       ->update([
-                           'switch' => 0,
-                           'reason' => '触发验证码'
-                       ]);
+//                Account::query()
+//                       ->find($normalCookieData['data']['id'])
+//                       ->update([
+//                           'switch' => 0,
+//                           'reason' => '触发验证码'
+//                       ]);
                 return ResponseController::hitCaptcha();
             case 8001:
             case 9013:
@@ -436,5 +455,40 @@ class ParseController extends Controller
             default:
                 return ResponseController::getDlinkError($response['errno']);
         }
+    }
+
+    public function generateVcode(Request $request)
+    {
+        try {
+            $http     = new Client([
+                'headers' => [
+                    'User-Agent' => config('94list.fake_user_agent'),
+                    'Cookie'     => config('94list.fake_cookie'),
+                    'Referer'    => 'https://pan.baidu.com/disk/home'
+                ]
+            ]);
+            $res      = $http->get('https://pan.baidu.com/api/getvcode', [
+                'query' => [
+                    'prod'       => 'pan',
+                    'channel'    => 'chunlei',
+                    'web'        => 1,
+                    'app_id'     => 250528,
+                    'clienttype' => 12
+                ]
+            ]);
+            $response = json_decode($res->getBody()->getContents(), true);
+        } catch (RequestException $e) {
+            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+        } catch (GuzzleException $e) {
+            return ResponseController::networkError('获取vcode');
+        }
+
+        return match ($response['errno']) {
+            0       => ResponseController::success([
+                'img'   => $response['img'],
+                'vcode' => $response['vcode'],
+            ]),
+            default => ResponseController::getVCodeError($response['errno']),
+        };
     }
 }

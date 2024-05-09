@@ -247,4 +247,9 @@ class ResponseController extends Controller
     {
         return self::response(10046, 403, '用户组不能被删除,原因:' . $reason);
     }
+
+    public static function getVCodeError($code)
+    {
+        return self::response(10047, 500, '在获取vcode时请求失败,code:' . $code);
+    }
 }
