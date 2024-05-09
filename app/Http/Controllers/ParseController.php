@@ -221,26 +221,14 @@ class ParseController extends Controller
 
         if (count($request['fs_ids']) > config('94list.max_once')) return ResponseController::linksOverloaded();
 
-        $normalCookieRes  = self::getRandomCookie($request, ['普通用户', '普通会员']);
-        $normalCookieData = $normalCookieRes->getData(true);
-        if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
-
-        // 获取签名信息
-        $signRes  = self::getSign($request);
-        $signData = $signRes->getData(true);
-        if ($signData['code'] !== 200) return $signRes;
-        $request['sign']      = $signData['data']['sign'];
-        $request['timestamp'] = $signData['data']['timestamp'];
-
         // 获取今日解析数量
         $group   = Group::query()->find(Auth::check() ? Auth::user()['group_id'] : -1);
         $records = Record::query()
                          ->where('ip', $request->ip())
                          ->whereDate('created_at', now())
-                         ->whereTime('created_at', now())
                          ->get();
 
-        if ($records->count() >= $group['count'] || $records->sum('size') >= $group['size']) return ResponseController::groupQuotaHasBeenUsedUp();
+        if ($records->count() >= $group['count'] || $records->sum('size') >= $group['size'] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
 
         $responseData = [];
 
@@ -257,9 +245,9 @@ class ParseController extends Controller
                                 ['account_id', '!=', -1]
                             ])
                             ->whereDate('created_at', now())
-                            ->whereTime('created_at', now()->addHours(8))
-                            ->get()
-                            ->last();
+                            ->whereTime('created_at', '<=', now()->addHours(8))
+                            ->latest()
+                            ->first();
 
             if (!$record) continue;
 
@@ -280,6 +268,19 @@ class ParseController extends Controller
                 'url'        => $record['url']
             ]);
         }
+
+        if (count($request['fs_ids']) === 0) return ResponseController::success($responseData);
+
+        $normalCookieRes  = self::getRandomCookie($request, ['普通用户', '普通会员']);
+        $normalCookieData = $normalCookieRes->getData(true);
+        if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
+
+        // 获取签名信息
+        $signRes  = self::getSign($request);
+        $signData = $signRes->getData(true);
+        if ($signData['code'] !== 200) return $signRes;
+        $request['sign']      = $signData['data']['sign'];
+        $request['timestamp'] = $signData['data']['timestamp'];
 
         $userAgent = config('94list.user_agent');
 
@@ -436,12 +437,6 @@ class ParseController extends Controller
                 return ResponseController::accountExpired();
             case -20:
             case 9019:
-//                Account::query()
-//                       ->find($normalCookieData['data']['id'])
-//                       ->update([
-//                           'switch' => 0,
-//                           'reason' => '触发验证码'
-//                       ]);
                 return ResponseController::hitCaptcha();
             case 8001:
             case 9013:
