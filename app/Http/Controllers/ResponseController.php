@@ -242,4 +242,9 @@ class ResponseController extends Controller
     {
         return self::response(10045, 403, '账户cookie已失效');
     }
+
+    public static function groupCanNotBeRemoved($reason)
+    {
+        return self::response(10046, 403, '用户组不能被删除,原因:' . $reason);
+    }
 }

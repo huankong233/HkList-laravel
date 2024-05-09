@@ -36,7 +36,7 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::delete('/', [UserController::class, 'removeUsers']);
             });
 
-            Route::pattern('group_id', '[0-9]+');
+            Route::pattern('group_id', '[-+]?[0-9]+');
             Route::prefix('/group')->group(function () {
                 Route::get('/{group_id?}', [GroupController::class, 'getGroup']);
                 Route::post('/', [GroupController::class, 'addGroup']);

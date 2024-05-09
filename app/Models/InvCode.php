@@ -14,6 +14,7 @@ class InvCode extends Model
     protected $fillable = [
         'name',
         'can_count',
-        'use_count'
+        'use_count',
+        'group_id'
     ];
 }

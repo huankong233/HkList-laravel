@@ -65,7 +65,7 @@ class UserController extends Controller
             'username'    => $request['username'],
             'password'    => Hash::make($request['password']),
             'role'        => 'user',
-            'group_id'    => 0,
+            'group_id'    => isset($invCode) ? $invCode['group_id'] : 0,
             'inv_code_id' => isset($invCode) ? $invCode['id'] : 0
         ]);
 

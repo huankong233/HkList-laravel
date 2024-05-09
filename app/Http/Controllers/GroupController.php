@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -75,6 +76,11 @@ class GroupController extends Controller
 
     public function removeGroup(Request $request, $group_id)
     {
+        if (in_array($group_id, ['-1', '0'])) return ResponseController::groupCanNotBeRemoved('自带分组禁止删除');
+
+        $users = User::query()->where('group_id', $group_id)->get();
+        if ($users->count() > 0) return ResponseController::groupCanNotBeRemoved('用户组还存在用户');
+
         $group = Group::query()->find($group_id);
         if (!$group) return ResponseController::groupNotExists();
 
