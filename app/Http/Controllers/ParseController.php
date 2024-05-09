@@ -34,7 +34,9 @@ class ParseController extends Controller
 
     public static function getRandomCookie(Request $request, $vipType = '超级会员')
     {
-        if ($vipType === '超级会员') {
+        $vipType = is_array($vipType) ? $vipType : [$vipType];
+
+        if (in_array('超级会员', $vipType)) {
             // 禁用不可用的账户
             $banAccounts = Account::query()
                                   ->where([
@@ -70,11 +72,13 @@ class ParseController extends Controller
             }
         }
 
-        $vipType = is_array($vipType) ? $vipType : [$vipType];
-
         $account = Account::query()
                           ->where('switch', 1)
-                          ->orWhere($vipType)
+                          ->where(function (Builder $query) use ($vipType) {
+                              foreach ($vipType as $type) {
+                                  $query->orWhere('vip_type', $type);
+                              }
+                          })
                           ->inRandomOrder()
                           ->first();
 
