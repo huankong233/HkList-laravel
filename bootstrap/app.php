@@ -24,9 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
                           'NeedInstall'  => NeedInstall::class,
                           'NeedPassword' => NeedPassword::class,
                       ]);
-                      $middleware->api(prepend: [
+
+
+                      $middleware->web(remove: [
                           StartSession::class,
                       ]);
+
+                      $middleware->use([
+                          StartSession::class
+                      ]);
+
                       $middleware->group('ThrottleRequest', [
                           // 限制1分钟内请求不超过50次 超过就停用5分钟
                           ThrottleRequests::class . ':30,5'
