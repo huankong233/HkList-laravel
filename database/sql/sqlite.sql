@@ -10,7 +10,7 @@
  Target Server Version : 3035005 (3.35.5)
  File Encoding         : 65001
 
- Date: 07/05/2024 00:05:37
+ Date: 09/05/2024 12:27:00
 */
 
 PRAGMA foreign_keys = false;
@@ -54,6 +54,7 @@ CREATE TABLE "groups" (
 DROP TABLE IF EXISTS "inv_codes";
 CREATE TABLE "inv_codes" (
   "id" integer NOT NULL,
+  "group_id" integer NOT NULL DEFAULT 0,
   "name" text NOT NULL,
   "use_count" integer NOT NULL,
   "can_count" integer NOT NULL,
@@ -90,7 +91,8 @@ CREATE TABLE "records" (
   "user_id" integer NOT NULL,
   "account_id" integer NOT NULL,
   "created_at" text NOT NULL,
-  "updated_at" text NOT NULL
+  "updated_at" text NOT NULL,
+  "deleted_at" text
 );
 
 -- ----------------------------
@@ -117,6 +119,5 @@ CREATE TABLE "users" (
   "updated_at" text NOT NULL,
   "deleted_at" text
 );
-
 
 PRAGMA foreign_keys = true;
