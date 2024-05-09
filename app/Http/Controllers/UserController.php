@@ -98,7 +98,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
-            'group_id' => 'nullable|numeric',
+            'group_id' => 'numeric',
             'role'     => ['required', Rule::in(['admin', 'user'])]
         ]);
 
@@ -107,7 +107,7 @@ class UserController extends Controller
         $user = User::query()->firstWhere('username', $request['username']);
         if ($user) return ResponseController::userExists();
 
-        if ($request['group_id'] !== null) {
+        if (isset($request['group_id'])) {
             $group = Group::query()->find($request['group_id']);
             if (!$group) return ResponseController::groupNotExists();
         }
@@ -126,10 +126,10 @@ class UserController extends Controller
     public function updateUser(Request $request, $user_id)
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'nullable|string',
-            'password' => 'nullable|string',
-            'group_id' => 'nullable|numeric',
-            'role'     => ['nullable', Rule::in(['admin', 'user'])]
+            'username' => 'string',
+            'password' => 'string',
+            'group_id' => 'numeric',
+            'role'     => Rule::in(['admin', 'user'])
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -139,19 +139,19 @@ class UserController extends Controller
 
         $update = [];
 
-        if ($request['group_id'] !== null) {
+        if (isset($request['group_id'])) {
             if (!Group::query()->find($request['group_id'])) return ResponseController::groupNotExists();
             $update['group_id'] = $request['group_id'];
         }
 
-        if ($request['username'] !== null) {
+        if (isset($request['username'])) {
             $User = User::query()->firstWhere('username', $request['username']);
             if ($User && $user['id'] !== $User['id']) return ResponseController::userExists();
             $update['username'] = $request['username'];
         }
 
-        if ($request['password'] !== null && !Hash::isHashed($request['password'])) $update['password'] = Hash::make($request['password']);
-        if ($request['role'] !== null) $update['role'] = $request['role'];
+        if (isset($request['password']) && !Hash::isHashed($request['password'])) $update['password'] = Hash::make($request['password']);
+        if (isset($request['role'])) $update['role'] = $request['role'];
 
         if (count($update) === 0) return ResponseController::paramsError();
 

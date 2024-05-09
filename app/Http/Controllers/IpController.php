@@ -44,8 +44,8 @@ class IpController extends Controller
     public function updateIp(Request $request, $ip_id)
     {
         $validator = Validator::make($request->all(), [
-            'ip'   => 'nullable|string|ip',
-            'mode' => ['nullable', Rule::in([0, 1])]
+            'ip'   => 'string|ip',
+            'mode' => Rule::in([0, 1])
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -55,13 +55,13 @@ class IpController extends Controller
 
         $update = [];
 
-        if ($request['ip'] !== null) {
+        if (isset($request['ip'])) {
             $Ip = Ip::query()->firstWhere('ip', $request['ip']);
             if ($Ip && $ip['id'] !== $Ip['id']) return ResponseController::IpExists();
             $update['ip'] = $request['ip'];
         }
 
-        if ($request['mode'] !== null) $update['mode'] = $request['mode'];
+        if (isset($request['mode'])) $update['mode'] = $request['mode'];
 
         if (count($update) === 0) return ResponseController::paramsError();
 

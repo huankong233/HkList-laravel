@@ -17,28 +17,28 @@ class ConfigController extends Controller
     public function updateConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'sleep'          => 'nullable|numeric',
-            'max_once'       => 'nullable|numeric',
+            'sleep'          => 'numeric',
+            'max_once'       => 'numeric',
             'password'       => 'nullable|string',
             'announce'       => 'nullable|string',
-            'user_agent'     => 'nullable|string',
-            'need_inv_code'  => 'nullable|bool',
-            'whitelist_mode' => 'nullable|bool',
-            'debug'          => 'nullable|bool'
+            'user_agent'     => 'string',
+            'need_inv_code'  => 'bool',
+            'whitelist_mode' => 'bool',
+            'debug'          => 'bool'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
         $update = [];
 
-        if ($request['sleep'] !== null) $update['_94LIST_SLEEP'] = $request['sleep'];
-        if ($request['max_once'] !== null) $update['_94LIST_MAX_ONCE'] = $request['max_once'];
-        if ($request['password'] !== null) $update['_94LIST_PASSWORD'] = $request['password'];
-        if ($request['announce'] !== null) $update['_94LIST_ANNOUNCE'] = '"' . $request['announce'] . '"';
-        if ($request['user_agent'] !== null) $update['_94LIST_USER_AGENT'] = $request['user_agent'];
-        if ($request['need_inv_code'] !== null) $update['_94LIST_NEED_INV_CODE'] = $request['need_inv_code'];
-        if ($request['whitelist_mode'] !== null) $update['_94LIST_WHITELIST_MODE'] = $request['whitelist_mode'];
-        if ($request['debug'] !== null) $update['APP_DEBUG'] = $request['debug'];
+        if (isset($request['sleep'])) $update['_94LIST_SLEEP'] = $request['sleep'];
+        if (isset($request['max_once'])) $update['_94LIST_MAX_ONCE'] = $request['max_once'];
+        if (isset($request['password'])) $update['_94LIST_PASSWORD'] = $request['password'] === null ? '' : $request['password'];
+        if (isset($request['announce'])) $update['_94LIST_ANNOUNCE'] = $request['announce'] === null ? '' : '"' . $request['announce'] . '"';
+        if (isset($request['user_agent'])) $update['_94LIST_USER_AGENT'] = $request['user_agent'];
+        if (isset($request['need_inv_code'])) $update['_94LIST_NEED_INV_CODE'] = $request['need_inv_code'];
+        if (isset($request['whitelist_mode'])) $update['_94LIST_WHITELIST_MODE'] = $request['whitelist_mode'];
+        if (isset($request['debug'])) $update['APP_DEBUG'] = $request['debug'];
 
         if (count($update) === 0) ResponseController::paramsError();
 

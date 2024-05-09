@@ -13,16 +13,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('NeedInstall')->group(function () {
     Route::prefix('/v1')->group(function () {
-        Route::prefix('/user')->group(function () {
+        Route::prefix('/user')->middleware(['ThrottleRequest'])->group(function () {
             Route::post('/login', [UserController::class, 'login']);
             Route::post('/register', [UserController::class, 'register']);
             Route::delete('/', [UserController::class, 'logout']);
         });
 
-        Route::prefix('/parse')->middleware(['NeedPassword', 'IpFilter'])->group(function () {
+        Route::prefix('/parse')->middleware(['ThrottleRequest', 'NeedPassword', 'IpFilter'])->group(function () {
             Route::get('/config', [ParseController::class, 'getConfig']);
             Route::post('/file_list', [ParseController::class, 'getFileList']);
-            Route::post('/sign', [ParseController::class, 'getSign']);
+//            Route::post('/sign', [ParseController::class, 'getSign']);
             Route::post('/download_files', [ParseController::class, 'downloadFiles']);
         });
 

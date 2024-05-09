@@ -83,10 +83,10 @@ class InvCodeController extends Controller
     public function updateInvCode(Request $request, $inv_code_id)
     {
         $validator = Validator::make($request->all(), [
-            'name'      => 'nullable|string',
-            'use_count' => 'nullable|numeric',
-            'group_id'  => 'nullable|numeric',
-            'can_count' => 'nullable|numeric'
+            'name'      => 'string',
+            'use_count' => 'numeric',
+            'group_id'  => 'numeric',
+            'can_count' => 'numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -96,20 +96,20 @@ class InvCodeController extends Controller
 
         $update = [];
 
-        if ($request['name'] !== null) {
+        if (isset($request['name'])) {
             $InvCode = InvCode::query()->firstWhere('name', $request['name']);
             if ($InvCode && $invCode['id'] !== $InvCode['id']) return ResponseController::invCodeExists();
             $update['name'] = $request['name'];
         }
 
-        if ($request['group_id'] !== null) {
+        if (isset($request['group_id'])) {
             $group = Group::query()->find($request['group_id']);
             if (!$group) return ResponseController::groupNotExists();
             $update['group_id'] = $request['group_id'];
         }
 
-        if ($request['use_count'] !== null) $update['use_count'] = $request['use_count'];
-        if ($request['can_count'] !== null) $update['can_count'] = $request['can_count'];
+        if (isset($request['use_count'])) $update['use_count'] = $request['use_count'];
+        if (isset($request['can_count'])) $update['can_count'] = $request['can_count'];
 
         if (count($update) === 0) return ResponseController::paramsError();
 

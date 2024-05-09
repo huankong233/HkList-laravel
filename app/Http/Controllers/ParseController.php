@@ -86,10 +86,10 @@ class ParseController extends Controller
         $validator = Validator::make($request->all(), [
             'shorturl' => 'required|string',
             'dir'      => 'required|string',
-            'pwd'      => 'nullable|string',
-            'page'     => 'nullable|numeric',
-            'num'      => 'nullable|numeric',
-            'order'    => 'nullable|string'
+            'pwd'      => 'string',
+            'page'     => 'numeric',
+            'num'      => 'numeric',
+            'order'    => 'string'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -199,12 +199,10 @@ class ParseController extends Controller
     public function downloadFiles(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fs_ids.*'  => 'required|numeric',
-            'randsk'    => 'required|string',
-            'shareid'   => 'required|numeric',
-            'timestamp' => 'required|numeric',
-            'uk'        => 'required|numeric',
-            'sign'      => 'required|string'
+            'fs_ids.*' => 'required|numeric',
+            'randsk'   => 'required|string',
+            'shareid'  => 'required|numeric',
+            'uk'       => 'required|numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -215,15 +213,12 @@ class ParseController extends Controller
         $normalCookieData = $normalCookieRes->getData(true);
         if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
 
-        // 检查 时间戳 是否有效
-        if (time() - $request['timestamp'] > 300) {
-            // 重新获取
-            $signRes  = self::getSign($request);
-            $signData = $signRes->getData(true);
-            if ($signData['code'] !== 200) return $signRes;
-            $request['sign']      = $signData['data']['sign'];
-            $request['timestamp'] = $signData['data']['timestamp'];
-        }
+        // 获取签名信息
+        $signRes  = self::getSign($request);
+        $signData = $signRes->getData(true);
+        if ($signData['code'] !== 200) return $signRes;
+        $request['sign']      = $signData['data']['sign'];
+        $request['timestamp'] = $signData['data']['timestamp'];
 
         // 获取今日解析数量
         $group   = Group::query()->find(Auth::check() ? Auth::user()['group_id'] : -1);
@@ -272,6 +267,8 @@ class ParseController extends Controller
                 'url'        => $record['url']
             ]);
         }
+
+        $userAgent = config('94list.user_agent');
 
         try {
             $http     = new Client([
@@ -369,7 +366,8 @@ class ParseController extends Controller
 
                         $responseData[] = [
                             'url'      => $effective_url,
-                            'filename' => $list['server_filename']
+                            'filename' => $list['server_filename'],
+                            'ua'       => $userAgent
                         ];
 
                         RecordController::addRecord([
