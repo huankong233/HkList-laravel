@@ -98,7 +98,7 @@ class InvCodeController extends Controller
 
         if ($request['name'] !== null) {
             $InvCode = InvCode::query()->firstWhere('name', $request['name']);
-            if ($invCode['id'] !== $InvCode['id']) return ResponseController::invCodeExists();
+            if ($InvCode && $invCode['id'] !== $InvCode['id']) return ResponseController::invCodeExists();
             $update['name'] = $request['name'];
         }
 

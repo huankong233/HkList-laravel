@@ -60,7 +60,7 @@ class GroupController extends Controller
 
         if ($request['name'] !== null) {
             $Group = Group::query()->firstWhere('name', $request['name']);
-            if ($group['id'] !== $Group['id']) return ResponseController::groupExists();
+            if ($Group && $group['id'] !== $Group['id']) return ResponseController::groupExists();
             $update['name'] = $request['name'];
         }
 

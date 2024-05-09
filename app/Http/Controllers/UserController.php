@@ -146,7 +146,7 @@ class UserController extends Controller
 
         if ($request['username'] !== null) {
             $User = User::query()->firstWhere('username', $request['username']);
-            if ($user['id'] !== $User['id']) return ResponseController::userExists();
+            if ($User && $user['id'] !== $User['id']) return ResponseController::userExists();
             $update['username'] = $request['username'];
         }
 
