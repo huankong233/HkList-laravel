@@ -1,1 +1,0 @@
-import{an as r,r as e,ar as o,as as n,E as t}from"./index-niWMSR8p.js";const u=r("aria2Store",()=>{const s=e(!1),i=e(o()),a=e(null);return{aria2ConfigDialogVisible:s,aria2ConfigForm:i,aria2ConfigFormRef:a,saveAria2Config:async()=>{!a.value||!await a.value.validate()||(n(i.value),t.success("保存成功"),s.value=!1)}}});export{u};
