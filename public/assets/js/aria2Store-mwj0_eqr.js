@@ -1,1 +1,0 @@
-import{ao as o,r as e,at as r,au as n,E as t}from"./index-B8pW1vfL.js";const u=o("aria2Store",()=>{const i=e(!1),s=e(r()),a=e(null);return{aria2ConfigDialogVisible:i,aria2ConfigForm:s,aria2ConfigFormRef:a,saveAria2Config:async()=>{!a.value||!await a.value.validate()||(n(s.value),t.success("保存成功"),i.value=!1)}}});export{u};
