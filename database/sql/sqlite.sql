@@ -10,7 +10,7 @@
  Target Server Version : 3035005 (3.35.5)
  File Encoding         : 65001
 
- Date: 10/05/2024 15:58:59
+ Date: 10/05/2024 17:14:53
 */
 
 PRAGMA foreign_keys = false;
@@ -89,6 +89,7 @@ CREATE TABLE "records" (
   "url" text NOT NULL,
   "ua" text NOT NULL,
   "user_id" integer NOT NULL,
+  "normal_account_id" integer NOT NULL,
   "account_id" integer NOT NULL,
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL,
