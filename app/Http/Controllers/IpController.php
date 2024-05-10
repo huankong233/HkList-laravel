@@ -70,16 +70,6 @@ class IpController extends Controller
         return ResponseController::success();
     }
 
-    public function removeIp(Request $request, $ip_id)
-    {
-        $ip = Ip::query()->find($ip_id);
-        if (!$ip) return ResponseController::IpNotExists();
-
-        $ip->delete();
-
-        return ResponseController::success();
-    }
-
     public function removeIps(Request $request)
     {
         $validator = Validator::make($request->all(), [

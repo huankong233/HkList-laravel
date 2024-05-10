@@ -178,9 +178,9 @@ class ResponseController extends Controller
         return self::response(10032, 500, '在获取reallink时请求失败!');
     }
 
-    public static function hitCaptcha($data)
+    public static function hitCaptcha()
     {
-        return self::response(10033, 500, '触发验证码', $data);
+        return self::response(10033, 500, '触发验证码');
     }
 
     public static function downloadError()
@@ -246,15 +246,5 @@ class ResponseController extends Controller
     public static function groupCanNotBeRemoved($reason)
     {
         return self::response(10046, 403, '用户组不能被删除,原因:' . $reason);
-    }
-
-    public static function getVCodeError($code)
-    {
-        return self::response(10047, 500, '在获取vcode时请求失败,code:' . $code);
-    }
-
-    public static function vcodeNotExists()
-    {
-        return self::response(10048, 404, 'vcode不存在');
     }
 }

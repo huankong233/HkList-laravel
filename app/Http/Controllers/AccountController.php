@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class AccountController extends Controller
 {
@@ -76,29 +77,6 @@ class AccountController extends Controller
         }
 
         return $response ? ResponseController::success($response) : ResponseController::getSvipEndTimeFailed();
-    }
-
-    public function getAccountInfo(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'cookie' => 'required|string'
-        ]);
-
-        if ($validator->fails()) return ResponseController::paramsError();
-
-        $response = [];
-
-        $accountInfoRes  = self::_getAccountInfo($request['cookie']);
-        $accountInfoData = $accountInfoRes->getData(true);
-        if ($accountInfoData['code'] !== 200) return $accountInfoRes;
-        $response['uinfo'] = $accountInfoData['data'];
-
-        $svipEndAtRes  = self::_getSvipEndAt($request['cookie']);
-        $svipEndAtData = $svipEndAtRes->getData(true);
-        if ($svipEndAtData['code'] !== 200) return $svipEndAtRes;
-        $response['query'] = $svipEndAtData['data'];
-
-        return ResponseController::success($response);
     }
 
     public static function _getAccountItems($cookie)
@@ -192,19 +170,29 @@ class AccountController extends Controller
             if ($accountItemsData['code'] !== 200) return $accountItemsRes;
 
             $account->update($accountItemsData['data']);
-
             sleep(1);
         }
 
         return ResponseController::success();
     }
 
-    public function removeAccount(Request $request, $account_id)
+    public function switchAccounts(Request $request)
     {
-        $account = Account::query()->find($account_id);
-        if (!$account) return ResponseController::accountNotExists();
+        $validator = Validator::make($request->all(), [
+            'account_ids.*' => 'numeric',
+            'switch'        => ['required', Rule::in([1, 0])]
+        ]);
 
-        $account->delete();
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        foreach ($request['account_ids'] as $account_id) {
+            $account = Account::query()->find($account_id);
+            if (!$account) return ResponseController::accountNotExists();
+
+            $account->update([
+                'switch' => $request['switch']
+            ]);
+        }
 
         return ResponseController::success();
     }

@@ -74,21 +74,6 @@ class GroupController extends Controller
         return ResponseController::success();
     }
 
-    public function removeGroup(Request $request, $group_id)
-    {
-        if (in_array($group_id, ['-1', '0'])) return ResponseController::groupCanNotBeRemoved('自带分组禁止删除');
-
-        $users = User::query()->where('group_id', $group_id)->get();
-        if ($users->count() > 0) return ResponseController::groupCanNotBeRemoved('用户组还存在用户');
-
-        $group = Group::query()->find($group_id);
-        if (!$group) return ResponseController::groupNotExists();
-
-        $group->delete();
-
-        return ResponseController::success();
-    }
-
     public function removeGroups(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -98,8 +83,14 @@ class GroupController extends Controller
         if ($validator->fails()) return ResponseController::paramsError();
 
         foreach ($request['group_ids'] as $group_id) {
+            if (in_array($group_id, ['-1', '0'])) return ResponseController::groupCanNotBeRemoved('自带分组禁止删除');
+
             $group = Group::query()->find($group_id);
             if (!$group) return ResponseController::groupNotExists();
+
+            $users = User::query()->where('group_id', $group_id)->get();
+            if ($users->count() > 0) return ResponseController::groupCanNotBeRemoved('用户组还存在用户');
+
             $group->delete();
         }
 

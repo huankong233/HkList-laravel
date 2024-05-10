@@ -20,5 +20,6 @@ class Record extends Model
         'ua',
         'user_id',
         'account_id',
+        'normal_account_id'
     ];
 }

@@ -23,28 +23,21 @@ class RecordController extends Controller
     public static function addRecord($data)
     {
         $validator = Validator::make($data, [
-            'ip'         => 'required|string',
-            'fs_id'      => 'required|numeric',
-            'filename'   => 'required|string',
-            'size'       => 'required|numeric',
-            'url'        => 'required|string',
-            'ua'         => 'required|string',
-            'user_id'    => 'required|numeric',
-            'account_id' => 'required|numeric',
+            'ip'                => 'required|string',
+            'fs_id'             => 'required|numeric',
+            'filename'          => 'required|string',
+            'size'              => 'required|numeric',
+            'url'               => 'required|string',
+            'ua'                => 'required|string',
+            'user_id'           => 'required|numeric',
+            'normal_account_id' => 'required|numeric',
+            'account_id'        => 'required|numeric',
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
         Record::query()->create($data);
 
-        return ResponseController::success();
-    }
-
-    public function removeRecord(Request $request, $record_id)
-    {
-        $record = Record::query()->find($record_id);
-        if (!$record) return ResponseController::recordNotExists();
-        $record->delete();
         return ResponseController::success();
     }
 

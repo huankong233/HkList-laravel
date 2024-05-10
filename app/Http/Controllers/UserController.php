@@ -160,16 +160,6 @@ class UserController extends Controller
         return ResponseController::success();
     }
 
-    public function removeUser(Request $request, $user_id)
-    {
-        $user = User::query()->find($user_id);
-        if (!$user) return ResponseController::userNotExists();
-
-        $user->delete();
-
-        return ResponseController::success();
-    }
-
     public function removeUsers(Request $request)
     {
         $validator = Validator::make($request->all(), [

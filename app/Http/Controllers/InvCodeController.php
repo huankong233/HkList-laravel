@@ -118,16 +118,6 @@ class InvCodeController extends Controller
         return ResponseController::success();
     }
 
-    public function removeInvCode(Request $request, $inv_code_id)
-    {
-        $invCode = InvCode::query()->find($inv_code_id);
-        if (!$invCode) return ResponseController::invCodeNotExists();
-
-        $invCode->delete();
-
-        return ResponseController::success();
-    }
-
     public function removeInvCodes(Request $request)
     {
         $validator = Validator::make($request->all(), [

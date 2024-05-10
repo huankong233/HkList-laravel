@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Group;
 use App\Models\Record;
-use App\Models\Vcode;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -70,7 +69,7 @@ class ParseController extends Controller
                         ]);
                         $updateFailedAccounts[] = $account->toJson();
                     }
-                    sleep(0.3);
+                    sleep(1);
                 }
 
                 if (config('mail.switch')) {
@@ -215,6 +214,7 @@ class ParseController extends Controller
             'fs_ids.*'    => 'required|numeric',
             'path_list.*' => 'required|string',
             'randsk'      => 'required|string',
+            'url'         => 'required|string',
             'shareid'     => 'required|numeric',
             'uk'          => 'required|numeric'
         ]);
@@ -244,7 +244,8 @@ class ParseController extends Controller
             $record = Record::query()
                             ->where([
                                 'fs_id' => $fs_id,
-                                ['account_id', '!=', -1]
+                                ['account_id', '!=', -1],
+                                ['normal_account_id', '!=', -1]
                             ])
                             ->whereDate('created_at', now())
                             ->whereTime('created_at', '>=', now()->subHours(8))
@@ -258,16 +259,17 @@ class ParseController extends Controller
                 'url'      => $record['url'],
                 'ua'       => $record['ua']
             ];
-            $request['fs_ids'] = array_slice($request['fs_ids'], $index + 1, count($request['fs_ids']) - 1);
+            $request['fs_ids'] = array_filter($request['fs_ids'], fn($Fs_id) => $Fs_id !== $fs_id);
             RecordController::addRecord([
-                'ip'         => $request->ip(),
-                'fs_id'      => $fs_id,
-                'filename'   => $record['filename'],
-                'user_id'    => Auth::check() ? Auth::user()['id'] : -1,
-                'account_id' => -1,
-                'size'       => $record['size'],
-                'ua'         => $record['ua'],
-                'url'        => $record['url']
+                'ip'                => $request->ip(),
+                'fs_id'             => $fs_id,
+                'filename'          => $record['filename'],
+                'user_id'           => Auth::check() ? Auth::user()['id'] : -1,
+                'account_id'        => -1,
+                'normal_account_id' => -1,
+                'size'              => $record['size'],
+                'ua'                => $record['ua'],
+                'url'               => $record['url']
             ]);
         }
 
@@ -295,23 +297,6 @@ class ParseController extends Controller
             'path_list=[' . join(',', array_map(fn($path) => '"' . $path . '"', $request['path_list'])) . ']'
         ];
 
-        // 验证码处理
-//        if (isset($request['vcode_id'])) {
-//            $validator = Validator::make($request->all(), [
-//                'vcode_id'    => 'required|numeric',
-//                'vcode_input' => 'required|string'
-//            ]);
-//
-//            if ($validator->fails()) return ResponseController::paramsError();
-//
-//            $vcode = Vcode::query()->find($request['vcode_id']);
-//            if (!$vcode) return ResponseController::vcodeNotExists();
-//
-//            $bodyArr['vcode_str']     = $vcode['vcode_str'];
-//            $bodyArr['vcode_input']   = $request['vcode_input'];
-//            $normalCookieData['data'] = Account::query()->find($vcode['account_id']);
-//        }
-
         $body = join('&', $bodyArr);
 
         $userAgent = config('94list.user_agent');
@@ -323,7 +308,7 @@ class ParseController extends Controller
                     'Cookie'     => $normalCookieData['data']['cookie'],
                     'Host'       => 'pan.baidu.com',
                     'Origin'     => 'https://pan.baidu.com',
-                    'Referer'    => 'https://pan.baidu.com/disk/home'
+                    'Referer'    => $request['url']
                 ]
             ]);
             $res      = $http->post('https://pan.baidu.com/api/sharedownload', [
@@ -367,7 +352,7 @@ class ParseController extends Controller
                             'Cookie'     => $svipCookieData['data']['cookie'],
                             'Host'       => 'pan.baidu.com',
                             'Origin'     => 'https://pan.baidu.com',
-                            'Referer'    => 'https://pan.baidu.com/disk/home'
+                            'Referer'    => $request['url']
                         ]
                     ]);
 
@@ -412,14 +397,15 @@ class ParseController extends Controller
                         ];
 
                         RecordController::addRecord([
-                            'ip'         => $request->ip(),
-                            'fs_id'      => $list['fs_id'],
-                            'filename'   => $list['server_filename'],
-                            'user_id'    => Auth::user()['id'] ?? -1,
-                            'account_id' => $svipCookieData['data']['id'],
-                            'size'       => $list['size'],
-                            'ua'         => $userAgent,
-                            'url'        => $effective_url
+                            'ip'                => $request->ip(),
+                            'fs_id'             => $list['fs_id'],
+                            'filename'          => $list['server_filename'],
+                            'user_id'           => Auth::user()['id'] ?? -1,
+                            'account_id'        => $svipCookieData['data']['id'],
+                            'normal_account_id' => $normalCookieData['data']['id'],
+                            'size'              => $list['size'],
+                            'ua'                => $userAgent,
+                            'url'               => $effective_url
                         ]);
                     } catch (RequestException $e) {
                         return ResponseController::getRealLinkError();
@@ -456,28 +442,13 @@ class ParseController extends Controller
                 return ResponseController::accountExpired();
             case -20:
             case 9019:
-//                $generateVocdeRes  = self::generateVcode($request, $normalCookieData['data']['cookie']);
-//                $generateVocdeData = $generateVocdeRes->getData(true);
-//                if ($generateVocdeData['code'] !== 200) return $generateVocdeRes;
-//
-//                $vcode = Vcode::query()->create([
-//                    'used'       => 0,
-//                    'account_id' => $normalCookieData['data']['id'],
-//                    'vcode_str'  => $generateVocdeData['data']['vcode']
-//                ]);
-
                 Account::query()
                        ->find($normalCookieData['data']['id'])
                        ->update([
-                          //  'switch' => 0,
-                           'reason' => '触发过验证码'
+                           'switch' => 0,
+                           'reason' => '触发验证码'
                        ]);
-
-                return ResponseController::hitCaptcha([
-//                    'vcode_id'  => $vcode['id'],
-//                    'vcode_img' => $generateVocdeData['data']['img'],
-//                    'res'       => $response
-                ]);
+                return ResponseController::hitCaptcha();
             case 8001:
             case 9013:
             case -6:
@@ -487,43 +458,9 @@ class ParseController extends Controller
                            'switch' => 0,
                            'reason' => '获取dlink时失败'
                        ]);
+                return ResponseController::getDlinkError($response['errno']);
             default:
                 return ResponseController::getDlinkError($response['errno']);
         }
-    }
-
-    public function generateVcode(Request $request, $cookie)
-    {
-        try {
-            $http     = new Client([
-                'headers' => [
-                    'User-Agent' => config('94list.fake_user_agent'),
-                    'Cookie'     => $cookie,
-                    'Referer'    => 'https://pan.baidu.com/disk/home'
-                ]
-            ]);
-            $res      = $http->get('https://pan.baidu.com/api/getvcode', [
-                'query' => [
-                    'prod'       => 'share',
-                    'channel'    => 'chunlei',
-                    'web'        => 1,
-                    'app_id'     => 250528,
-                    'clienttype' => 12
-                ]
-            ]);
-            $response = json_decode($res->getBody()->getContents(), true);
-        } catch (RequestException $e) {
-            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
-        } catch (GuzzleException $e) {
-            return ResponseController::networkError('获取vcode');
-        }
-
-        return match ($response['errno']) {
-            0       => ResponseController::success([
-                'img'   => $response['img'],
-                'vcode' => $response['vcode'],
-            ]),
-            default => ResponseController::getVCodeError($response['errno']),
-        };
     }
 }

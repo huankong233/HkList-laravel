@@ -22,9 +22,7 @@ Route::middleware('NeedInstall')->group(function () {
         Route::prefix('/parse')->middleware(['ThrottleRequest', 'NeedPassword', 'IpFilter'])->group(function () {
             Route::get('/config', [ParseController::class, 'getConfig']);
             Route::post('/get_file_list', [ParseController::class, 'getFileList']);
-//            Route::post('/sign', [ParseController::class, 'getSign']);
             Route::post('/download_files', [ParseController::class, 'downloadFiles']);
-//            Route::get('/generate_vcode', [ParseController::class, 'generateVcode']);
         });
 
         Route::prefix('/admin')->middleware('RoleFilter:admin')->group(function () {
@@ -33,7 +31,6 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::get('/{user_id?}', [UserController::class, 'getUser']);
                 Route::post('/', [UserController::class, 'addUser']);
                 Route::patch('/{user_id}', [UserController::class, 'updateUser']);
-                Route::delete('/{user_id}', [UserController::class, 'removeUser']);
                 Route::delete('/', [UserController::class, 'removeUsers']);
             });
 
@@ -42,25 +39,21 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::get('/{group_id?}', [GroupController::class, 'getGroup']);
                 Route::post('/', [GroupController::class, 'addGroup']);
                 Route::patch('/{group_id}', [GroupController::class, 'updateGroup']);
-                Route::delete('/{group_id}', [GroupController::class, 'removeGroup']);
                 Route::delete('/', [GroupController::class, 'removeGroups']);
             });
 
             Route::pattern('record_id', '[0-9]+');
             Route::prefix('/record')->group(function () {
                 Route::get('/{record_id?}', [RecordController::class, 'getRecord']);
-                Route::delete('/{record_id}', [RecordController::class, 'removeRecord']);
                 Route::delete('/', [RecordController::class, 'removeRecords']);
             });
 
             Route::pattern('account_id', '[0-9]+');
             Route::prefix('/account')->group(function () {
                 Route::get('/{account_id?}', [AccountController::class, 'getAccount']);
-                Route::get('/info', [AccountController::class, 'getAccountInfo']);
                 Route::post('/', [AccountController::class, 'addAccount']);
-                Route::patch('/{account_id}', [AccountController::class, 'updateAccount']);
                 Route::patch('/', [AccountController::class, 'updateAccounts']);
-                Route::delete('/{account_id}', [AccountController::class, 'removeAccount']);
+                Route::patch('/switch', [AccountController::class, 'switchAccounts']);
                 Route::delete('/', [AccountController::class, 'removeAccounts']);
             });
 
@@ -70,7 +63,6 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::post('/', [InvCodeController::class, 'addInvCode']);
                 Route::post('/generate', [InvCodeController::class, 'generateInvCode']);
                 Route::patch('/{inv_code_id}', [InvCodeController::class, 'updateInvCode']);
-                Route::delete('/{inv_code_id}', [InvCodeController::class, 'removeInvCode']);
                 Route::delete('/', [InvCodeController::class, 'removeInvCodes']);
             });
 
@@ -79,7 +71,6 @@ Route::middleware('NeedInstall')->group(function () {
                 Route::get('/{ip_id?}', [IpController::class, 'getIp']);
                 Route::post('/', [IpController::class, 'addIp']);
                 Route::patch('/{ip_id}', [IpController::class, 'updateIp']);
-                Route::delete('/{ip_id}', [IpController::class, 'removeIp']);
                 Route::delete('/', [IpController::class, 'removeIps']);
             });
 
