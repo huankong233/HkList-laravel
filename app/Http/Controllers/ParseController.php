@@ -466,6 +466,13 @@ class ParseController extends Controller
 //                    'vcode_str'  => $generateVocdeData['data']['vcode']
 //                ]);
 
+                Account::query()
+                       ->find($normalCookieData['data']['id'])
+                       ->update([
+                          //  'switch' => 0,
+                           'reason' => '触发过验证码'
+                       ]);
+
                 return ResponseController::hitCaptcha([
 //                    'vcode_id'  => $vcode['id'],
 //                    'vcode_img' => $generateVocdeData['data']['img'],
