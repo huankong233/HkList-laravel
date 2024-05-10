@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Group;
 use App\Models\Record;
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -73,9 +74,13 @@ class ParseController extends Controller
                 }
 
                 if (config('mail.switch')) {
-                    Mail::raw('亲爱的' . config('mail.to.name') . ':\n\t有账户已过期,详见:' . json_encode($updateFailedAccounts), function ($message) {
-                        $message->to(config('mail.to.address'))->subject('有账户过期了~');
-                    });
+                    try {
+                        Mail::raw('亲爱的' . config('mail.to.name') . ':\n\t有账户已过期,详见:' . json_encode($updateFailedAccounts), function ($message) {
+                            $message->to(config('mail.to.address'))->subject('有账户过期了~');
+                        });
+                    } catch (Exception $e) {
+                        return ResponseController::sendMailFailed($e->getMessage());
+                    }
                 }
             }
         }
