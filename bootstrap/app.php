@@ -25,7 +25,6 @@ return Application::configure(basePath: dirname(__DIR__))
                           'NeedPassword' => NeedPassword::class,
                       ]);
 
-
                       $middleware->web(remove: [
                           StartSession::class,
                       ]);

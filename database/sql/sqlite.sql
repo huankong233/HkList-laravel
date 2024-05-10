@@ -10,7 +10,7 @@
  Target Server Version : 3035005 (3.35.5)
  File Encoding         : 65001
 
- Date: 09/05/2024 12:27:00
+ Date: 10/05/2024 12:08:31
 */
 
 PRAGMA foreign_keys = false;
@@ -118,6 +118,19 @@ CREATE TABLE "users" (
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL,
   "deleted_at" text
+);
+
+-- ----------------------------
+-- Table structure for vcodes
+-- ----------------------------
+DROP TABLE IF EXISTS "vcodes";
+CREATE TABLE "vcodes" (
+  "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "account_id" integer NOT NULL,
+  "vcode_str" text NOT NULL,
+  "used" integer NOT NULL,
+  "created_at" text NOT NULL,
+  "updated_at" text NOT NULL
 );
 
 PRAGMA foreign_keys = true;

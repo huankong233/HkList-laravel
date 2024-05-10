@@ -178,9 +178,9 @@ class ResponseController extends Controller
         return self::response(10032, 500, '在获取reallink时请求失败!');
     }
 
-    public static function hitCaptcha()
+    public static function hitCaptcha($data)
     {
-        return self::response(10033, 500, '触发验证码');
+        return self::response(10033, 500, '触发验证码', $data);
     }
 
     public static function downloadError()
@@ -251,5 +251,10 @@ class ResponseController extends Controller
     public static function getVCodeError($code)
     {
         return self::response(10047, 500, '在获取vcode时请求失败,code:' . $code);
+    }
+
+    public static function vcodeNotExists()
+    {
+        return self::response(10048, 404, 'vcode不存在');
     }
 }

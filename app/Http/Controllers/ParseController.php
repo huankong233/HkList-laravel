@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Group;
 use App\Models\Record;
+use App\Models\Vcode;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -211,10 +212,11 @@ class ParseController extends Controller
     public function downloadFiles(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fs_ids.*' => 'required|numeric',
-            'randsk'   => 'required|string',
-            'shareid'  => 'required|numeric',
-            'uk'       => 'required|numeric'
+            'fs_ids.*'    => 'required|numeric',
+            'path_list.*' => 'required|string',
+            'randsk'      => 'required|string',
+            'shareid'     => 'required|numeric',
+            'uk'          => 'required|numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -245,7 +247,7 @@ class ParseController extends Controller
                                 ['account_id', '!=', -1]
                             ])
                             ->whereDate('created_at', now())
-                            ->whereTime('created_at', '<=', now()->addHours(8))
+                            ->whereTime('created_at', '>=', now()->subHours(8))
                             ->latest()
                             ->first();
 
@@ -282,42 +284,56 @@ class ParseController extends Controller
         $request['sign']      = $signData['data']['sign'];
         $request['timestamp'] = $signData['data']['timestamp'];
 
-        $userAgent = config('94list.user_agent');
-
         $bodyArr = [
             'encrypt=0',
             'extra=' . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
-            'fid_list=[' . join(',', $request['fs_ids']) . ']',
-            'primaryid=' . $request['shareid'],
-            'uk=' . $request['uk'],
             'product=share',
-            'type=nolimit'
+            'timestamp=' . $request['timestamp'],
+            'uk=' . $request['uk'],
+            'primaryid=' . $request['shareid'],
+            'fid_list=[' . join(',', $request['fs_ids']) . ']',
+            'path_list=[' . join(',', array_map(fn($path) => '"' . $path . '"', $request['path_list'])) . ']'
         ];
 
         // 验证码处理
-        if (isset($request['vcode_str'])) {
-            if (!isset($request['vcode_input'])) return ResponseController::paramsError();
-            $bodyArr['vcode_str']   = $request['vcode_str'];
-            $bodyArr['vcode_input'] = $request['vcode_input'];
-        }
+//        if (isset($request['vcode_id'])) {
+//            $validator = Validator::make($request->all(), [
+//                'vcode_id'    => 'required|numeric',
+//                'vcode_input' => 'required|string'
+//            ]);
+//
+//            if ($validator->fails()) return ResponseController::paramsError();
+//
+//            $vcode = Vcode::query()->find($request['vcode_id']);
+//            if (!$vcode) return ResponseController::vcodeNotExists();
+//
+//            $bodyArr['vcode_str']     = $vcode['vcode_str'];
+//            $bodyArr['vcode_input']   = $request['vcode_input'];
+//            $normalCookieData['data'] = Account::query()->find($vcode['account_id']);
+//        }
+
         $body = join('&', $bodyArr);
+
+        $userAgent = config('94list.user_agent');
 
         try {
             $http     = new Client([
                 'headers' => [
                     'User-Agent' => config('94list.fake_user_agent'),
                     'Cookie'     => $normalCookieData['data']['cookie'],
+                    'Host'       => 'pan.baidu.com',
+                    'Origin'     => 'https://pan.baidu.com',
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
             ]);
             $res      = $http->post('https://pan.baidu.com/api/sharedownload', [
                 'query' => [
-                    'app_id'     => 250528,
                     'channel'    => 'chunlei',
                     'clienttype' => 12,
+                    'web'        => 1,
+                    'app_id'     => 250528,
                     'sign'       => $request['sign'],
                     'timestamp'  => $request['timestamp'],
-                    'web'        => 1
                 ],
                 'body'  => $body
             ]);
@@ -349,8 +365,9 @@ class ParseController extends Controller
                         'headers' => [
                             'User-Agent' => config('94list.user_agent'),
                             'Cookie'     => $svipCookieData['data']['cookie'],
-                            'Referer'    => 'https://pan.baidu.com/disk/home',
                             'Host'       => 'pan.baidu.com',
+                            'Origin'     => 'https://pan.baidu.com',
+                            'Referer'    => 'https://pan.baidu.com/disk/home'
                         ]
                     ]);
 
@@ -404,8 +421,10 @@ class ParseController extends Controller
                             'ua'         => $userAgent,
                             'url'        => $effective_url
                         ]);
-                    } catch (GuzzleException $e) {
+                    } catch (RequestException $e) {
                         return ResponseController::getRealLinkError();
+                    } catch (GuzzleException $e) {
+                        return ResponseController::networkError('获取reallink');
                     }
                     sleep($sleepTime);
                 }
@@ -437,7 +456,21 @@ class ParseController extends Controller
                 return ResponseController::accountExpired();
             case -20:
             case 9019:
-                return ResponseController::hitCaptcha();
+//                $generateVocdeRes  = self::generateVcode($request, $normalCookieData['data']['cookie']);
+//                $generateVocdeData = $generateVocdeRes->getData(true);
+//                if ($generateVocdeData['code'] !== 200) return $generateVocdeRes;
+//
+//                $vcode = Vcode::query()->create([
+//                    'used'       => 0,
+//                    'account_id' => $normalCookieData['data']['id'],
+//                    'vcode_str'  => $generateVocdeData['data']['vcode']
+//                ]);
+
+                return ResponseController::hitCaptcha([
+//                    'vcode_id'  => $vcode['id'],
+//                    'vcode_img' => $generateVocdeData['data']['img'],
+//                    'res'       => $response
+                ]);
             case 8001:
             case 9013:
             case -6:
@@ -452,19 +485,19 @@ class ParseController extends Controller
         }
     }
 
-    public function generateVcode(Request $request)
+    public function generateVcode(Request $request, $cookie)
     {
         try {
             $http     = new Client([
                 'headers' => [
                     'User-Agent' => config('94list.fake_user_agent'),
-                    'Cookie'     => config('94list.fake_cookie'),
+                    'Cookie'     => $cookie,
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
             ]);
             $res      = $http->get('https://pan.baidu.com/api/getvcode', [
                 'query' => [
-                    'prod'       => 'pan',
+                    'prod'       => 'share',
                     'channel'    => 'chunlei',
                     'web'        => 1,
                     'app_id'     => 250528,

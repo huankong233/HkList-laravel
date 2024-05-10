@@ -24,7 +24,7 @@ Route::middleware('NeedInstall')->group(function () {
             Route::post('/get_file_list', [ParseController::class, 'getFileList']);
 //            Route::post('/sign', [ParseController::class, 'getSign']);
             Route::post('/download_files', [ParseController::class, 'downloadFiles']);
-            Route::get('/generate_vcode', [ParseController::class, 'generateVcode']);
+//            Route::get('/generate_vcode', [ParseController::class, 'generateVcode']);
         });
 
         Route::prefix('/admin')->middleware('RoleFilter:admin')->group(function () {
