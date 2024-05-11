@@ -25,9 +25,6 @@ class NeedInstall
 
         // 检查是否存在 .lock 文件
         if (!file_exists($installLock)) {
-            // 复制 .env 文件
-            if (!file_exists(base_path('.env'))) copy(base_path('.env.example'), base_path('.env'));
-
             $dbFile = database_path('database.sqlite');
 
             // 如果不存在则自动创建
