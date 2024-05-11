@@ -1,0 +1,1 @@
+import{i as o}from"./request-CizaxWX-.js";const e=s=>o.post("/doInstall",s),n=()=>o.post("/user/getConfig"),i=s=>o.post("/user/getFileList",s),a=s=>o.post("/user/getSign",s),d=s=>o.post("/user/downloadFiles",s);export{i as a,a as b,d as c,n as d,e};
