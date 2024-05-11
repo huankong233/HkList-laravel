@@ -143,9 +143,9 @@ class ResponseController extends Controller
         return self::response(10025, 500, '获取文件列表遇到未知错误,code:' . $errno);
     }
 
-    public static function getSignError($errno)
+    public static function getSignError($errno, $message)
     {
-        return self::response(10026, 500, '获取文件签名遇到未知错误,code:' . $errno);
+        return self::response(10026, 500, '获取文件签名遇到未知错误,code:' . $errno . ',提示信息:' . $message);
     }
 
     public static function linksOverloaded()

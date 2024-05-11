@@ -22,7 +22,8 @@ Route::middleware('NeedInstall')->group(function () {
         Route::prefix('/parse')->middleware(['ThrottleRequest', 'NeedPassword', 'IpFilter'])->group(function () {
             Route::get('/config', [ParseController::class, 'getConfig']);
             Route::post('/get_file_list', [ParseController::class, 'getFileList']);
-            Route::post('/download_files', [ParseController::class, 'downloadFiles']);
+            Route::post('/get_sign', [ParseController::class, 'getSign']);
+            Route::post('/get_download_links', [ParseController::class, 'getDownloadLinks']);
         });
 
         Route::prefix('/admin')->middleware('RoleFilter:admin')->group(function () {

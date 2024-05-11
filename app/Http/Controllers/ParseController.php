@@ -10,6 +10,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -24,8 +25,8 @@ class ParseController extends Controller
         $have_account = true;
 
         if (
-            self::getRandomCookie($request)->getData(true)['data'] === null ||
-            self::getRandomCookie($request, ['普通用户', '普通会员'])->getData(true)['data'] === null
+            self::getRandomCookie()->getData(true)['data'] === null ||
+            self::getRandomCookie(['普通用户', '普通会员'])->getData(true)['data'] === null
         )
             $have_account = false;
 
@@ -41,7 +42,7 @@ class ParseController extends Controller
         ]);
     }
 
-    public static function getRandomCookie(Request $request, $vipType = '超级会员')
+    public function getRandomCookie($vipType = '超级会员')
     {
         $vipType = is_array($vipType) ? $vipType : [$vipType];
 
@@ -61,7 +62,7 @@ class ParseController extends Controller
             if ($banAccounts->count() !== 0) {
                 // 更新账户状态
                 foreach ($banAccounts as $account) {
-                    $updateRes  = AccountController::updateAccount($request, $account['id']);
+                    $updateRes  = AccountController::updateAccount($account['id']);
                     $updateData = $updateRes->getData(true);
                     if ($updateData['code'] !== 200) {
                         $account->update([
@@ -98,15 +99,22 @@ class ParseController extends Controller
         return ResponseController::success($account);
     }
 
+    public function decodeSceKey($seckey)
+    {
+        $seckey = str_replace("-", "+", $seckey);
+        $seckey = str_replace("~", "=", $seckey);
+        return str_replace("_", "/", $seckey);
+    }
+
     public function getFileList(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'shorturl' => 'required|string',
-            'dir'      => 'required|string',
-            'pwd'      => 'string',
-            'page'     => 'numeric',
-            'num'      => 'numeric',
-            'order'    => 'string'
+            'surl'  => 'required|string',
+            'dir'   => 'required|string',
+            'pwd'   => 'string',
+            'page'  => 'numeric',
+            'num'   => 'numeric',
+            'order' => 'string'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -114,7 +122,7 @@ class ParseController extends Controller
         try {
             $http     = new Client([
                 'headers' => [
-                    'User-Agent' => 'Mozilla/5.0 (Linux; Android 7.1.1; MI 6 Build/NMF26X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/043807 Mobile Safari/537.36 MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN miniProgram',
+                    'User-Agent' => config('94list.fake_wx_user_agent'),
                     'Cookie'     => config('94list.fake_cookie'),
                     'Referer'    => 'https://pan.baidu.com/disk/home'
                 ]
@@ -128,7 +136,7 @@ class ParseController extends Controller
                     'qq-pf-to'   => 'pcqq.c2c'
                 ],
                 'form_params' => [
-                    'shorturl' => $request['shorturl'],
+                    'shorturl' => $request['surl'],
                     'dir'      => $request['dir'],
                     'root'     => $request['dir'] === '/' ? 1 : 0,
                     'pwd'      => $request['pwd'] ?? '',
@@ -137,19 +145,19 @@ class ParseController extends Controller
                     'order'    => $request['order'] ?? 'filename'
                 ]
             ]);
-            $response = json_decode($res->getBody()->getContents(), true);
+            $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
-            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+            $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
             return ResponseController::networkError('获取文件列表');
         }
 
-        $errno = $response['errtype'] ?? $response['errno'];
+        $errno = $response['errtype'] ?? ($response['errno'] ?? '未知');
         return match ($errno) {
             0                     => ResponseController::success([
                 'uk'      => $response['data']['uk'],
                 'shareid' => $response['data']['shareid'],
-                'randsk'  => $response['data']['seckey'],
+                'randsk'  => self::decodeSceKey($response['data']['seckey']),
                 'list'    => $response['data']['list']
             ]),
             'mis_105'             => ResponseController::fileNotExists(),
@@ -166,6 +174,7 @@ class ParseController extends Controller
     public function getSign(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'surl'    => 'required|string',
             'uk'      => 'required|numeric',
             'shareid' => 'required|numeric'
         ]);
@@ -183,6 +192,7 @@ class ParseController extends Controller
 
             $res      = $http->get('https://pan.baidu.com/share/tplconfig', [
                 'query' => [
+                    'surl'       => $request['surl'],
                     'shareid'    => $request['shareid'],
                     'uk'         => $request['uk'],
                     'fields'     => 'sign,timestamp',
@@ -192,44 +202,76 @@ class ParseController extends Controller
                     'clienttype' => 0
                 ]
             ]);
-            $response = json_decode($res->getBody()->getContents(), true);
+            $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
-            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+            $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
             return ResponseController::networkError('获取签名信息');
         }
 
-        $errno = $response['errtype'] ?? $response['errno'];
+        $errno = $response['errtype'] ?? ($response['errno'] ?? '未知');
         return match ($errno) {
-            0                     => ResponseController::success($response['data']),
-            'mis_105'             => ResponseController::fileNotExists(),
-            'mispw_9', 'mispwd-9' => ResponseController::pwdWrong(),
-            'mis_2', 'mis_4'      => ResponseController::pathNotExists(),
-            5                     => ResponseController::linkWrongOrPathNotExists(),
-            3                     => ResponseController::linkNotValid(),
-            10                    => ResponseController::linkIsOutDate(),
-            8001, 9013, 9019      => ResponseController::cookieError($errno),
-            default               => ResponseController::getSignError($errno),
+            0       => ResponseController::success($response['data']),
+            default => ResponseController::getSignError($errno, $response['show_msg'] ?? '未知'),
         };
     }
 
-    public function downloadFiles(Request $request)
+    public function getDownloadLinks(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fs_ids.*'    => 'required|numeric',
-            'path_list.*' => 'required|string',
-            'randsk'      => 'required|string',
-            'url'         => 'required|string',
-            'shareid'     => 'required|numeric',
-            'uk'          => 'required|numeric'
+            'fs_ids.*'  => 'required|numeric',
+            'randsk'    => 'required|string',
+            'shareid'   => 'required|numeric',
+            'uk'        => 'required|numeric',
+            'sign'      => 'required|string',
+            'timestamp' => 'required|numeric'
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
         if (count($request['fs_ids']) > config('94list.max_once')) return ResponseController::linksOverloaded();
 
+        // 检查限制还能不能解析
+        $checkCanParseUrlRes  = self::checkCanParseUrl($request);
+        $checkCanParseUrlData = $checkCanParseUrlRes->getData(true);
+        if ($checkCanParseUrlData['code'] !== 200) return $checkCanParseUrlRes;
+        $normalAccountId = $checkCanParseUrlData['data'];
+
+        // 获取缓存
+        $getCacheRes  = self::getCache($request);
+        $getCacheData = $getCacheRes->getData(true);
+        if ($getCacheData['code'] !== 200) return $checkCanParseUrlRes;
+
+        $responseData      = $getCacheData['data']['responseData'];
+        $request['fs_ids'] = $getCacheData['data']['fs_ids'];
+
+        if (count($request['fs_ids']) === 0) return ResponseController::success($responseData);
+
+        // 获取DLink
+        $getDLinkRes  = self::getDLink($request, $normalAccountId);
+        $getDLinkData = $getDLinkRes->getData(true);
+        if ($getDLinkData['code'] !== 200) return $getDLinkRes;
+        $DlinkList = $getDLinkData['data'];
+
+        // 获取RealLink
+        $getRealLinkRes  = self::getRealLink($request, $DlinkList, $normalAccountId);
+        $getRealLinkData = $getRealLinkRes->getData(true);
+        if ($getRealLinkData['code'] !== 200) return $getRealLinkRes;
+
+        $responseData = [
+            ...$responseData,
+            ...$getRealLinkData['data']
+        ];
+
+        return ResponseController::success($responseData);
+    }
+
+    public function checkCanParseUrl(Request $request)
+    {
         // 获取今日解析数量
-        $group   = Group::query()->find(Auth::check() ? Auth::user()['group_id'] : -1);
+        $group = Group::query()
+                      ->find(Auth::check() ? Auth::user()['group_id'] : -1);
+
         $records = Record::query()
                          ->where('ip', $request->ip())
                          ->whereDate('created_at', now())
@@ -237,7 +279,21 @@ class ParseController extends Controller
 
         if ($records->count() >= $group['count'] || $records->sum('size') >= $group['size'] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
 
+        // 检查签名是否过期
+        if (time() - $request['timestamp'] > 300) return ResponseController::signIsOutDate();
+
+        // 检查普通账户是否够用
+        $normalCookieRes  = self::getRandomCookie(['普通用户', '普通会员']);
+        $normalCookieData = $normalCookieRes->getData(true);
+        if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
+
+        return ResponseController::success($normalCookieData['data']['id']);
+    }
+
+    public function getCache(Request $request)
+    {
         $responseData = [];
+        $user_id      = Auth::check() ? Auth::user()['id'] : -1;
 
         /**
          * account_id -1表示读取缓存的记录
@@ -245,7 +301,7 @@ class ParseController extends Controller
          */
 
         // 读取缓存
-        foreach ($request['fs_ids'] as $index => $fs_id) {
+        foreach ($request['fs_ids'] as $fs_id) {
             $record = Record::query()
                             ->where([
                                 'fs_id' => $fs_id,
@@ -259,17 +315,19 @@ class ParseController extends Controller
 
             if (!$record) continue;
 
-            $responseData[]    = [
+            $responseData[] = [
                 'filename' => $record['filename'],
                 'url'      => $record['url'],
                 'ua'       => $record['ua']
             ];
+
             $request['fs_ids'] = array_filter($request['fs_ids'], fn($Fs_id) => $Fs_id !== $fs_id);
+
             RecordController::addRecord([
                 'ip'                => $request->ip(),
                 'fs_id'             => $fs_id,
                 'filename'          => $record['filename'],
-                'user_id'           => Auth::check() ? Auth::user()['id'] : -1,
+                'user_id'           => $user_id,
                 'account_id'        => -1,
                 'normal_account_id' => -1,
                 'size'              => $record['size'],
@@ -278,148 +336,64 @@ class ParseController extends Controller
             ]);
         }
 
-        if (count($request['fs_ids']) === 0) return ResponseController::success($responseData);
+        return ResponseController::success([
+            'responseData' => $responseData,
+            'fs_ids'       => $request['fs_ids']
+        ]);
+    }
 
-        $normalCookieRes  = self::getRandomCookie($request, ['普通用户', '普通会员']);
-        $normalCookieData = $normalCookieRes->getData(true);
-        if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
+    public function getDLink(Request $request, $normalAccountId)
+    {
+        $normalAccount = Account::query()->find($normalAccountId);
 
-        // 获取签名信息
-        $signRes  = self::getSign($request);
-        $signData = $signRes->getData(true);
-        if ($signData['code'] !== 200) return $signRes;
-        $request['sign']      = $signData['data']['sign'];
-        $request['timestamp'] = $signData['data']['timestamp'];
-
-        $bodyArr = [
-            'encrypt=0',
-            'extra=' . urlencode('{"sekey":"' . urldecode($request['randsk']) . '"}'),
-            'product=share',
-            'timestamp=' . $request['timestamp'],
-            'uk=' . $request['uk'],
-            'primaryid=' . $request['shareid'],
-            'fid_list=[' . join(',', $request['fs_ids']) . ']',
-            'path_list=[' . join(',', array_map(fn($path) => '"' . $path . '"', $request['path_list'])) . ']'
-        ];
-
-        $body = join('&', $bodyArr);
-
-        $userAgent = config('94list.user_agent');
+        $http = new Client([
+            'headers' => [
+                'User-Agent' => config('94list.fake_user_agent'),
+                'Cookie'     => $normalAccount['cookie'],
+                'Host'       => 'pan.baidu.com',
+                'Origin'     => 'https://pan.baidu.com',
+                'Referer'    => 'https://pan.baidu.com/disk/home'
+            ]
+        ]);
 
         try {
-            $http     = new Client([
-                'headers' => [
-                    'User-Agent' => config('94list.fake_user_agent'),
-                    'Cookie'     => $normalCookieData['data']['cookie'],
-                    'Host'       => 'pan.baidu.com',
-                    'Origin'     => 'https://pan.baidu.com',
-                    'Referer'    => $request['url']
-                ]
-            ]);
             $res      = $http->post('https://pan.baidu.com/api/sharedownload', [
                 'query' => [
+                    'app_id'     => 250528,
                     'channel'    => 'chunlei',
                     'clienttype' => 12,
-                    'web'        => 1,
-                    'app_id'     => 250528,
                     'sign'       => $request['sign'],
                     'timestamp'  => $request['timestamp'],
+                    'web'        => 1
                 ],
-                'body'  => $body
+                'body'  => join('&', [
+                    'encrypt=0',
+                    'extra=' . urlencode(
+                        Json::encode([
+                            'sekey' => str_contains($request['randsk'], "%") ? urldecode($request['randsk']) : $request['randsk']
+                        ])
+                    ),
+                    'fid_list=' . JSON::encode($request['fs_ids']),
+                    'primaryid=' . $request['shareid'],
+                    'uk=' . $request['uk'],
+                    'product=share',
+                    'type=nolimit'
+                ])
             ]);
-            $response = json_decode($res->getBody()->getContents(), true);
+            $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
-            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+            $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
-            return ResponseController::networkError('获取dlink');
+            return ResponseController::networkError('获取DLink');
         }
 
-        switch ($response['errno']) {
+        $errno = $response['errtype'] ?? ($response['errno'] ?? '未知');
+        switch ($errno) {
             case 0:
-                // 如果就一个文件就不睡
-                // 有多个文件就每个睡一觉
-                $sleepTime = count($response['list']) > 1 ? config('94list.sleep') : 0;
-
-                foreach ($response['list'] as $list) {
-                    $svipCookieRes  = self::getRandomCookie($request);
-                    $svipCookieData = $svipCookieRes->getData(true);
-                    if ($svipCookieData['data'] === null) return ResponseController::svipAccountIsNotEnough();
-
-                    Account::query()
-                           ->find($svipCookieData['data']['id'])
-                           ->update([
-                               'last_use_at' => date('Y-m-d H:i:s')
-                           ]);
-
-                    $http = new Client([
-                        'headers' => [
-                            'User-Agent' => config('94list.user_agent'),
-                            'Cookie'     => $svipCookieData['data']['cookie'],
-                            'Host'       => 'pan.baidu.com',
-                            'Origin'     => 'https://pan.baidu.com',
-                            'Referer'    => $request['url']
-                        ]
-                    ]);
-
-                    try {
-                        $headResponse = $http->head($list['dlink'], [
-                            'allow_redirects' => [
-                                'follow_redirects' => false,
-                                'track_redirects'  => true,
-                            ]
-                        ]);
-
-                        // 获取最后一个重定向的 URL
-                        $redirectUrls  = $headResponse->getHeader('X-Guzzle-Redirect-History');
-                        $effective_url = end($redirectUrls);
-
-                        if (!$effective_url) {
-                            Account::query()
-                                   ->find($svipCookieData['data']['id'])
-                                   ->update([
-                                       'switch' => 0,
-                                       'reason' => '获取reallink返回空'
-                                   ]);
-                            return ResponseController::getRealLinkError();
-                        }
-
-                        // 账号限速
-                        if (str_contains($effective_url, 'qdall01') || !str_contains($effective_url, 'tsl=0')) {
-                            Account::query()
-                                   ->find($svipCookieData['data']['id'])
-                                   ->update([
-                                       'switch' => 0,
-                                       'reason' => '账户限速'
-                                   ]);
-
-                            return ResponseController::accountHasBeenLimitOfTheSpeed();
-                        }
-
-                        $responseData[] = [
-                            'url'      => $effective_url,
-                            'filename' => $list['server_filename'],
-                            'ua'       => $userAgent
-                        ];
-
-                        RecordController::addRecord([
-                            'ip'                => $request->ip(),
-                            'fs_id'             => $list['fs_id'],
-                            'filename'          => $list['server_filename'],
-                            'user_id'           => Auth::user()['id'] ?? -1,
-                            'account_id'        => $svipCookieData['data']['id'],
-                            'normal_account_id' => $normalCookieData['data']['id'],
-                            'size'              => $list['size'],
-                            'ua'                => $userAgent,
-                            'url'               => $effective_url
-                        ]);
-                    } catch (RequestException $e) {
-                        return ResponseController::getRealLinkError();
-                    } catch (GuzzleException $e) {
-                        return ResponseController::networkError('获取reallink');
-                    }
-                    sleep($sleepTime);
-                }
-                return ResponseController::success($responseData);
+                $normalAccount->update([
+                    'last_use_at' => date("Y-m-d H:i:s")
+                ]);
+                return ResponseController::success($response['list']);
             case -1:
                 return ResponseController::linkNotValid();
             case -9:
@@ -438,34 +412,113 @@ class ParseController extends Controller
             case 121:
                 return ResponseController::processFilesTooMuch();
             case 4:
-                Account::query()
-                       ->find($normalCookieData['data']['id'])
-                       ->update([
-                           'switch' => 0,
-                           'reason' => 'cookie已失效'
-                       ]);
+            case -6:
+                $normalAccount->update([
+                    'switch' => 0,
+                    'reason' => 'cookie已失效'
+                ]);
                 return ResponseController::accountExpired();
             case -20:
             case 9019:
-                Account::query()
-                       ->find($normalCookieData['data']['id'])
-                       ->update([
-                           'switch' => 0,
-                           'reason' => '触发验证码'
-                       ]);
+                $normalAccount->update([
+                    'reason' => '触发验证码'
+                ]);
                 return ResponseController::hitCaptcha();
             case 8001:
             case 9013:
-            case -6:
-                Account::query()
-                       ->find($normalCookieData['data']['id'])
-                       ->update([
-                           'switch' => 0,
-                           'reason' => '获取dlink时失败'
-                       ]);
-                return ResponseController::getDlinkError($response['errno']);
+                $normalAccount->update([
+                    'switch' => 0,
+                    'reason' => '获取DLink失败'
+                ]);
+                return ResponseController::getDlinkError($errno);
             default:
-                return ResponseController::getDlinkError($response['errno']);
+                return ResponseController::getDlinkError($errno);
         }
+    }
+
+    public function getRealLink(Request $request, $DlinkList, $normalAccountId)
+    {
+        // 如果就一个文件就不睡
+        // 有多个文件就每个睡一觉
+        $sleepTime    = count($DlinkList) > 1 ? config('94list.sleep') : 0;
+        $userAgent    = config("94list.user_agent");
+        $responseData = [];
+
+        foreach ($DlinkList as $list) {
+            $svipCookieRes  = self::getRandomCookie();
+            $svipCookieData = $svipCookieRes->getData(true);
+            if ($svipCookieData['data'] === null) return ResponseController::svipAccountIsNotEnough();
+
+            $svipAccount = Account::query()->find($svipCookieData['data']['id']);
+            $svipAccount->update([
+                'last_use_at' => date('Y-m-d H:i:s')
+            ]);
+
+            $http = new Client([
+                'headers' => [
+                    'User-Agent' => $userAgent,
+                    'Cookie'     => $svipCookieData['data']['cookie'],
+                    'Host'       => 'pan.baidu.com',
+                    'Origin'     => 'https://pan.baidu.com',
+                    'Referer'    => 'https://pan.baidu.com/disk/home'
+                ]
+            ]);
+
+            try {
+                $headResponse = $http->head($list['dlink'], [
+                    'allow_redirects' => [
+                        'follow_redirects' => false,
+                        'track_redirects'  => true,
+                    ]
+                ]);
+
+                // 获取最后一个重定向的 URL
+                $redirectUrls  = $headResponse->getHeader('X-Guzzle-Redirect-History');
+                $effective_url = end($redirectUrls);
+
+                if (!$effective_url || strlen($effective_url) < 20) {
+                    $svipAccount->update([
+                        'switch' => 0,
+                        'reason' => '获取reallink返回空'
+                    ]);
+                    return ResponseController::getRealLinkError();
+                }
+
+                // 账号限速
+                if (str_contains($effective_url, 'qdall01') || !str_contains($effective_url, 'tsl=0')) {
+                    $svipAccount->update([
+                        'switch' => 0,
+                        'reason' => '账户限速'
+                    ]);
+
+                    return ResponseController::accountHasBeenLimitOfTheSpeed();
+                }
+
+                $responseData[] = [
+                    'url'      => $effective_url,
+                    'filename' => $list['server_filename'],
+                    'ua'       => $userAgent
+                ];
+
+                RecordController::addRecord([
+                    'ip'                => $request->ip(),
+                    'fs_id'             => $list['fs_id'],
+                    'filename'          => $list['server_filename'],
+                    'user_id'           => Auth::user()['id'] ?? -1,
+                    'account_id'        => $svipAccount['id'],
+                    'normal_account_id' => $normalAccountId,
+                    'size'              => $list['size'],
+                    'ua'                => $userAgent,
+                    'url'               => $effective_url
+                ]);
+            } catch (RequestException $e) {
+                return ResponseController::getRealLinkError();
+            } catch (GuzzleException $e) {
+                return ResponseController::networkError('获取reallink');
+            }
+            sleep($sleepTime);
+        }
+
+        return ResponseController::success($responseData);
     }
 }

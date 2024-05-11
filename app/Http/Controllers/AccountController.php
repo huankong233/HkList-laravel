@@ -6,6 +6,7 @@ use App\Models\Account;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -39,9 +40,9 @@ class AccountController extends Controller
                     'method' => 'uinfo'
                 ]
             ]);
-            $response = json_decode($res->getBody()->getContents(), true);
+            $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
-            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+            $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
             return ResponseController::networkError('获取百度账户信息');
         }
@@ -69,9 +70,9 @@ class AccountController extends Controller
                     'web'        => 1
                 ]
             ]);
-            $response = json_decode($res->getBody()->getContents(), true);
+            $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
-            $response = $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+            $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
             return ResponseController::networkError('获取SVIP到期时间');
         }
@@ -137,7 +138,7 @@ class AccountController extends Controller
         return ResponseController::success();
     }
 
-    public static function updateAccount(Request $request, $account_id)
+    public static function updateAccount($account_id)
     {
         $account = Account::query()->find($account_id);
         if (!$account) return ResponseController::accountNotExists();
@@ -161,15 +162,10 @@ class AccountController extends Controller
         if ($validator->fails()) return ResponseController::paramsError();
 
         foreach ($request['account_ids'] as $account_id) {
-            $account = Account::query()->find($account_id);
-            if (!$account) return ResponseController::accountNotExists();
-            $cookie = $account['cookie'];
+            $updateAccountRes  = self::updateAccount($account_id);
+            $updateAccountData = $updateAccountRes->getData(true);
+            if ($updateAccountData['code'] !== 200) return $updateAccountRes;
 
-            $accountItemsRes  = self::_getAccountItems($cookie);
-            $accountItemsData = $accountItemsRes->getData(true);
-            if ($accountItemsData['code'] !== 200) return $accountItemsRes;
-
-            $account->update($accountItemsData['data']);
             sleep(1);
         }
 
