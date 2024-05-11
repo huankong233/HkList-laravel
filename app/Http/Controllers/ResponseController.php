@@ -160,12 +160,14 @@ class ResponseController extends Controller
 
     public static function svipAccountIsNotEnough()
     {
-        return self::response(10029, 403, '超级会员账户不足');
+        // 10029
+        return '超级会员账户不足';
     }
 
     public static function accountHasBeenLimitOfTheSpeed()
     {
-        return self::response(10030, 500, '账户被限速,请重新解析尝试!');
+        // 10030
+        return '账户被限速,请重新解析尝试!';
     }
 
     public static function getDlinkError($code)
@@ -175,12 +177,13 @@ class ResponseController extends Controller
 
     public static function getRealLinkError()
     {
-        return self::response(10032, 500, '在获取reallink时请求失败!');
+        // 10032
+        return '在获取reallink时请求失败!';
     }
 
     public static function hitCaptcha()
     {
-        return self::response(10033, 500, '触发验证码');
+        return self::response(10033, 500, '触发验证码,请重试!');
     }
 
     public static function downloadError()

@@ -240,7 +240,7 @@ class ParseController extends Controller
         // 获取缓存
         $getCacheRes  = self::getCache($request);
         $getCacheData = $getCacheRes->getData(true);
-        if ($getCacheData['code'] !== 200) return $checkCanParseUrlRes;
+//        if ($getCacheData['code'] !== 200) return $getCacheRes;
 
         $responseData      = $getCacheData['data']['responseData'];
         $request['fs_ids'] = $getCacheData['data']['fs_ids'];
@@ -256,7 +256,23 @@ class ParseController extends Controller
         // 获取RealLink
         $getRealLinkRes  = self::getRealLink($request, $DlinkList, $normalAccountId);
         $getRealLinkData = $getRealLinkRes->getData(true);
-        if ($getRealLinkData['code'] !== 200) return $getRealLinkRes;
+//        if ($getRealLinkData['code'] !== 200) return $getRealLinkRes;
+
+        // 插入缓存读取到的那部分
+        $user_id = Auth::check() ? Auth::user()['id'] : -1;
+        foreach ($responseData as $responseDatum) {
+            RecordController::addRecord([
+                'ip'                => $request->ip(),
+                'fs_id'             => $responseDatum['fs_id'],
+                'filename'          => $responseDatum['filename'],
+                'user_id'           => $user_id,
+                'account_id'        => -1,
+                'normal_account_id' => -1,
+                'size'              => $responseDatum['size'],
+                'ua'                => $responseDatum['ua'],
+                'url'               => $responseDatum['url']
+            ]);
+        }
 
         $responseData = [
             ...$responseData,
@@ -293,7 +309,6 @@ class ParseController extends Controller
     public function getCache(Request $request)
     {
         $responseData = [];
-        $user_id      = Auth::check() ? Auth::user()['id'] : -1;
 
         /**
          * account_id -1表示读取缓存的记录
@@ -322,18 +337,6 @@ class ParseController extends Controller
             ];
 
             $request['fs_ids'] = array_filter($request['fs_ids'], fn($Fs_id) => $Fs_id !== $fs_id);
-
-            RecordController::addRecord([
-                'ip'                => $request->ip(),
-                'fs_id'             => $fs_id,
-                'filename'          => $record['filename'],
-                'user_id'           => $user_id,
-                'account_id'        => -1,
-                'normal_account_id' => -1,
-                'size'              => $record['size'],
-                'ua'                => $record['ua'],
-                'url'               => $record['url']
-            ]);
         }
 
         return ResponseController::success([
@@ -447,7 +450,14 @@ class ParseController extends Controller
         foreach ($DlinkList as $list) {
             $svipCookieRes  = self::getRandomCookie();
             $svipCookieData = $svipCookieRes->getData(true);
-            if ($svipCookieData['data'] === null) return ResponseController::svipAccountIsNotEnough();
+            if ($svipCookieData['data'] === null) {
+                $responseData[] = [
+                    'url'      => ResponseController::svipAccountIsNotEnough(),
+                    'filename' => $list['server_filename'],
+                    'ua'       => $userAgent,
+                ];
+                continue;
+            }
 
             $svipAccount = Account::query()->find($svipCookieData['data']['id']);
             $svipAccount->update([
@@ -481,7 +491,12 @@ class ParseController extends Controller
                         'switch' => 0,
                         'reason' => '获取reallink返回空'
                     ]);
-                    return ResponseController::getRealLinkError();
+                    $responseData[] = [
+                        'url'      => ResponseController::getRealLinkError(),
+                        'filename' => $list['server_filename'],
+                        'ua'       => $userAgent,
+                    ];
+                    continue;
                 }
 
                 // 账号限速
@@ -490,8 +505,12 @@ class ParseController extends Controller
                         'switch' => 0,
                         'reason' => '账户限速'
                     ]);
-
-                    return ResponseController::accountHasBeenLimitOfTheSpeed();
+                    $responseData[] = [
+                        'url'      => ResponseController::accountHasBeenLimitOfTheSpeed(),
+                        'filename' => $list['server_filename'],
+                        'ua'       => $userAgent,
+                    ];
+                    continue;
                 }
 
                 $responseData[] = [
@@ -512,9 +531,17 @@ class ParseController extends Controller
                     'url'               => $effective_url
                 ]);
             } catch (RequestException $e) {
-                return ResponseController::getRealLinkError();
+                $responseData[] = [
+                    'url'      => ResponseController::getRealLinkError(),
+                    'filename' => $list['server_filename'],
+                    'ua'       => $userAgent,
+                ];
             } catch (GuzzleException $e) {
-                return ResponseController::networkError('获取reallink');
+                $responseData[] = [
+                    'url'      => ResponseController::networkError('获取reallink')->getData(true)['message'],
+                    'filename' => $list['server_filename'],
+                    'ua'       => $userAgent,
+                ];
             }
             sleep($sleepTime);
         }
