@@ -34,7 +34,7 @@ class ConfigController extends Controller
         if (isset($request['sleep'])) $update['_94LIST_SLEEP'] = $request['sleep'];
         if (isset($request['max_once'])) $update['_94LIST_MAX_ONCE'] = $request['max_once'];
         if (isset($request['password'])) $update['_94LIST_PASSWORD'] = $request['password'] === null ? '' : '"' . $request['password'] . '"';
-        if (isset($request['announce'])) $update['_94LIST_ANNOUNCE'] = $request['announce'] === null ? '' : '"' . $request['announce'] . '"';
+        if (isset($request['announce'])) $update['_94LIST_ANNOUNCE'] = $request['announce'] === null ? '' : '"' . htmlspecialchars(str_replace("\n", "[NextLine]", $request['announce']), ENT_QUOTES) . '"';
         if (isset($request['user_agent'])) $update['_94LIST_USER_AGENT'] = $request['user_agent'];
         if (isset($request['need_inv_code'])) $update['_94LIST_NEED_INV_CODE'] = $request['need_inv_code'];
         if (isset($request['whitelist_mode'])) $update['_94LIST_WHITELIST_MODE'] = $request['whitelist_mode'];
