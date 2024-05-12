@@ -249,7 +249,7 @@ class ParseController extends Controller
         $normalAccountId = $normalCookieData['data']['id'];
 
         // 检查文件数量是否符合用户组配额
-        if (count($request['fs_ids']) >= $count) return ResponseController::groupQuotaIsNotEnough();
+        if (count($request['fs_ids']) > $count) return ResponseController::groupQuotaCountIsNotEnough();
 
         // 获取缓存
         $getCacheRes  = self::getCache($request);
@@ -267,7 +267,7 @@ class ParseController extends Controller
         $DlinkList = $getDLinkData['data'];
 
         // 检查文件大小是否符合用户组配额
-        if (collect($DlinkList)->sum('size') >= $size) return ResponseController::groupQuotaIsNotEnough();
+        if (collect($DlinkList)->sum('size') > $size) return ResponseController::groupQuotaSizeIsNotEnough();
 
         // 获取RealLink
         $getRealLinkRes  = self::getRealLink($request, $DlinkList, $normalAccountId);
