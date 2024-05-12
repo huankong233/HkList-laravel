@@ -31,7 +31,7 @@ class ParseController extends Controller
             $have_account = false;
 
         return ResponseController::success([
-            'announce'      => $config['announce'],
+            'announce'      => $config['announce'] === '' ? null : $config['announce'],
             'user_agent'    => $config['user_agent'],
             'debug'         => config('app.debug'),
             'max_once'      => $config['max_once'],
@@ -282,7 +282,7 @@ class ParseController extends Controller
         return ResponseController::success($responseData);
     }
 
-    public function checkCanParseUrl(Request $request)
+    public function checkLimit(Request $request)
     {
         // 获取今日解析数量
         $group = Group::query()
@@ -294,6 +294,19 @@ class ParseController extends Controller
                          ->get();
 
         if ($records->count() >= $group['count'] || $records->sum('size') >= $group['size'] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
+
+        return ResponseController::success([
+            'group_name' => $group['name'],
+            'count'      => $group['count'] - $records->count(),
+            'size'       => $group['size'] * 1073741824 - $records->sum('size')
+        ]);
+    }
+
+    public function checkCanParseUrl(Request $request)
+    {
+        $checkLimitRes  = self::checkLimit($request);
+        $checkLimitData = $checkLimitRes->getData(true);
+        if ($checkLimitData['code'] !== 200) return $checkLimitRes;
 
         // 检查签名是否过期
         if (time() - $request['timestamp'] > 300) return ResponseController::signIsOutDate();
