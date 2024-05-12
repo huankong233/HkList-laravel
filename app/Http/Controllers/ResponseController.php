@@ -251,8 +251,13 @@ class ResponseController extends Controller
         return self::response(10046, 403, '用户组不能被删除,原因:' . $reason);
     }
 
-    public static function groupQuotaIsNotEnough()
+    public static function groupQuotaCountIsNotEnough()
     {
-        return self::response(10047, 403, '用户组剩余配额不足以解析这么多文件');
+        return self::response(10047, 403, '用户组剩余解析文件数量不足');
+    }
+
+    public static function groupQuotaSizeIsNotEnough()
+    {
+        return self::response(10048, 403, '用户组剩余解析文件大小不足');
     }
 }
