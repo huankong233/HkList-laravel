@@ -232,15 +232,28 @@ class ParseController extends Controller
         if (count($request['fs_ids']) > config('94list.max_once')) return ResponseController::linksOverloaded();
 
         // 检查限制还能不能解析
-        $checkCanParseUrlRes  = self::checkCanParseUrl($request);
-        $checkCanParseUrlData = $checkCanParseUrlRes->getData(true);
-        if ($checkCanParseUrlData['code'] !== 200) return $checkCanParseUrlRes;
-        $normalAccountId = $checkCanParseUrlData['data'];
+        $checkLimitRes  = self::checkLimit($request);
+        $checkLimitData = $checkLimitRes->getData(true);
+        if ($checkLimitData['code'] !== 200) return $checkLimitRes;
+
+        $count = $checkLimitData['data']['count'];
+        $size  = $checkLimitData['data']['size'];
+
+        // 检查签名是否过期
+        if (time() - $request['timestamp'] > 300) return ResponseController::signIsOutDate();
+
+        // 检查普通账户是否够用
+        $normalCookieRes  = self::getRandomCookie(['普通用户', '普通会员']);
+        $normalCookieData = $normalCookieRes->getData(true);
+        if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
+        $normalAccountId = $normalCookieData['data']['id'];
+
+        // 检查文件数量是否符合用户组配额
+        if (count($request['fs_ids']) >= $count) return ResponseController::groupQuotaIsNotEnough();
 
         // 获取缓存
         $getCacheRes  = self::getCache($request);
         $getCacheData = $getCacheRes->getData(true);
-//        if ($getCacheData['code'] !== 200) return $getCacheRes;
 
         $responseData      = $getCacheData['data']['responseData'];
         $request['fs_ids'] = $getCacheData['data']['fs_ids'];
@@ -253,10 +266,12 @@ class ParseController extends Controller
         if ($getDLinkData['code'] !== 200) return $getDLinkRes;
         $DlinkList = $getDLinkData['data'];
 
+        // 检查文件大小是否符合用户组配额
+        if (collect($DlinkList)->sum('size') >= $size) return ResponseController::groupQuotaIsNotEnough();
+
         // 获取RealLink
         $getRealLinkRes  = self::getRealLink($request, $DlinkList, $normalAccountId);
         $getRealLinkData = $getRealLinkRes->getData(true);
-//        if ($getRealLinkData['code'] !== 200) return $getRealLinkRes;
 
         // 插入缓存读取到的那部分
         $user_id = Auth::check() ? Auth::user()['id'] : -1;
@@ -302,23 +317,6 @@ class ParseController extends Controller
         ]);
     }
 
-    public function checkCanParseUrl(Request $request)
-    {
-        $checkLimitRes  = self::checkLimit($request);
-        $checkLimitData = $checkLimitRes->getData(true);
-        if ($checkLimitData['code'] !== 200) return $checkLimitRes;
-
-        // 检查签名是否过期
-        if (time() - $request['timestamp'] > 300) return ResponseController::signIsOutDate();
-
-        // 检查普通账户是否够用
-        $normalCookieRes  = self::getRandomCookie(['普通用户', '普通会员']);
-        $normalCookieData = $normalCookieRes->getData(true);
-        if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
-
-        return ResponseController::success($normalCookieData['data']['id']);
-    }
-
     public function getCache(Request $request)
     {
         $responseData = [];
@@ -346,7 +344,9 @@ class ParseController extends Controller
             $responseData[] = [
                 'filename' => $record['filename'],
                 'url'      => $record['url'],
-                'ua'       => $record['ua']
+                'ua'       => $record['ua'],
+                'size'     => $record['size'],
+                'fs_id'    => $record['fs_id']
             ];
 
             $request['fs_ids'] = array_filter($request['fs_ids'], fn($Fs_id) => $Fs_id !== $fs_id);
