@@ -1,1 +1,0 @@
-import{E as c}from"./.pnpm-iATkil5N.js";const r=async(a,t="复制成功")=>{if(navigator.clipboard)try{await navigator.clipboard.writeText(a)}catch{const e=document.createElement("textarea");e.value=a,document.body.appendChild(e),e.select(),document.execCommand("copy"),document.body.removeChild(e)}c({message:t,type:"success"})};export{r as c};

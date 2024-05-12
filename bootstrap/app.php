@@ -34,8 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
                       ]);
 
                       $middleware->group('ThrottleRequest', [
-                          // 限制1分钟内请求不超过50次 超过就停用5分钟
-                          ThrottleRequests::class . ':30,5'
+                          // 限制1分钟内请求不超过50次 超过就停用10分钟
+                          ThrottleRequests::class . ':30,10'
                       ]);
                   })
                   ->withExceptions(function (Exceptions $exceptions) {
