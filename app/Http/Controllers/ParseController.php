@@ -31,7 +31,7 @@ class ParseController extends Controller
             $have_account = false;
 
         return ResponseController::success([
-            'show_announce' => $config['announce'] !== null,
+            'show_announce' => $config['announce'] !== null && $config['announce'] !== '',
             'announce'      => $config['announce'],
             'user_agent'    => $config['user_agent'],
             'debug'         => config('app.debug'),
