@@ -175,10 +175,10 @@ class ResponseController extends Controller
         return self::response(10031, 500, '在获取dlink时请求失败,code:' . $code);
     }
 
-    public static function getRealLinkError()
+    public static function getRealLinkError($extend)
     {
         // 10032
-        return '在获取reallink时请求失败!';
+        return '在获取reallink时请求失败!' . $extend;
     }
 
     public static function hitCaptcha()
