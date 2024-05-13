@@ -19,6 +19,7 @@ RUN apk update && \
     echo "Asia/Shanghai" > /etc/timezone
 
 # 复制项目源码
+COPY .env.example .env
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
