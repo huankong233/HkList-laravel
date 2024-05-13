@@ -43,7 +43,7 @@ class ParseController extends Controller
         ]);
     }
 
-    public function getRandomCookie($vipType = '超级会员')
+    public function getRandomCookie($vipType = ['超级会员'])
     {
         $vipType = is_array($vipType) ? $vipType : [$vipType];
 
@@ -481,7 +481,7 @@ class ParseController extends Controller
             $http = new Client([
                 'headers' => [
                     'User-Agent' => $userAgent,
-                    'Cookie'     => $svipCookieData['data']['cookie'],
+                    'Cookie'     => $svipAccount['cookie'],
                     'Host'       => 'pan.baidu.com',
                     'Origin'     => 'https://pan.baidu.com',
                     'Referer'    => 'https://pan.baidu.com/disk/home'
@@ -506,7 +506,7 @@ class ParseController extends Controller
                         'reason' => '获取reallink返回空'
                     ]);
                     $responseData[] = [
-                        'url'      => ResponseController::getRealLinkError(),
+                        'url'      => ResponseController::getRealLinkError(',原因: 返回数据为空'),
                         'filename' => $list['server_filename'],
                         'ua'       => $userAgent,
                     ];
@@ -545,8 +545,12 @@ class ParseController extends Controller
                     'url'               => $effective_url
                 ]);
             } catch (RequestException $e) {
+                $svipAccount->update([
+                    'switch' => 0,
+                    'reason' => '获取reaklink时提示被封禁'
+                ]);
                 $responseData[] = [
-                    'url'      => ResponseController::getRealLinkError(),
+                    'url'      => ResponseController::getRealLinkError(',原因: 账号被封禁'),
                     'filename' => $list['server_filename'],
                     'ua'       => $userAgent,
                 ];
