@@ -260,4 +260,9 @@ class ResponseController extends Controller
     {
         return self::response(10047, 403, '用户组剩余解析文件大小不足');
     }
+
+    public static function paramsErrorFromRequest()
+    {
+        return self::response(10048, 403, '参数错误来自百度服务器');
+    }
 }

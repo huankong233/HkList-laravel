@@ -423,7 +423,7 @@ class ParseController extends Controller
                 return ResponseController::signIsOutDate();
             case 113:
             case 118:
-                return ResponseController::paramsError();
+                return ResponseController::paramsErrorFromRequest();
             case 116:
                 return ResponseController::linkIsOutDate();
             case 121:
