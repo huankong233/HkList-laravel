@@ -1,25 +1,33 @@
 #!/bin/sh
 
 # 变量
-dir_path="/var/www/html"
+www_path="/var/www/html"
 latest_path="/var/www/94list-laravel"
+commands_path="/app/Console/Commands"
 
-# 目录映射检测
-if [ -d "$dir_path" ]; then
-    cd $dir_path
-    # 判断文件夹是否为空
-    if [ ! "$(ls -A $dir_path)" ]; then
-        # 文件夹为空 复制文件夹内容
-        cp -a "$latest_path"/. "$dir_path"
+echo "检查目录映射是否正确" && \
+if [ -d "$www_path" ]; then
+    cd $www_path || exit
+    if [ ! "$(ls -A $www_path)" ]; then
+        echo "文件夹为空,导入文件"
+        cp -a $latest_path/. $www_path
     fi
 else
-    # 文件夹不存在
-    echo "没有正确映射路径…"
-fi && \
+    echo "没有正确映射路径"
+    exit
+fi
 
-# 复制 vendor 文件夹
-echo "导入新的依赖…" && \
-rm -rf "$dir_path"/vendor && \
-cp -a "$latest_path"/vendor "$dir_path"/vendor && \
+echo "导入Commands文件夹"
+rm -rf $www_path$commands_path
+mkdir -p $www_path$commands_path
+cp -a $latest_path$commands_path/. $www_path$commands_path
+
+echo "导入新的依赖"
+rm -rf $www_path/vendor
+cp -a $latest_path/vendor/. $www_path/vendor
+
+echo "启动更新程序"
+cd $latest_path || exit
+php artisan app:check-app-status
 
 exec "$@"
