@@ -9,6 +9,7 @@ COPY . /app
 # 开始构建
 RUN composer install --optimize-autoloader --no-interaction --no-progress
 
+# 项目地址: https://github.com/huankong233/php-nginx
 FROM huankong233/php-nginx:latest
 
 # 指定当前用户
@@ -47,8 +48,6 @@ EXPOSE 8080
 
 # 映射源码目录
 VOLUME ["/var/www/html"]
-# 映射备份目录
-VOLUME ["/var/www/html_old"]
 
 # 启动
 ENTRYPOINT ["/entrypoint.sh"]
