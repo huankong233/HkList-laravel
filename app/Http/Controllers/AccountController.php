@@ -101,7 +101,7 @@ class AccountController extends Controller
             $svipEndAtData = $svipEndAtRes->getData(true);
             if ($svipEndAtData['code'] !== 200) return $svipEndAtRes;
 
-            $svip_end_at = date('Y-m-d H:i:s', $svipEndAtData['data']['currenttime'] ?? 0 + $svipEndAtData['data']['reminder']['svip']['leftseconds'] ?? 0);
+            $svip_end_at = date('Y-m-d H:i:s', ($svipEndAtData['data']['currenttime'] ?? 0) + ($svipEndAtData['data']['reminder']['svip']['leftseconds'] ?? 0));
             if (strtotime($svip_end_at) < strtotime('now')) $switch = 0;
         }
 
