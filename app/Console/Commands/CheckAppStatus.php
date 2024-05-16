@@ -78,8 +78,8 @@ class CheckAppStatus extends Command
         $bak_env_file = $bak_path . '/.env';
 
         $this->info('开始备份数据库和配置文件');
-        File::copy($www_db_file, $bak_db_file);
-        File::copy($www_env_file, $bak_env_file);
+        if (File::exists($www_db_file)) File::copy($www_db_file, $bak_db_file);
+        if (File::exists($www_env_file)) File::copy($www_env_file, $bak_env_file);
         $this->info('完成备份数据库和配置文件');
 
         $this->info('开始导入容器版本源码');
@@ -88,17 +88,18 @@ class CheckAppStatus extends Command
         File::copyDirectory($latest_path, $www_path);
         $this->info('完成导入容器版本源码');
 
-        $this->info('开始导入sqlite数据库和配置文件');
-        File::copy($bak_db_file, $www_db_file);
+        $this->info('开始导入sqlite数据库');
+        if (File::exists($bak_db_file)) File::copy($bak_db_file, $www_db_file);
+        $this->info('完成导入sqlite数据库');
+
+        $this->info('开始导入配置文件');
         // 删除配置文件
         File::delete($www_env_path);
-        File::copy($bak_env_file, $www_env_file);
-        $this->info('完成导入sqlite数据库和配置文件');
-
         // 更新env信息
         $latest_env->map(fn($env, $key) => $www_env->get($key) ?? $env);
         $latest_env['_94LIST_VERSION'] = $latest_version;
         File::replace($www_env_path, $latest_env->implode("\n"));
+        $this->info('完成导入配置文件');
 
         // 重建文件锁
         $this->info('重建文件锁');
