@@ -78,6 +78,7 @@ class CheckAppStatus extends Command
         $bak_env_file = $bak_path . '/.env';
 
         $this->info('开始备份数据库和配置文件');
+        if (!File::exists($bak_path)) File::makeDirectory($bak_path);
         if (File::exists($www_db_file)) File::copy($www_db_file, $bak_db_file);
         if (File::exists($www_env_file)) File::copy($www_env_file, $bak_env_file);
         $this->info('完成备份数据库和配置文件');
