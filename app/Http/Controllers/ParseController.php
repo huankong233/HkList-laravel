@@ -336,7 +336,7 @@ class ParseController extends Controller
                                 ['normal_account_id', '!=', -1]
                             ])
                             ->whereDate('created_at', now())
-                            ->whereTime('created_at', '>=', now()->subHours(8))
+                            ->whereTime('created_at', '>=', now()->subHours(2))
                             ->latest()
                             ->first();
 
@@ -434,7 +434,7 @@ class ParseController extends Controller
                     'switch' => 0,
                     'reason' => 'cookie已失效'
                 ]);
-                return ResponseController::accountExpired();
+                return ResponseController::accountExpired(true);
             case -20:
             case 9019:
                 $normalAccount->update([
@@ -517,10 +517,10 @@ class ParseController extends Controller
                 if (str_contains($effective_url, 'qdall01') || !str_contains($effective_url, 'tsl=0')) {
                     $svipAccount->update([
                         'switch' => 0,
-                        'reason' => '账户限速'
+                        'reason' => '账户限速或cookie已失效'
                     ]);
                     $responseData[] = [
-                        'url'      => ResponseController::accountHasBeenLimitOfTheSpeed(),
+                        'url'      => ResponseController::accountHasBeenLimitOfTheSpeedOrCookieExpired(),
                         'filename' => $list['server_filename'],
                         'ua'       => $userAgent,
                     ];
