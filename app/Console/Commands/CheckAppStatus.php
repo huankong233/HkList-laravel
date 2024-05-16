@@ -41,17 +41,16 @@ class CheckAppStatus extends Command
         $this->info('开始检查是否更新');
 
         // 各项文件夹目录
-        $www_path     = '/var/www/html';
-        $bak_path     = '/var/www/html_bak';
-        $bak_www_path = '/var/www/html/bak';
-        $latest_path  = '/var/www/94list-laravel';
+        $www_path    = '/var/www/html';
+        $latest_path = '/var/www/94list-laravel';
 
         // .env文件的路径
         $www_env_path    = $www_path . '/.env';
         $latest_env_path = $latest_path . '/.env';
 
-        $www_env        = $this->getEnvFile($www_env_path);
-        $latest_env     = $this->getEnvFile($latest_env_path);
+        $www_env    = $this->getEnvFile($www_env_path);
+        $latest_env = $this->getEnvFile($latest_env_path);
+
         $www_version    = $this->getVersionString($www_env);
         $latest_version = $this->getVersionString($latest_env);
 
@@ -70,17 +69,18 @@ class CheckAppStatus extends Command
 
         $this->info('本地版本低于容器版本，开始更新');
 
-        // 备份当前版本
-        $this->info('开始备份当前版本');
-        if (!File::exists($bak_path)) File::makeDirectory($bak_path);
-        // 如果当前文件夹里存在备份 就移动
-        if (File::exists($bak_www_path)) File::moveDirectory($bak_www_path, $bak_path, true);
-        $bak_version_path = $bak_path . '/' . $www_version;
-        // 如果存在就删除掉
-        if (File::exists($bak_version_path)) File::deleteDirectories($bak_version_path);
-        // 复制一份
-        File::copyDirectory($www_path, $bak_version_path);
-        $this->info('完成备份当前版本');
+        $bak_path = '/var/www/bak';
+
+        $www_db_file = $www_path . '/database/database.sqlite';
+        $bak_db_file = $bak_path . '/database/database.sqlite';
+
+        $www_env_file = $www_path . '/.env';
+        $bak_env_file = $bak_path . '/.env';
+
+        $this->info('开始备份数据库和配置文件');
+        File::copy($www_db_file, $bak_db_file);
+        File::copy($www_env_file, $bak_env_file);
+        $this->info('完成备份数据库和配置文件');
 
         $this->info('开始导入容器版本源码');
         // 清空当前版本下所有内容
@@ -88,18 +88,12 @@ class CheckAppStatus extends Command
         File::copyDirectory($latest_path, $www_path);
         $this->info('完成导入容器版本源码');
 
-        // 复制数据库
-        $bak_sqlite_db_file = $bak_version_path . '/database/database.sqlite';
-        $www_sqlite_db_file = $www_path . '/database/database.sqlite';
-        if (File::exists($bak_sqlite_db_file)) {
-            File::copy($bak_sqlite_db_file, $www_sqlite_db_file);
-            $this->info('本地sqlite数据库存在，导入完成');
-        } else {
-            $this->info('本地sqlite数据库不存在，无需导入');
-        }
-
+        $this->info('开始导入sqlite数据库和配置文件');
+        File::copy($bak_db_file, $www_db_file);
         // 删除配置文件
         File::delete($www_env_path);
+        File::copy($bak_env_file, $www_env_file);
+        $this->info('完成导入sqlite数据库和配置文件');
 
         // 更新env信息
         $latest_env->map(fn($env, $key) => $www_env->get($key) ?? $env);
@@ -109,10 +103,6 @@ class CheckAppStatus extends Command
         // 重建文件锁
         $this->info('重建文件锁');
         File::replace($www_path . '/install.lock', 'install ok');
-        File::replace($www_path . '/update.lock', $latest_version);
-
-        // 复制回文件
-        File::copyDirectory($bak_path, $bak_www_path);
 
         # 更新完成
         $this->info('更新完成');
