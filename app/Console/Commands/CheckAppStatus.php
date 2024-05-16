@@ -25,12 +25,15 @@ class CheckAppStatus extends Command
 
     public function getVersionString($env_arr): string
     {
-        return $env_arr->filter(fn($env) => Str::contains($env, '_94LIST_VERSION='))->map(fn($env) => $env ? explode('=', $env)[1] : '0.0.0')->first();
+        return $env_arr->filter(fn($env, $key) => $key === '_94LIST_VERSION')->first() ?? '0.0.0';
     }
 
     public function getEnvFile($env_path): Collection
     {
-        return collect(explode("\n", File::get($env_path)));
+        return collect(explode("\n", File::get($env_path)))
+            ->filter(fn($line) => $line)
+            ->map(fn($line) => explode('=', $line))
+            ->mapWithKeys(fn($item) => [$item[0] => $item[1]]);
     }
 
     /**
@@ -97,8 +100,10 @@ class CheckAppStatus extends Command
         // 删除配置文件
         File::delete($www_env_path);
         // 更新env信息
-        $latest_env->map(fn($env, $key) => $www_env->get($key) ?? $env);
-        $latest_env['_94LIST_VERSION'] = $latest_version;
+        $latest_env = $latest_env->map(function ($env, $key) use ($www_env, $latest_version) {
+            if ($key === '_94LIST_VERSION') return '_94LIST_VERSION=' . $latest_version;
+            return $key . '=' . ($www_env->get($key) ?? $env);
+        });
         File::replace($www_env_path, $latest_env->implode("\n"));
         $this->info('完成导入配置文件');
 
