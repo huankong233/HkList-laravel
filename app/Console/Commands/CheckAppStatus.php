@@ -104,7 +104,7 @@ class CheckAppStatus extends Command
         // 更新env信息
         $latest_env->map(fn($env, $key) => $www_env->get($key) ?? $env);
         $latest_env['_94LIST_VERSION'] = $latest_version;
-        File::replace($www_path, $latest_env->implode("\n"));
+        File::replace($www_env_path, $latest_env->implode("\n"));
 
         // 重建文件锁
         $this->info('重建文件锁');
