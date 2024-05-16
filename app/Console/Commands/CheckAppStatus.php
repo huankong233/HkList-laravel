@@ -111,6 +111,9 @@ class CheckAppStatus extends Command
         File::replace($www_path . '/install.lock', 'install ok');
         File::replace($www_path . '/update.lock', $latest_version);
 
+        // 复制回文件
+        File::copyDirectory($bak_path, $bak_www_path);
+
         # 更新完成
         $this->info('更新完成');
     }
