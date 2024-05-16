@@ -1,15 +1,15 @@
 # 依赖构建
 FROM composer AS composer
 
+COPY .env.example .env
+
 # 复制项目源码
 COPY . /app
 
 # 开始构建
 RUN composer install --optimize-autoloader --no-interaction --no-progress
 
-###########################################################################
-
-# 父级镜像
+# 项目地址: https://github.com/huankong233/php-nginx
 FROM huankong233/php-nginx:latest
 
 # 指定当前用户
@@ -38,6 +38,7 @@ RUN chmod a+x /entrypoint.sh
 
 # 环境变量
 ENV APP_AUTO_UPDATE=true
+ENV IS_DOCKER=true
 
 # 默认工作目录
 WORKDIR /var/www/html
@@ -47,8 +48,6 @@ EXPOSE 8080
 
 # 映射源码目录
 VOLUME ["/var/www/html"]
-# 映射备份目录
-VOLUME ["/var/www/html_old"]
 
 # 启动
 ENTRYPOINT ["/entrypoint.sh"]
