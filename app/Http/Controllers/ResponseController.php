@@ -45,12 +45,12 @@ class ResponseController extends Controller
 
     public static function userPasswordError()
     {
-        return self::response(10005, 403, '用户名或密码错误');
+        return self::response(10005, 401, '用户名或密码错误');
     }
 
     public static function userNotLogin()
     {
-        return self::response(10006, 403, '用户未登陆');
+        return self::response(10006, 401, '用户未登陆');
     }
 
     public static function permissionsDenied()
@@ -85,12 +85,12 @@ class ResponseController extends Controller
 
     public static function getAccountInfoFailed()
     {
-        return self::response(10015, 404, '获取账户信息失败');
+        return self::response(10015, 500, '获取账户信息失败');
     }
 
     public static function getSvipEndTimeFailed()
     {
-        return self::response(10015, 404, '获取SVIP到期时间失败');
+        return self::response(10015, 500, '获取SVIP到期时间失败');
     }
 
     public static function sendMailFailed($reason)
@@ -120,7 +120,7 @@ class ResponseController extends Controller
 
     public static function linkWrongOrPathNotExists()
     {
-        return self::response(10021, 400, '不存在此分享链接或提取码错误');
+        return self::response(10021, 404, '不存在此分享链接或提取码错误');
     }
 
     public static function linkNotValid()
@@ -130,7 +130,7 @@ class ResponseController extends Controller
 
     public static function linkIsOutDate()
     {
-        return self::response(10023, 403, '啊哦，来晚了，该分享文件已过期');
+        return self::response(10023, 410, '啊哦，来晚了，该分享文件已过期');
     }
 
     public static function cookieError($errno)
@@ -164,10 +164,10 @@ class ResponseController extends Controller
         return '超级会员账户不足';
     }
 
-    public static function accountHasBeenLimitOfTheSpeed()
+    public static function accountHasBeenLimitOfTheSpeedOrCookieExpired()
     {
         // 10030
-        return '账户被限速,请重新解析尝试!';
+        return '账户被限速或cookie已过期,请重新解析尝试!';
     }
 
     public static function getDlinkError($code)
@@ -241,9 +241,9 @@ class ResponseController extends Controller
         return self::response(10044, 403, '用户组配额已用完');
     }
 
-    public static function accountExpired()
+    public static function accountExpired($isDlink = false)
     {
-        return self::response(10045, 403, '账户cookie已失效');
+        return self::response(10045, 403, ($isDlink ? '获取dlink时,遇到' : '') . '账户cookie已失效');
     }
 
     public static function groupCanNotBeRemoved($reason)

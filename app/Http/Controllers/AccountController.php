@@ -87,9 +87,10 @@ class AccountController extends Controller
         if ($accountInfoData['code'] !== 200) return $accountInfoRes;
 
         $vip_type = match ($accountInfoData['data']['vip_type']) {
-            0 => '普通用户',
-            1 => '普通会员',
-            2 => '超级会员'
+            0       => '普通用户',
+            1       => '普通会员',
+            2       => '超级会员',
+            default => '未知'
         };
 
         $switch      = 1;
@@ -100,8 +101,8 @@ class AccountController extends Controller
             $svipEndAtData = $svipEndAtRes->getData(true);
             if ($svipEndAtData['code'] !== 200) return $svipEndAtRes;
 
-            $svip_end_at = date('Y-m-d H:i:s', $svipEndAtData['data']['currenttime'] + $svipEndAtData['data']['reminder']['svip']['leftseconds']);
-            if ($svip_end_at < date('Y-m-d H:i:s')) $switch = 0;
+            $svip_end_at = date('Y-m-d H:i:s', $svipEndAtData['data']['currenttime'] ?? 0 + $svipEndAtData['data']['reminder']['svip']['leftseconds'] ?? 0);
+            if (strtotime($svip_end_at) < strtotime('now')) $switch = 0;
         }
 
         return ResponseController::success([
@@ -126,16 +127,22 @@ class AccountController extends Controller
 
         $request['cookie'] = is_array($request['cookie']) ? $request['cookie'] : [$request['cookie']];
 
+        $have_repeat = false;
         foreach ($request['cookie'] as $cookie) {
             if (!$cookie) continue;
             $accountItemsRes  = self::_getAccountItems($cookie);
             $accountItemsData = $accountItemsRes->getData(true);
             if ($accountItemsData['code'] !== 200) return $accountItemsRes;
-            Account::query()->create($accountItemsData['data']);
+            $account = Account::query()->firstWhere([
+                'baidu_name'   => $accountItemsData['data']['baidu_name'],
+                'netdisk_name' => $accountItemsData['data']['netdisk_name'],
+            ]);
+            if (!$account) Account::query()->create($accountItemsData['data']);
+            else $have_repeat = true;
             sleep(1);
         }
 
-        return ResponseController::success();
+        return ResponseController::success(['have_repeat' => $have_repeat]);
     }
 
     public static function updateAccount($account_id)
@@ -146,9 +153,14 @@ class AccountController extends Controller
 
         $accountItemsRes  = self::_getAccountItems($cookie);
         $accountItemsData = $accountItemsRes->getData(true);
-        if ($accountItemsData['code'] !== 200) return $accountItemsRes;
-
-        $account->update($accountItemsData['data']);
+        if ($accountItemsData['code'] === 200) {
+            $account->update($accountItemsData['data']);
+        } else if ($accountItemsData['code'] === 10045) {
+            $account->update([
+                'switch' => 0,
+                'reason' => 'cookie已过期'
+            ]);
+        }
 
         return ResponseController::success();
     }
@@ -165,7 +177,6 @@ class AccountController extends Controller
             $updateAccountRes  = self::updateAccount($account_id);
             $updateAccountData = $updateAccountRes->getData(true);
             if ($updateAccountData['code'] !== 200) return $updateAccountRes;
-
             sleep(1);
         }
 
