@@ -15,9 +15,17 @@
 
 ## 安装方法
 
+### 普通安装
+
 - 1.使用 `composer` 安装依赖, 可以参考 [独角数卡安装](https://github.com/assimon/dujiaoka/wiki/2.x_linux_install#composer-%E5%AE%89%E8%A3%85)
 - 2.复制 `.env.example` 并重命名为 `.env`
 - 3.访问页面
+
+### `docker` 安装
+
+- 1.获取[镜像](https://hub.docker.com/r/huankong233/94list-laravel)
+- 2.启动项目
+- 3.所有值可以通过修改 `.env` 文件 或者通过修改 `系统变量` 来定义
 
 ## 相关仓库
 
