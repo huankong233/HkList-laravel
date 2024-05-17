@@ -1,6 +1,6 @@
 # 94list-laravel
 
-![Laravel Logo](https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg)
+![Laravel Logo](https://raw.githubusercontent.com/jonacruz89/SAWARATSUKI.ServiceLogos/main/Laravel/Laravel.png)
 
 ## 提前声明
 
@@ -8,10 +8,6 @@
 开源项目所涉及的接口均为官方开放接口，需使用正版 SVIP 会员账号进行代理提取高速链接，无破坏官方接口行为，本身不存违法。
 仅供自己参考学习使用。诺违规使用官方会限制或封禁你的账号，包括你的 IP，如无官方授权进行商业用途会对你造成更严重后果。
 源码仅供学习，如无视声明使用产生正负面结果(限速，被封等)与都作者无关。
-
-## 项目文档(未完成)
-
-[跳转👉](https://blog.huankong.top/docs/94list-laravel)
 
 ## 安装方法
 
