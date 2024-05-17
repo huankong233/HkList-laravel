@@ -87,10 +87,9 @@ class AccountController extends Controller
         if ($accountInfoData['code'] !== 200) return $accountInfoRes;
 
         $vip_type = match ($accountInfoData['data']['vip_type']) {
-            0       => '普通用户',
-            1       => '普通会员',
-            2       => '超级会员',
-            default => '未知'
+            0 => '普通用户',
+            1 => '普通会员',
+            2 => '超级会员'
         };
 
         $switch      = 1;
@@ -101,8 +100,13 @@ class AccountController extends Controller
             $svipEndAtData = $svipEndAtRes->getData(true);
             if ($svipEndAtData['code'] !== 200) return $svipEndAtRes;
 
-            $svip_end_at = date('Y-m-d H:i:s', ($svipEndAtData['data']['currenttime'] ?? 0) + ($svipEndAtData['data']['reminder']['svip']['leftseconds'] ?? 0));
-            if (strtotime($svip_end_at) < strtotime('now')) $switch = 0;
+            // 百度漏洞 svip到期后依然可用 #87
+            if (isset($svipEndAtData['data']['reminder']['svip'])) {
+                $svip_end_at = date('Y-m-d H:i:s', ($svipEndAtData['data']['currenttime'] ?? 0) + ($svipEndAtData['data']['reminder']['svip']['leftseconds'] ?? 0));
+                if (strtotime($svip_end_at) < strtotime('now')) $switch = 0;
+            } else {
+                $svip_end_at = date('Y-m-d H:i:s', strtotime("+1day"));
+            }
         }
 
         return ResponseController::success([
