@@ -256,16 +256,16 @@ class ParseController extends Controller
         $getCacheRes  = self::getCache($request);
         $getCacheData = $getCacheRes->getData(true);
 
-        $responseData      = $getCacheData['data']['responseData'];
+        $DlinkList         = $getCacheData['data']['DlinkList'];
         $request['fs_ids'] = $getCacheData['data']['fs_ids'];
 
-        if (count($request['fs_ids']) === 0) return ResponseController::success($responseData);
-
-        // 获取DLink
-        $getDLinkRes  = self::getDLink($request, $normalAccountId);
-        $getDLinkData = $getDLinkRes->getData(true);
-        if ($getDLinkData['code'] !== 200) return $getDLinkRes;
-        $DlinkList = $getDLinkData['data'];
+        if (count($request['fs_ids']) > 0) {
+            // 获取DLink
+            $getDLinkRes  = self::getDLink($request, $normalAccountId);
+            $getDLinkData = $getDLinkRes->getData(true);
+            if ($getDLinkData['code'] !== 200) return $getDLinkRes;
+            $DlinkList = array_merge($DlinkList, $getDLinkData['data']);
+        }
 
         // 检查文件大小是否符合用户组配额
         if (collect($DlinkList)->sum('size') > $size) return ResponseController::groupQuotaSizeIsNotEnough();
@@ -273,27 +273,7 @@ class ParseController extends Controller
         // 获取RealLink
         $getRealLinkRes  = self::getRealLink($request, $DlinkList, $normalAccountId);
         $getRealLinkData = $getRealLinkRes->getData(true);
-
-        // 插入缓存读取到的那部分
-        $user_id = Auth::check() ? Auth::user()['id'] : -1;
-        foreach ($responseData as $responseDatum) {
-            RecordController::addRecord([
-                'ip'                => $request->ip(),
-                'fs_id'             => $responseDatum['fs_id'],
-                'filename'          => $responseDatum['filename'],
-                'user_id'           => $user_id,
-                'account_id'        => -1,
-                'normal_account_id' => -1,
-                'size'              => $responseDatum['size'],
-                'ua'                => $responseDatum['ua'],
-                'url'               => $responseDatum['url']
-            ]);
-        }
-
-        $responseData = [
-            ...$responseData,
-            ...$getRealLinkData['data']
-        ];
+        $responseData    = $getRealLinkData['data'];
 
         return ResponseController::success($responseData);
     }
@@ -320,7 +300,7 @@ class ParseController extends Controller
 
     public function getCache(Request $request)
     {
-        $responseData = [];
+        $DlinkList = [];
 
         /**
          * account_id -1表示读取缓存的记录
@@ -336,13 +316,13 @@ class ParseController extends Controller
                                 ['normal_account_id', '!=', -1]
                             ])
                             ->whereDate('created_at', now())
-                            ->whereTime('created_at', '>=', now()->subHours(2))
+                            ->whereTime('created_at', '>=', now()->subHours(8))
                             ->latest()
                             ->first();
 
             if (!$record) continue;
 
-            $responseData[] = [
+            $DlinkList[] = [
                 'filename' => $record['filename'],
                 'url'      => $record['url'],
                 'ua'       => $record['ua'],
@@ -354,8 +334,8 @@ class ParseController extends Controller
         }
 
         return ResponseController::success([
-            'responseData' => $responseData,
-            'fs_ids'       => $request['fs_ids']
+            'DlinkList' => $DlinkList,
+            'fs_ids'    => $request['fs_ids']
         ]);
     }
 
@@ -462,6 +442,9 @@ class ParseController extends Controller
         $responseData = [];
 
         foreach ($DlinkList as $list) {
+            $list['server_filename'] = $list['server_filename'] ?? $list['filename'];
+            $list['dlink']           = $list['dlink'] ?? $list['url'];
+
             $svipCookieRes  = self::getRandomCookie();
             $svipCookieData = $svipCookieRes->getData(true);
             if ($svipCookieData['data'] === null) {
@@ -542,7 +525,7 @@ class ParseController extends Controller
                     'normal_account_id' => $normalAccountId,
                     'size'              => $list['size'],
                     'ua'                => $userAgent,
-                    'url'               => $effective_url
+                    'url'               => $list['dlink']
                 ]);
             } catch (RequestException $e) {
                 $svipAccount->update([
