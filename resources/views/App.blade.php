@@ -4,6 +4,6 @@
     try {
         echo \Illuminate\Support\Facades\File::get(public_path('index.html'));
     }catch (Exception $e){
-        echo '';
+        echo '未获取到页面内容,请检查public目录下是否存在编译后的前端项目!!!';
     }
 @endphp
