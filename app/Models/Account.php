@@ -12,13 +12,13 @@ class Account extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'baidu_name',
-        'netdisk_name',
-        'cookie',
-        'vip_type',
-        'switch',
-        'reason',
-        'svip_end_at',
-        'last_use_at'
+        "baidu_name",
+        "netdisk_name",
+        "cookie",
+        "vip_type",
+        "switch",
+        "reason",
+        "svip_end_at",
+        "last_use_at"
     ];
 }

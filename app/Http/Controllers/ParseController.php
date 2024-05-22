@@ -20,42 +20,42 @@ class ParseController extends Controller
 {
     public function getConfig(Request $request)
     {
-        $config = config('94list');
+        $config = config("94list");
 
         $have_account = true;
 
         if (
-            self::getRandomCookie()->getData(true)['data'] === null ||
-            self::getRandomCookie(['普通用户', '普通会员'])->getData(true)['data'] === null
+            self::getRandomCookie()->getData(true)["data"] === null ||
+            self::getRandomCookie(["普通用户", "普通会员"])->getData(true)["data"] === null
         )
             $have_account = false;
 
         return ResponseController::success([
-            'show_announce' => $config['announce'] !== null && $config['announce'] !== '',
-            'announce'      => $config['announce'],
-            'user_agent'    => $config['user_agent'],
-            'debug'         => config('app.debug'),
-            'max_once'      => $config['max_once'],
-            'have_account'  => $have_account,
-            'have_login'    => Auth::check(),
-            'need_inv_code' => $config['need_inv_code'],
-            'need_password' => $config['password'] !== ''
+            "show_announce" => $config["announce"] !== null && $config["announce"] !== "",
+            "announce"      => $config["announce"],
+            "user_agent"    => $config["user_agent"],
+            "debug"         => config("app.debug"),
+            "max_once"      => $config["max_once"],
+            "have_account"  => $have_account,
+            "have_login"    => Auth::check(),
+            "need_inv_code" => $config["need_inv_code"],
+            "need_password" => $config["password"] !== ""
         ]);
     }
 
-    public function getRandomCookie($vipType = ['超级会员'])
+    public function getRandomCookie($vipType = ["超级会员"])
     {
         $vipType = is_array($vipType) ? $vipType : [$vipType];
 
-        if (in_array('超级会员', $vipType)) {
+        if (in_array("超级会员", $vipType)) {
             // 禁用不可用的账户
             $banAccounts = Account::query()
                                   ->where([
-                                      'switch'   => 1,
-                                      'vip_type' => '超级会员',
+                                      "switch"   => 1,
+                                      "vip_type" => "超级会员",
                                   ])
-                                  ->whereDate('svip_end_at', '<', now())
-                                  ->whereTime('svip_end_at', '<', now())
+                                  ->whereDate("svip_end_at", "<", now())
+                                  ->whereTime("svip_end_at", "<", now())
                                   ->get();
 
             $updateFailedAccounts = [];
@@ -63,22 +63,22 @@ class ParseController extends Controller
             if ($banAccounts->count() !== 0) {
                 // 更新账户状态
                 foreach ($banAccounts as $account) {
-                    $updateRes  = AccountController::updateAccount($account['id']);
+                    $updateRes  = AccountController::updateAccount($account["id"]);
                     $updateData = $updateRes->getData(true);
-                    if ($updateData['code'] !== 200) {
+                    if ($updateData["code"] !== 200) {
                         $account->update([
-                            'switch' => 0,
-                            'reason' => $updateData['message']
+                            "switch" => 0,
+                            "reason" => $updateData["message"]
                         ]);
                         $updateFailedAccounts[] = $account->toJson();
                     }
                     sleep(1);
                 }
 
-                if (config('mail.switch')) {
+                if (config("mail.switch")) {
                     try {
-                        Mail::raw('亲爱的' . config('mail.to.name') . ':\n\t有账户已过期,详见:' . json_encode($updateFailedAccounts), function ($message) {
-                            $message->to(config('mail.to.address'))->subject('有账户过期了~');
+                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户已过期,详见:" . json_encode($updateFailedAccounts), function ($message) {
+                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
                         });
                     } catch (Exception $e) {
                         return ResponseController::sendMailFailed($e->getMessage());
@@ -88,10 +88,10 @@ class ParseController extends Controller
         }
 
         $account = Account::query()
-                          ->where('switch', 1)
+                          ->where("switch", 1)
                           ->where(function (Builder $query) use ($vipType) {
                               foreach ($vipType as $type) {
-                                  $query->orWhere('vip_type', $type);
+                                  $query->orWhere("vip_type", $type);
                               }
                           })
                           ->inRandomOrder()
@@ -110,60 +110,60 @@ class ParseController extends Controller
     public function getFileList(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'surl'  => 'required|string',
-            'dir'   => 'required|string',
-            'pwd'   => 'string',
-            'page'  => 'numeric',
-            'num'   => 'numeric',
-            'order' => 'string'
+            "surl"  => "required|string",
+            "dir"   => "required|string",
+            "pwd"   => "string",
+            "page"  => "numeric",
+            "num"   => "numeric",
+            "order" => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
         try {
             $http     = new Client([
-                'headers' => [
-                    'User-Agent' => config('94list.fake_wx_user_agent'),
-                    'Cookie'     => config('94list.fake_cookie'),
-                    'Referer'    => 'https://pan.baidu.com/disk/home'
+                "headers" => [
+                    "User-Agent" => config("94list.fake_wx_user_agent"),
+                    "Cookie"     => config("94list.fake_cookie"),
+                    "Referer"    => "https://pan.baidu.com/disk/home"
                 ]
             ]);
-            $res      = $http->post('https://pan.baidu.com/share/wxlist', [
-                'query'       => [
-                    'channel'    => 'weixin',
-                    'version'    => '2.9.6',
-                    'clienttype' => 25,
-                    'web'        => 1,
-                    'qq-pf-to'   => 'pcqq.c2c'
+            $res      = $http->post("https://pan.baidu.com/share/wxlist", [
+                "query"       => [
+                    "channel"    => "weixin",
+                    "version"    => "2.9.6",
+                    "clienttype" => 25,
+                    "web"        => 1,
+                    "qq-pf-to"   => "pcqq.c2c"
                 ],
-                'form_params' => [
-                    'shorturl' => $request['surl'],
-                    'dir'      => $request['dir'],
-                    'root'     => $request['dir'] === '/' ? 1 : 0,
-                    'pwd'      => $request['pwd'] ?? '',
-                    'page'     => $request['page'] ?? 1,
-                    'num'      => $request['num'] ?? 1000,
-                    'order'    => $request['order'] ?? 'filename'
+                "form_params" => [
+                    "shorturl" => $request["surl"],
+                    "dir"      => $request["dir"],
+                    "root"     => $request["dir"] === "/" ? 1 : 0,
+                    "pwd"      => $request["pwd"] ?? "",
+                    "page"     => $request["page"] ?? 1,
+                    "num"      => $request["num"] ?? 1000,
+                    "order"    => $request["order"] ?? "filename"
                 ]
             ]);
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
-            return ResponseController::networkError('获取文件列表');
+            return ResponseController::networkError("获取文件列表");
         }
 
-        $errno = $response['errtype'] ?? ($response['errno'] ?? '未知');
+        $errno = $response["errtype"] ?? ($response["errno"] ?? "未知");
         return match ($errno) {
             0                     => ResponseController::success([
-                'uk'      => $response['data']['uk'],
-                'shareid' => $response['data']['shareid'],
-                'randsk'  => self::decodeSceKey($response['data']['seckey']),
-                'list'    => $response['data']['list']
+                "uk"      => $response["data"]["uk"],
+                "shareid" => $response["data"]["shareid"],
+                "randsk"  => self::decodeSceKey($response["data"]["seckey"]),
+                "list"    => $response["data"]["list"]
             ]),
-            'mis_105'             => ResponseController::fileNotExists(),
-            'mispw_9', 'mispwd-9' => ResponseController::pwdWrong(),
-            'mis_2', 'mis_4'      => ResponseController::pathNotExists(),
+            "mis_105"             => ResponseController::fileNotExists(),
+            "mispw_9", "mispwd-9" => ResponseController::pwdWrong(),
+            "mis_2", "mis_4"      => ResponseController::pathNotExists(),
             5                     => ResponseController::linkWrongOrPathNotExists(),
             3                     => ResponseController::linkNotValid(),
             10                    => ResponseController::linkIsOutDate(),
@@ -175,105 +175,105 @@ class ParseController extends Controller
     public function getSign(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'surl'    => 'required|string',
-            'uk'      => 'required|numeric',
-            'shareid' => 'required|numeric'
+            "surl"    => "required|string",
+            "uk"      => "required|numeric",
+            "shareid" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
         try {
             $http = new Client([
-                'headers' => [
-                    'User-Agent' => config("94list.fake_user_agent"),
-                    'Cookie'     => config('94list.fake_cookie'),
-                    'Referer'    => 'https://pan.baidu.com/disk/home'
+                "headers" => [
+                    "User-Agent" => config("94list.fake_user_agent"),
+                    "Cookie"     => config("94list.fake_cookie"),
+                    "Referer"    => "https://pan.baidu.com/disk/home"
                 ]
             ]);
 
-            $res      = $http->get('https://pan.baidu.com/share/tplconfig', [
-                'query' => [
-                    'surl'       => $request['surl'],
-                    'shareid'    => $request['shareid'],
-                    'uk'         => $request['uk'],
-                    'fields'     => 'sign,timestamp',
-                    'channel'    => 'chunlei',
-                    'web'        => 1,
-                    'app_id'     => 250528,
-                    'clienttype' => 0
+            $res      = $http->get("https://pan.baidu.com/share/tplconfig", [
+                "query" => [
+                    "surl"       => $request["surl"],
+                    "shareid"    => $request["shareid"],
+                    "uk"         => $request["uk"],
+                    "fields"     => "sign,timestamp",
+                    "channel"    => "chunlei",
+                    "web"        => 1,
+                    "app_id"     => 250528,
+                    "clienttype" => 0
                 ]
             ]);
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
-            return ResponseController::networkError('获取签名信息');
+            return ResponseController::networkError("获取签名信息");
         }
 
-        $errno = $response['errtype'] ?? ($response['errno'] ?? '未知');
+        $errno = $response["errtype"] ?? ($response["errno"] ?? "未知");
         return match ($errno) {
-            0       => ResponseController::success($response['data']),
-            default => ResponseController::getSignError($errno, $response['show_msg'] ?? '未知'),
+            0       => ResponseController::success($response["data"]),
+            default => ResponseController::getSignError($errno, $response["show_msg"] ?? "未知"),
         };
     }
 
     public function getDownloadLinks(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fs_ids.*'  => 'required|numeric',
-            'randsk'    => 'required|string',
-            'shareid'   => 'required|numeric',
-            'uk'        => 'required|numeric',
-            'sign'      => 'required|string',
-            'timestamp' => 'required|numeric'
+            "fs_ids.*"  => "required|numeric",
+            "randsk"    => "required|string",
+            "shareid"   => "required|numeric",
+            "uk"        => "required|numeric",
+            "sign"      => "required|string",
+            "timestamp" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        if (count($request['fs_ids']) > config('94list.max_once')) return ResponseController::linksOverloaded();
+        if (count($request["fs_ids"]) > config("94list.max_once")) return ResponseController::linksOverloaded();
 
         // 检查限制还能不能解析
         $checkLimitRes  = self::checkLimit($request);
         $checkLimitData = $checkLimitRes->getData(true);
-        if ($checkLimitData['code'] !== 200) return $checkLimitRes;
+        if ($checkLimitData["code"] !== 200) return $checkLimitRes;
 
-        $count = $checkLimitData['data']['count'];
-        $size  = $checkLimitData['data']['size'];
+        $count = $checkLimitData["data"]["count"];
+        $size  = $checkLimitData["data"]["size"];
 
         // 检查签名是否过期
-        if (time() - $request['timestamp'] > 300) return ResponseController::signIsOutDate();
+        if (time() - $request["timestamp"] > 300) return ResponseController::signIsOutDate();
 
         // 检查普通账户是否够用
-        $normalCookieRes  = self::getRandomCookie(['普通用户', '普通会员']);
+        $normalCookieRes  = self::getRandomCookie(["普通用户", "普通会员"]);
         $normalCookieData = $normalCookieRes->getData(true);
-        if ($normalCookieData['data'] === null) return ResponseController::normalAccountIsNotEnough();
-        $normalAccountId = $normalCookieData['data']['id'];
+        if ($normalCookieData["data"] === null) return ResponseController::normalAccountIsNotEnough();
+        $normalAccountId = $normalCookieData["data"]["id"];
 
         // 检查文件数量是否符合用户组配额
-        if (count($request['fs_ids']) > $count) return ResponseController::groupQuotaCountIsNotEnough();
+        if (count($request["fs_ids"]) > $count) return ResponseController::groupQuotaCountIsNotEnough();
 
         // 获取缓存
         $getCacheRes  = self::getCache($request);
         $getCacheData = $getCacheRes->getData(true);
 
-        $DlinkList         = $getCacheData['data']['DlinkList'];
-        $request['fs_ids'] = $getCacheData['data']['fs_ids'];
+        $DlinkList         = $getCacheData["data"]["DlinkList"];
+        $request["fs_ids"] = $getCacheData["data"]["fs_ids"];
 
-        if (count($request['fs_ids']) > 0) {
+        if (count($request["fs_ids"]) > 0) {
             // 获取DLink
             $getDLinkRes  = self::getDLink($request, $normalAccountId);
             $getDLinkData = $getDLinkRes->getData(true);
-            if ($getDLinkData['code'] !== 200) return $getDLinkRes;
-            $DlinkList = array_merge($DlinkList, $getDLinkData['data']);
+            if ($getDLinkData["code"] !== 200) return $getDLinkRes;
+            $DlinkList = array_merge($DlinkList, $getDLinkData["data"]);
         }
 
         // 检查文件大小是否符合用户组配额
-        if (collect($DlinkList)->sum('size') > $size) return ResponseController::groupQuotaSizeIsNotEnough();
+        if (collect($DlinkList)->sum("size") > $size) return ResponseController::groupQuotaSizeIsNotEnough();
 
         // 获取RealLink
         $getRealLinkRes  = self::getRealLink($request, $DlinkList, $normalAccountId);
         $getRealLinkData = $getRealLinkRes->getData(true);
-        $responseData    = $getRealLinkData['data'];
+        $responseData    = $getRealLinkData["data"];
 
         return ResponseController::success($responseData);
     }
@@ -282,19 +282,19 @@ class ParseController extends Controller
     {
         // 获取今日解析数量
         $group = Group::query()
-                      ->find(Auth::check() ? Auth::user()['group_id'] : -1);
+                      ->find(Auth::check() ? Auth::user()["group_id"] : -1);
 
         $records = Record::query()
-                         ->where('ip', $request->ip())
-                         ->whereDate('created_at', now())
+                         ->where("ip", $request->ip())
+                         ->whereDate("created_at", now())
                          ->get();
 
-        if ($records->count() >= $group['count'] || $records->sum('size') >= $group['size'] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
+        if ($records->count() >= $group["count"] || $records->sum("size") >= $group["size"] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
 
         return ResponseController::success([
-            'group_name' => $group['name'],
-            'count'      => $group['count'] - $records->count(),
-            'size'       => $group['size'] * 1073741824 - $records->sum('size')
+            "group_name" => $group["name"],
+            "count"      => $group["count"] - $records->count(),
+            "size"       => $group["size"] * 1073741824 - $records->sum("size")
         ]);
     }
 
@@ -308,34 +308,36 @@ class ParseController extends Controller
          */
 
         // 读取缓存
-        foreach ($request['fs_ids'] as $fs_id) {
+        foreach ($request["fs_ids"] as $fs_id) {
             $record = Record::query()
                             ->where([
-                                'fs_id' => $fs_id,
-                                ['account_id', '!=', -1],
-                                ['normal_account_id', '!=', -1]
+                                "fs_id" => $fs_id,
+                                ["account_id", "!=", -1],
+                                ["normal_account_id", "!=", -1]
                             ])
-                            ->whereDate('created_at', now())
-                            ->whereTime('created_at', '>=', now()->subHours(8))
+                            ->whereDate("created_at", now())
+                            ->whereTime("created_at", ">=", now()->subHours(8))
                             ->latest()
                             ->first();
 
             if (!$record) continue;
 
             $DlinkList[] = [
-                'filename' => $record['filename'],
-                'url'      => $record['url'],
-                'ua'       => $record['ua'],
-                'size'     => $record['size'],
-                'fs_id'    => $record['fs_id']
+                "filename"  => $record["filename"],
+                "url"       => $record["url"],
+                "ua"        => $record["ua"],
+                "size"      => $record["size"],
+                "fs_id"     => $record["fs_id"],
+                'record_id' => $record['id'],
+                'is_cache'  => 1
             ];
 
-            $request['fs_ids'] = array_filter($request['fs_ids'], fn($Fs_id) => $Fs_id !== $fs_id);
+            $request["fs_ids"] = array_filter($request["fs_ids"], fn($Fs_id) => $Fs_id !== $fs_id);
         }
 
         return ResponseController::success([
-            'DlinkList' => $DlinkList,
-            'fs_ids'    => $request['fs_ids']
+            "DlinkList" => $DlinkList,
+            "fs_ids"    => $request["fs_ids"]
         ]);
     }
 
@@ -344,53 +346,53 @@ class ParseController extends Controller
         $normalAccount = Account::query()->find($normalAccountId);
 
         $http = new Client([
-            'headers' => [
-                'User-Agent' => config('94list.fake_user_agent'),
-                'Cookie'     => $normalAccount['cookie'],
-                'Host'       => 'pan.baidu.com',
-                'Origin'     => 'https://pan.baidu.com',
-                'Referer'    => 'https://pan.baidu.com/disk/home'
+            "headers" => [
+                "User-Agent" => config("94list.fake_user_agent"),
+                "Cookie"     => $normalAccount["cookie"],
+                "Host"       => "pan.baidu.com",
+                "Origin"     => "https://pan.baidu.com",
+                "Referer"    => "https://pan.baidu.com/disk/home"
             ]
         ]);
 
         try {
-            $res      = $http->post('https://pan.baidu.com/api/sharedownload', [
-                'query' => [
-                    'app_id'     => 250528,
-                    'channel'    => 'chunlei',
-                    'clienttype' => 12,
-                    'sign'       => $request['sign'],
-                    'timestamp'  => $request['timestamp'],
-                    'web'        => 1
+            $res      = $http->post("https://pan.baidu.com/api/sharedownload", [
+                "query" => [
+                    "app_id"     => 250528,
+                    "channel"    => "chunlei",
+                    "clienttype" => 12,
+                    "sign"       => $request["sign"],
+                    "timestamp"  => $request["timestamp"],
+                    "web"        => 1
                 ],
-                'body'  => join('&', [
-                    'encrypt=0',
-                    'extra=' . urlencode(
+                "body"  => join("&", [
+                    "encrypt=0",
+                    "extra=" . urlencode(
                         Json::encode([
-                            'sekey' => str_contains($request['randsk'], "%") ? urldecode($request['randsk']) : $request['randsk']
+                            "sekey" => str_contains($request["randsk"], "%") ? urldecode($request["randsk"]) : $request["randsk"]
                         ])
                     ),
-                    'fid_list=' . JSON::encode($request['fs_ids']),
-                    'primaryid=' . $request['shareid'],
-                    'uk=' . $request['uk'],
-                    'product=share',
-                    'type=nolimit'
+                    "fid_list=" . JSON::encode($request["fs_ids"]),
+                    "primaryid=" . $request["shareid"],
+                    "uk=" . $request["uk"],
+                    "product=share",
+                    "type=nolimit"
                 ])
             ]);
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
         } catch (GuzzleException $e) {
-            return ResponseController::networkError('获取DLink');
+            return ResponseController::networkError("获取DLink");
         }
 
-        $errno = $response['errtype'] ?? ($response['errno'] ?? '未知');
+        $errno = $response["errtype"] ?? ($response["errno"] ?? "未知");
         switch ($errno) {
             case 0:
                 $normalAccount->update([
-                    'last_use_at' => date("Y-m-d H:i:s")
+                    "last_use_at" => date("Y-m-d H:i:s")
                 ]);
-                return ResponseController::success($response['list']);
+                return ResponseController::success($response["list"]);
             case -1:
                 return ResponseController::linkNotValid();
             case -9:
@@ -411,21 +413,21 @@ class ParseController extends Controller
             case 4:
             case -6:
                 $normalAccount->update([
-                    'switch' => 0,
-                    'reason' => 'cookie已失效'
+                    "switch" => 0,
+                    "reason" => "cookie已失效"
                 ]);
                 return ResponseController::accountExpired(true);
             case -20:
             case 9019:
                 $normalAccount->update([
-                    'reason' => '触发验证码'
+                    "reason" => "触发验证码"
                 ]);
                 return ResponseController::hitCaptcha();
             case 8001:
             case 9013:
                 $normalAccount->update([
-                    'switch' => 0,
-                    'reason' => '获取DLink失败'
+                    "switch" => 0,
+                    "reason" => "获取DLink失败"
                 ]);
                 return ResponseController::getDlinkError($errno);
             default:
@@ -437,114 +439,136 @@ class ParseController extends Controller
     {
         // 如果就一个文件就不睡
         // 有多个文件就每个睡一觉
-        $sleepTime    = count($DlinkList) > 1 ? config('94list.sleep') : 0;
+        $sleepTime    = count($DlinkList) > 1 ? config("94list.sleep") : 0;
         $userAgent    = config("94list.user_agent");
         $responseData = [];
 
-        foreach ($DlinkList as $list) {
-            $list['server_filename'] = $list['server_filename'] ?? $list['filename'];
-            $list['dlink']           = $list['dlink'] ?? $list['url'];
+        foreach ($DlinkList as $index => $list) {
+            $list["server_filename"] = $list["server_filename"] ?? $list["filename"];
+            $list["dlink"]           = $list["dlink"] ?? $list["url"];
 
-            $svipCookieRes  = self::getRandomCookie();
+            $svipCookieRes  = self::getRandomCookie(["超级会员", "假超级会员"]);
             $svipCookieData = $svipCookieRes->getData(true);
-            if ($svipCookieData['data'] === null) {
+            if ($svipCookieData["data"] === null) {
                 $responseData[] = [
-                    'url'      => ResponseController::svipAccountIsNotEnough(),
-                    'filename' => $list['server_filename'],
-                    'ua'       => $userAgent,
+                    "url"      => ResponseController::svipAccountIsNotEnough(),
+                    "filename" => $list["server_filename"],
+                    "ua"       => $userAgent,
+                    "fs_id"    => $list["fs_id"]
                 ];
                 continue;
             }
 
-            $svipAccount = Account::query()->find($svipCookieData['data']['id']);
+            $svipAccount = Account::query()->find($svipCookieData["data"]["id"]);
             $svipAccount->update([
-                'last_use_at' => date('Y-m-d H:i:s')
+                "last_use_at" => date("Y-m-d H:i:s")
             ]);
 
             $http = new Client([
-                'headers' => [
-                    'User-Agent' => $userAgent,
-                    'Cookie'     => $svipAccount['cookie'],
-                    'Host'       => 'pan.baidu.com',
-                    'Origin'     => 'https://pan.baidu.com',
-                    'Referer'    => 'https://pan.baidu.com/disk/home'
+                "headers" => [
+                    "User-Agent" => $userAgent,
+                    "Cookie"     => $svipAccount["cookie"],
+                    "Host"       => "pan.baidu.com",
+                    "Origin"     => "https://pan.baidu.com",
+                    "Referer"    => "https://pan.baidu.com/disk/home"
                 ]
             ]);
 
             try {
-                $headResponse = $http->head($list['dlink'], [
-                    'allow_redirects' => [
-                        'follow_redirects' => false,
-                        'track_redirects'  => true,
+                $headResponse = $http->head($list["dlink"], [
+                    "allow_redirects" => [
+                        "follow_redirects" => false,
+                        "track_redirects"  => true,
                     ]
                 ]);
 
                 // 获取最后一个重定向的 URL
-                $redirectUrls  = $headResponse->getHeader('X-Guzzle-Redirect-History');
+                $redirectUrls  = $headResponse->getHeader("X-Guzzle-Redirect-History");
                 $effective_url = end($redirectUrls);
 
                 if (!$effective_url || strlen($effective_url) < 20) {
                     $svipAccount->update([
-                        'switch' => 0,
-                        'reason' => '获取reallink返回空'
+                        "switch" => 0,
+                        "reason" => "获取reallink返回空"
                     ]);
                     $responseData[] = [
-                        'url'      => ResponseController::getRealLinkError(',原因: 返回数据为空'),
-                        'filename' => $list['server_filename'],
-                        'ua'       => $userAgent,
+                        "url"      => ResponseController::getRealLinkError(",原因: 返回数据为空"),
+                        "filename" => $list["server_filename"],
+                        "ua"       => $userAgent,
+                        "fs_id"    => $list["fs_id"]
                     ];
                     continue;
                 }
 
                 // 账号限速
-                if (str_contains($effective_url, 'qdall01') || !str_contains($effective_url, 'tsl=0')) {
-                    $svipAccount->update([
-                        'switch' => 0,
-                        'reason' => '账户限速或cookie已失效'
-                    ]);
+                if (str_contains($effective_url, "qdall01") || !str_contains($effective_url, "tsl=0")) {
+                    // 如果是假会员 被限速后回归普通账户 更新账户信息
+                    if ($svipAccount["vip_type"] === "假超级会员") {
+                        AccountController::updateAccount($svipAccount['id']);
+                    } else {
+                        $svipAccount->update([
+                            "switch" => 0,
+                            "reason" => "账户限速或cookie已失效"
+                        ]);
+                    }
                     $responseData[] = [
-                        'url'      => ResponseController::accountHasBeenLimitOfTheSpeedOrCookieExpired(),
-                        'filename' => $list['server_filename'],
-                        'ua'       => $userAgent,
+                        "url"      => ResponseController::accountHasBeenLimitOfTheSpeedOrCookieExpired(),
+                        "filename" => $list["server_filename"],
+                        "ua"       => $userAgent,
+                        "fs_id"    => $list["fs_id"]
                     ];
                     continue;
                 }
 
                 $responseData[] = [
-                    'url'      => $effective_url,
-                    'filename' => $list['server_filename'],
-                    'ua'       => $userAgent
+                    "url"      => $effective_url,
+                    "filename" => $list["server_filename"],
+                    "ua"       => $userAgent,
+                    "fs_id"    => $list["fs_id"]
                 ];
 
                 RecordController::addRecord([
-                    'ip'                => $request->ip(),
-                    'fs_id'             => $list['fs_id'],
-                    'filename'          => $list['server_filename'],
-                    'user_id'           => Auth::user()['id'] ?? -1,
-                    'account_id'        => $svipAccount['id'],
-                    'normal_account_id' => $normalAccountId,
-                    'size'              => $list['size'],
-                    'ua'                => $userAgent,
-                    'url'               => $list['dlink']
+                    "ip"                => $request->ip(),
+                    "fs_id"             => $list["fs_id"],
+                    "filename"          => $list["server_filename"],
+                    "user_id"           => Auth::user()["id"] ?? -1,
+                    "account_id"        => $svipAccount["id"],
+                    "normal_account_id" => $normalAccountId,
+                    "size"              => $list["size"],
+                    "ua"                => $userAgent,
+                    "url"               => $list["dlink"]
                 ]);
             } catch (RequestException $e) {
-                $svipAccount->update([
-                    'switch' => 0,
-                    'reason' => '获取reaklink时提示被封禁'
-                ]);
-                $responseData[] = [
-                    'url'      => ResponseController::getRealLinkError(',原因: 账号被封禁'),
-                    'filename' => $list['server_filename'],
-                    'ua'       => $userAgent,
-                ];
+                // 检查是否是缓存
+                if ($list['is_cache']) {
+                    Record::query()->find($list['record_id'])->delete();
+                    $responseData[] = [
+                        "url"      => ResponseController::getRealLinkError(",原因: 缓存的dlnk失效,请重新获取"),
+                        "filename" => $list["server_filename"],
+                        "ua"       => $userAgent,
+                        "fs_id"    => $list["fs_id"]
+                    ];
+                } else {
+                    $svipAccount->update([
+                        "switch" => 0,
+                        "reason" => "获取reaklink时提示被封禁"
+                    ]);
+                    $responseData[] = [
+                        "url"      => ResponseController::getRealLinkError(",原因: 账号被封禁"),
+                        "filename" => $list["server_filename"],
+                        "ua"       => $userAgent,
+                        "fs_id"    => $list["fs_id"]
+                    ];
+                }
             } catch (GuzzleException $e) {
                 $responseData[] = [
-                    'url'      => ResponseController::networkError('获取reallink')->getData(true)['message'],
-                    'filename' => $list['server_filename'],
-                    'ua'       => $userAgent,
+                    "url"      => ResponseController::networkError("获取reallink")->getData(true)["message"],
+                    "filename" => $list["server_filename"],
+                    "ua"       => $userAgent,
+                    "fs_id"    => $list["fs_id"]
                 ];
             }
-            sleep($sleepTime);
+            if ($index !== count($DlinkList) - 1) sleep($sleepTime);
         }
 
         return ResponseController::success($responseData);
