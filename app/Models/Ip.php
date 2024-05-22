@@ -10,7 +10,7 @@ class Ip extends Model
     use HasFactory;
 
     protected $fillable = [
-        'ip',
-        'mode'
+        "ip",
+        "mode"
     ];
 }

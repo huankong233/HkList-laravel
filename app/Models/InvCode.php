@@ -12,9 +12,9 @@ class InvCode extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'can_count',
-        'use_count',
-        'group_id'
+        "name",
+        "can_count",
+        "use_count",
+        "group_id"
     ];
 }
