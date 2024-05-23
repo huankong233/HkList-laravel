@@ -75,15 +75,15 @@ class CheckAppStatus extends Command
         $bak_path = "/var/www/bak";
 
         $www_db_file = $www_path . "/database/database.sqlite";
-        $bak_db_file = $bak_path . "/database/database.sqlite";
+        $bak_db_file = $bak_path . "/database.sqlite";
 
         $www_env_file = $www_path . "/.env";
         $bak_env_file = $bak_path . "/.env";
 
         $this->info("开始备份数据库和配置文件");
         if (!File::exists($bak_path)) File::makeDirectory($bak_path);
-        if (File::exists($www_db_file)) File::copy($bak_db_file, $www_db_file);
-        if (File::exists($www_env_file)) File::copy($bak_env_file, $www_env_file);
+        if (File::exists($www_db_file)) File::copy($www_db_file, $bak_db_file);
+        if (File::exists($www_env_file)) File::copy($www_env_file, $bak_env_file);
         $this->info("完成备份数据库和配置文件");
 
         $this->info("开始导入容器版本源码");
@@ -93,7 +93,7 @@ class CheckAppStatus extends Command
         $this->info("完成导入容器版本源码");
 
         $this->info("开始导入sqlite数据库");
-        if (File::exists($bak_db_file)) File::copy($www_db_file, $bak_db_file);
+        if (File::exists($bak_db_file)) File::copy($bak_db_file, $www_db_file);
         $this->info("完成导入sqlite数据库");
 
         $this->info("开始导入配置文件");
