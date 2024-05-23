@@ -49,6 +49,7 @@ Route::middleware("NeedInstall")->group(function () {
             Route::pattern("record_id", "[0-9]+");
             Route::prefix("/record")->group(function () {
                 Route::get("/{record_id?}", [RecordController::class, "getRecord"]);
+                Route::get('/count', [RecordController::class, 'getRecordCount']);
                 Route::delete("/", [RecordController::class, "removeRecords"]);
             });
 
