@@ -20,6 +20,22 @@ class RecordController extends Controller
         return ResponseController::success($records);
     }
 
+    public function getRecordCount()
+    {
+        $today = Record::query()->whereDate('created_at', '=', date('Y-m-d'))->get();
+        $total = Record::query()->get();
+        return ResponseController::success([
+            'today' => [
+                'count' => $today->count(),
+                'size'  => $today->sum('size'),
+            ],
+            'total' => [
+                'count' => $total->count(),
+                'size'  => $total->sum('size'),
+            ]
+        ]);
+    }
+
     public static function addRecord($data)
     {
         $validator = Validator::make($data, [
