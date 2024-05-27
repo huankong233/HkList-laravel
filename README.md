@@ -17,6 +17,8 @@ USDT-TRC20: `TJK9FLAxqQmYU583Qjtof35MpJEu8Xq8iF`
 
 ## 安装方法
 
+默认账号密码都是 `admin`
+
 ### 普通安装
 
 - 1.使用 `composer` 安装依赖, 可以参考 [独角数卡安装](https://github.com/assimon/dujiaoka/wiki/2.x_linux_install#composer-%E5%AE%89%E8%A3%85)
