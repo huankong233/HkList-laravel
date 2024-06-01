@@ -367,11 +367,7 @@ class ParseController extends Controller
                 ],
                 "body"  => join("&", [
                     "encrypt=0",
-                    "extra=" . urlencode(
-                        Json::encode([
-                            "sekey" => str_contains($request["randsk"], "%") ? urldecode($request["randsk"]) : $request["randsk"]
-                        ])
-                    ),
+                    "extra=" . urlencode(Json::encode(["sekey" => str_contains($request["randsk"], "%") ? urldecode($request["randsk"]) : $request["randsk"]])),
                     "fid_list=" . JSON::encode($request["fs_ids"]),
                     "primaryid=" . $request["shareid"],
                     "uk=" . $request["uk"],
@@ -404,8 +400,9 @@ class ParseController extends Controller
             case 112:
                 return ResponseController::signIsOutDate();
             case 113:
+                return ResponseController::paramsErrorFromRequest(113);
             case 118:
-                return ResponseController::paramsErrorFromRequest();
+                return ResponseController::paramsErrorFromRequest(118);
             case 116:
                 return ResponseController::linkIsOutDate();
             case 121:

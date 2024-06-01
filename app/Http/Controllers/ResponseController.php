@@ -100,37 +100,37 @@ class ResponseController extends Controller
 
     public static function parsePasswordError()
     {
-        return self::response(10017, 403, "解析密码错误");
+        return self::response(10017, 403, "百度服务器返回: 解析密码错误");
     }
 
     public static function fileNotExists()
     {
-        return self::response(10018, 404, "文件不存在");
+        return self::response(10018, 404, "百度服务器返回: 文件不存在");
     }
 
     public static function pwdWrong()
     {
-        return self::response(10019, 403, "提取码错误");
+        return self::response(10019, 403, "百度服务器返回: 提取码错误");
     }
 
     public static function pathNotExists()
     {
-        return self::response(10020, 404, "不存在此目录");
+        return self::response(10020, 404, "百度服务器返回: 不存在此目录");
     }
 
     public static function linkWrongOrPathNotExists()
     {
-        return self::response(10021, 404, "不存在此分享链接或提取码错误");
+        return self::response(10021, 404, "百度服务器返回: 不存在此分享链接或提取码错误");
     }
 
     public static function linkNotValid()
     {
-        return self::response(10022, 403, "此链接分享内容可能因为涉及侵权、色情、反动、低俗等信息，无法访问！");
+        return self::response(10022, 403, "百度服务器返回: 此链接分享内容可能因为涉及侵权、色情、反动、低俗等信息，无法访问！");
     }
 
     public static function linkIsOutDate()
     {
-        return self::response(10023, 410, "啊哦，来晚了，该分享文件已过期");
+        return self::response(10023, 410, "百度服务器返回: 啊哦，来晚了，该分享文件已过期");
     }
 
     public static function cookieError($errno)
@@ -183,27 +183,27 @@ class ResponseController extends Controller
 
     public static function hitCaptcha()
     {
-        return self::response(10033, 500, "触发验证码,请重试!");
+        return self::response(10033, 500, "百度服务器返回: 触发验证码,请重试!");
     }
 
     public static function downloadError()
     {
-        return self::response(10034, 500, "下载失败");
+        return self::response(10034, 500, "百度服务器返回: 下载失败");
     }
 
     public static function ipHasBeenBaned()
     {
-        return self::response(10035, 500, "服务器ip被拉黑");
+        return self::response(10035, 500, "百度服务器返回: 服务器ip被拉黑");
     }
 
     public static function signIsOutDate()
     {
-        return self::response(10036, 500, "签名过期");
+        return self::response(10036, 500, "百度服务器返回: 签名过期");
     }
 
     public static function processFilesTooMuch()
     {
-        return self::response(10037, 500, "操作的文件过多");
+        return self::response(10037, 500, "百度服务器返回: 操作的文件过多");
     }
 
     public static function invCodeNotExists()
@@ -261,8 +261,8 @@ class ResponseController extends Controller
         return self::response(10047, 403, "用户组剩余解析文件大小不足");
     }
 
-    public static function paramsErrorFromRequest()
+    public static function paramsErrorFromRequest($code)
     {
-        return self::response(10048, 403, "参数错误来自百度服务器");
+        return self::response(10048, 403, "百度服务器返回: 参数错误,code:" . $code);
     }
 }
