@@ -11,7 +11,11 @@ class ConfigController extends Controller
 {
     public function getConfig(Request $request)
     {
-        return ResponseController::success(array_merge(config("94list"), ["debug" => config("app.debug")]));
+        return ResponseController::success([
+            ...config("94list"),
+            "debug" => config("app.debug"),
+            "name"  => config("app.name")
+        ]);
     }
 
     public function updateConfig(Request $request)
@@ -24,7 +28,8 @@ class ConfigController extends Controller
             "user_agent"     => "string",
             "need_inv_code"  => "bool",
             "whitelist_mode" => "bool",
-            "debug"          => "bool"
+            "debug"          => "bool",
+            "name"           => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -39,6 +44,7 @@ class ConfigController extends Controller
         if (isset($request["need_inv_code"])) $update["_94LIST_NEED_INV_CODE"] = $request["need_inv_code"];
         if (isset($request["whitelist_mode"])) $update["_94LIST_WHITELIST_MODE"] = $request["whitelist_mode"];
         if (isset($request["debug"])) $update["APP_DEBUG"] = $request["debug"];
+        if (isset($request["name"])) $update["APP_NAME"] = $request["name"];
 
         if (count($update) === 0) ResponseController::paramsError();
 
