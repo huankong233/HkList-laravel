@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\v1;
 
+use App\Http\Controllers\Controller;
 use App\Models\Record;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -22,16 +23,16 @@ class RecordController extends Controller
 
     public function getRecordCount()
     {
-        $today = Record::query()->whereDate('created_at', '=', date('Y-m-d'))->get();
+        $today = Record::query()->whereDate("created_at", "=", date("Y-m-d"))->get();
         $total = Record::query()->get();
         return ResponseController::success([
-            'today' => [
-                'count' => $today->count(),
-                'size'  => $today->sum('size'),
+            "today" => [
+                "count" => $today->count(),
+                "size"  => $today->sum("size"),
             ],
-            'total' => [
-                'count' => $total->count(),
-                'size'  => $total->sum('size'),
+            "total" => [
+                "count" => $total->count(),
+                "size"  => $total->sum("size"),
             ]
         ]);
     }

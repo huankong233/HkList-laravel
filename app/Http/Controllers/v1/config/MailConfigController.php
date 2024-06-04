@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\config;
+namespace App\Http\Controllers\v1\config;
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\v1\ResponseController;
 use Exception;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Http\Controllers\ResponseController;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;

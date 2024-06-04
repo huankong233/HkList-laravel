@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Controllers\ResponseController;
+use App\Http\Controllers\v1\ResponseController;
 use App\Models\Group;
 use App\Models\User;
 use Closure;

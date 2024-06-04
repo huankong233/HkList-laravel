@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\v1;
 
+use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Group;
 use App\Models\Record;
@@ -243,8 +244,19 @@ class ParseController extends Controller
         // 检查签名是否过期
         if (time() - $request["timestamp"] > 300) return ResponseController::signIsOutDate();
 
-        // 检查普通账户是否够用
-        $normalCookieRes  = self::getRandomCookie(["普通用户", "普通会员"]);
+        $parse_version = config("94list.parse_version");
+
+        if ($parse_version === 1) {
+            // 检查普通账户是否够用
+            $normalCookieRes = self::getRandomCookie(["普通用户", "普通会员"]);
+        } else if ($parse_version === 2) {
+            // 使用会员账号解析Dlink
+            $normalCookieRes = self::getRandomCookie(["超级会员"]);
+        } else {
+            // fallback
+            $normalCookieRes = self::getRandomCookie(["普通用户", "普通会员"]);
+        }
+
         $normalCookieData = $normalCookieRes->getData(true);
         if ($normalCookieData["data"] === null) return ResponseController::normalAccountIsNotEnough();
         $normalAccountId = $normalCookieData["data"]["id"];
@@ -316,7 +328,7 @@ class ParseController extends Controller
                                 ["normal_account_id", "!=", -1]
                             ])
                             ->whereDate("created_at", now())
-                            ->whereTime("created_at", ">=", now()->subHours(8))
+                            ->whereTime("created_at", ">=", now()->subHours(4))
                             ->latest()
                             ->first();
 
@@ -328,8 +340,8 @@ class ParseController extends Controller
                 "ua"        => $record["ua"],
                 "size"      => $record["size"],
                 "fs_id"     => $record["fs_id"],
-                'record_id' => $record['id'],
-                'is_cache'  => 1
+                "record_id" => $record["id"],
+                "is_cache"  => 1
             ];
 
             $request["fs_ids"] = array_filter($request["fs_ids"], fn($Fs_id) => $Fs_id !== $fs_id);
@@ -501,7 +513,7 @@ class ParseController extends Controller
                 if (str_contains($effective_url, "qdall01") || !str_contains($effective_url, "tsl=0")) {
                     // 如果是假会员 被限速后回归普通账户 更新账户信息
                     if ($svipAccount["vip_type"] === "假超级会员") {
-                        AccountController::updateAccount($svipAccount['id']);
+                        AccountController::updateAccount($svipAccount["id"]);
                     } else {
                         $svipAccount->update([
                             "switch" => 0,
@@ -537,8 +549,8 @@ class ParseController extends Controller
                 ]);
             } catch (RequestException $e) {
                 // 检查是否是缓存
-                if ($list['is_cache']) {
-                    Record::query()->find($list['record_id'])->delete();
+                if (isset($list["is_cache"]) && $list["is_cache"]) {
+                    Record::query()->find($list["record_id"])->delete();
                     $responseData[] = [
                         "url"      => ResponseController::getRealLinkError(",原因: 缓存的dlnk失效,请重新获取"),
                         "filename" => $list["server_filename"],

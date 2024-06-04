@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\v1;
 
+use App\Http\Controllers\Controller;
 use App\Models\Account;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
