@@ -1,14 +1,14 @@
 <?php
 
-use App\Http\Controllers\AccountController;
-use App\Http\Controllers\config\ConfigController;
-use App\Http\Controllers\config\MailConfigController;
-use App\Http\Controllers\GroupController;
-use App\Http\Controllers\InvCodeController;
-use App\Http\Controllers\IpController;
-use App\Http\Controllers\ParseController;
-use App\Http\Controllers\RecordController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\v1\AccountController;
+use App\Http\Controllers\v1\config\MailConfigController;
+use App\Http\Controllers\v1\config\MainConfigController;
+use App\Http\Controllers\v1\GroupController;
+use App\Http\Controllers\v1\InvCodeController;
+use App\Http\Controllers\v1\IpController;
+use App\Http\Controllers\v1\ParseController;
+use App\Http\Controllers\v1\RecordController;
+use App\Http\Controllers\v1\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware("NeedInstall")->group(function () {
@@ -81,8 +81,8 @@ Route::middleware("NeedInstall")->group(function () {
 
             Route::prefix("/config")->group(function () {
                 Route::prefix("/main")->group(function () {
-                    Route::get("/", [ConfigController::class, "getConfig"]);
-                    Route::patch("/", [ConfigController::class, "updateConfig"]);
+                    Route::get("/", [MainConfigController::class, "getConfig"]);
+                    Route::patch("/", [MainConfigController::class, "updateConfig"]);
                 });
 
                 Route::prefix("/mail")->group(function () {
