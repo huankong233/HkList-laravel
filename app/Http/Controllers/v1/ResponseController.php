@@ -158,15 +158,15 @@ class ResponseController extends Controller
         return self::response(10028, 403, "普通用户账户不足");
     }
 
-    public static function svipAccountIsNotEnough()
+    public static function svipAccountIsNotEnough($bool = false)
     {
-        // 10029
+        if ($bool) return self::response(10029, 403, "超级会员账户不足");
         return "超级会员账户不足";
     }
 
-    public static function accountHasBeenLimitOfTheSpeedOrCookieExpired()
+    public static function accountHasBeenLimitOfTheSpeedOrCookieExpired($bool = false)
     {
-        // 10030
+        if ($bool) return self::response(10030, 403, "账户被限速或cookie已过期,请重新解析尝试!");
         return "账户被限速或cookie已过期,请重新解析尝试!";
     }
 
@@ -181,9 +181,9 @@ class ResponseController extends Controller
         return "在获取reallink时请求失败!" . $extend;
     }
 
-    public static function hitCaptcha()
+    public static function hitCaptcha($data = [])
     {
-        return self::response(10033, 500, "百度服务器返回: 触发验证码,请重试!");
+        return self::response(10033, 500, "百度服务器返回: 触发验证码,请重试!", $data);
     }
 
     public static function downloadError()
@@ -264,5 +264,15 @@ class ResponseController extends Controller
     public static function paramsErrorFromRequest($code)
     {
         return self::response(10048, 403, "百度服务器返回: 参数错误,code:" . $code);
+    }
+
+    public static function unknownFsId()
+    {
+        return self::response(10049, 404, "未记录的fs_id");
+    }
+
+    public static function errorFromMainServer()
+    {
+        return self::response(10050, 500, "解析服务器报错了！");
     }
 }

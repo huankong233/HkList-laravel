@@ -13,11 +13,11 @@
 
 USDT-TRC20: `TJK9FLAxqQmYU583Qjtof35MpJEu8Xq8iF`
 
-![wx](https://img.huankong.top/i/2024/05/23/664ed9e75e31a.png)
-
 ## 安装方法
 
 默认账号密码都是 `admin`
+
+新版本解析需要授权, 购买联系 [tg](https://t.me/huan_kong)
 
 ### 普通安装
 

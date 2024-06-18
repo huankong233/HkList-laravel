@@ -12,19 +12,19 @@ class RecordController extends Controller
     public function getRecord(Request $request, $record_id = null)
     {
         if ($record_id !== null) {
-            $record = Record::query()->find($record_id);
+            $record = Record::withTrashed()->find($record_id);
             if (!$record) return ResponseController::recordNotExists();
             return ResponseController::success($record);
         }
 
-        $records = Record::query()->paginate($request["size"]);
+        $records = Record::withTrashed()->paginate($request["size"]);
         return ResponseController::success($records);
     }
 
     public function getRecordCount()
     {
-        $today = Record::query()->whereDate("created_at", "=", date("Y-m-d"))->get();
-        $total = Record::query()->get();
+        $today = Record::withTrashed()->whereDate("created_at", "=", date("Y-m-d"))->get();
+        $total = Record::withTrashed()->get();
         return ResponseController::success([
             "today" => [
                 "count" => $today->count(),
