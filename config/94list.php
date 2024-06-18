@@ -10,9 +10,10 @@ return [
     "max_once"       => (int)env("_94LIST_MAX_ONCE", 20),
     "password"       => env("_94LIST_PASSWORD", ""),
     "announce"       => env("_94LIST_ANNOUNCE", "公告"),
-    "user_agent"     => env("_94LIST_USER_AGENT", "LogStatistic"),
+    "user_agent"     => env("_94LIST_USER_AGENT", "netdisk;7.42.0.5;PC;PC-Windows;10.0.18362;WindowsBaiduYunGuanJia"),
     "need_inv_code"  => (bool)env("_94LIST_NEED_INV_CODE", false),
     "whitelist_mode" => (bool)env("_94LIST_WHITELIST_MODE", false),
 
-    "parse_version" => (int)env("_94LIST_PARSE_VERSION", 1),
+    "main_server" => env("_94LIST_MAIN_SERVER", "https://bd.huankong.top"),
+    "code"        => env("_94LIST_CODE", ""),
 ];

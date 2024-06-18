@@ -4,6 +4,11 @@ namespace App\Http\Controllers\v1\config;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\v1\ResponseController;
+use App\Models\Account;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -51,5 +56,23 @@ class MainConfigController extends Controller
         updateEnv($update);
 
         return ResponseController::success();
+    }
+
+    public function testAuth(Request $request)
+    {
+        $updateConfig     = self::updateConfig($request);
+        $updateConfigData = $updateConfig->getData(true);
+        if ($updateConfigData["code"] !== 200) return $updateConfig;
+
+        // 测试
+        try {
+            $http = new Client();
+            $res  = $http->post(config("94list.main_server") . "/api/checkCode", ["json" => ["code" => config("94list.code")]]);
+            return JSON::decode($res->getBody()->getContents());
+        } catch (RequestException $e) {
+            return JSON::decode($e->getResponse()->getBody()->getContents());
+        } catch (GuzzleException $e) {
+            return ResponseController::networkError("连接解析服务器");
+        }
     }
 }

@@ -24,7 +24,6 @@ Route::middleware("NeedInstall")->group(function () {
             Route::get("/limit", [ParseController::class, "checkLimit"]);
             Route::prefix("/")->middleware(["ThrottleRequest", "NeedPassword"])->group(function () {
                 Route::post("/get_file_list", [ParseController::class, "getFileList"]);
-                Route::post("/get_sign", [ParseController::class, "getSign"]);
                 Route::post("/get_download_links", [ParseController::class, "getDownloadLinks"]);
             });
         });
@@ -83,6 +82,7 @@ Route::middleware("NeedInstall")->group(function () {
                 Route::prefix("/main")->group(function () {
                     Route::get("/", [MainConfigController::class, "getConfig"]);
                     Route::patch("/", [MainConfigController::class, "updateConfig"]);
+                    Route::post("/testAuth", [MainConfigController::class, "testAuth"]);
                 });
 
                 Route::prefix("/mail")->group(function () {

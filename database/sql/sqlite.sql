@@ -1,18 +1,3 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : 94list2
- Source Server Type    : SQLite
- Source Server Version : 3035005 (3.35.5)
- Source Schema         : main
-
- Target Server Type    : SQLite
- Target Server Version : 3035005 (3.35.5)
- File Encoding         : 65001
-
- Date: 10/05/2024 17:14:53
-*/
-
 PRAGMA foreign_keys = false;
 
 -- ----------------------------
@@ -32,6 +17,19 @@ CREATE TABLE "accounts" (
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL,
   "deleted_at" text
+);
+
+-- ----------------------------
+-- Table structure for file_lists
+-- ----------------------------
+DROP TABLE IF EXISTS "file_lists";
+CREATE TABLE "file_lists" (
+  "fs_id" text NOT NULL,
+  "size" integer NOT NULL,
+  "md5" text NOT NULL,
+  "created_at" text NOT NULL,
+  "updated_at" text NOT NULL,
+  PRIMARY KEY ("fs_id")
 );
 
 -- ----------------------------
@@ -94,6 +92,15 @@ CREATE TABLE "records" (
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL,
   "deleted_at" text
+);
+
+-- ----------------------------
+-- Table structure for sqlite_sequence
+-- ----------------------------
+DROP TABLE IF EXISTS "sqlite_sequence";
+CREATE TABLE "sqlite_sequence" (
+  "name",
+  "seq"
 );
 
 -- ----------------------------
