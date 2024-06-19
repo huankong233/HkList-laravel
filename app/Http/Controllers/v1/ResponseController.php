@@ -271,8 +271,8 @@ class ResponseController extends Controller
         return self::response(10049, 404, "未记录的fs_id");
     }
 
-    public static function errorFromMainServer()
+    public static function errorFromMainServer($reason)
     {
-        return self::response(10050, 500, "解析服务器报错了！");
+        return self::response(10050, 500, "解析服务器提示: $reason");
     }
 }

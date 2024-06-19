@@ -240,7 +240,9 @@ class ParseController extends Controller
 
         $cookie     = self::getRandomCookie();
         $cookieData = $cookie->getData(true);
-        if ($cookieData["code"] !== 200) return $cookieData;
+        if ($cookieData["code"] !== 200) return $cookie;
+
+        $ua = config("94list.user_agent");
 
         try {
             $http     = new Client();
@@ -252,22 +254,40 @@ class ParseController extends Controller
                     "randsk"   => $request["randsk"],
                     "uk"       => $request["uk"],
                     "shareid"  => $request["shareid"],
+                    "ua"       => $ua
                 ]
             ]);
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
-            Account::query()->find($cookieData["data"]["id"])->update([
-                "switch" => 0,
-                "reason" => $response["message"] ?? "未知原因",
-            ]);
-            return $response;
+            $reason   = $response["message"] ?? "未知原因";
+            if ($reason !== "授权码已过期") {
+                Account::query()->find($cookieData["data"]["id"])->update([
+                    "switch" => 0,
+                    "reason" => $reason,
+                ]);
+            }
+            return ResponseController::errorFromMainServer($reason);
         } catch (GuzzleException $e) {
             return ResponseController::networkError("连接解析服务器");
         }
 
         if ($response["code"] !== 200) return $response;
         $responseData = $response["data"];
+
+        foreach ($request["fs_ids"] as $index => $fs_id) {
+            RecordController::addRecord([
+                "ip"                => $request->ip(),
+                "fs_id"             => $fs_id,
+                "filename"          => $responseData[$index]["filename"],
+                "user_id"           => Auth::user()["id"] ?? -1,
+                "account_id"        => $cookieData["data"]["id"],
+                "normal_account_id" => 0,
+                "size"              => FileList::query()->firstWhere("fs_id", $fs_id)["size"] ?? 0,
+                "ua"                => $ua,
+                "url"               => $responseData[$index]["url"]
+            ]);
+        }
 
         return ResponseController::success($responseData);
     }
