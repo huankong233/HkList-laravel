@@ -100,7 +100,7 @@ class ResponseController extends Controller
 
     public static function parsePasswordError()
     {
-        return self::response(10017, 403, "百度服务器返回: 解析密码错误");
+        return self::response(10017, 403, "解析密码错误");
     }
 
     public static function fileNotExists()
