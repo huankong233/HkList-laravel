@@ -273,10 +273,10 @@ class ParseController extends Controller
             return ResponseController::networkError("连接解析服务器");
         }
 
-        if ($response["code"] !== 200) return $response;
+        if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        Account::query()->find($cookie["data"]["id"])->update([
+        Account::query()->find($cookieData["data"]["id"])->update([
             "last_use_at" => date("Y-m-d H:i:s")
         ]);
 
