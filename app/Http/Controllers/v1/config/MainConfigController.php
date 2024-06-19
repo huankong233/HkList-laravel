@@ -34,7 +34,9 @@ class MainConfigController extends Controller
             "need_inv_code"  => "bool",
             "whitelist_mode" => "bool",
             "debug"          => "bool",
-            "name"           => "string"
+            "name"           => "string",
+            "main_server"    => "string",
+            "code"           => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -50,6 +52,8 @@ class MainConfigController extends Controller
         if (isset($request["whitelist_mode"])) $update["_94LIST_WHITELIST_MODE"] = $request["whitelist_mode"];
         if (isset($request["debug"])) $update["APP_DEBUG"] = $request["debug"];
         if (isset($request["name"])) $update["APP_NAME"] = $request["name"];
+        if (isset($request["main_server"])) $update["_94LIST_MAIN_SERVER"] = $request["main_server"];
+        if (isset($request["code"])) $update["_94LIST_CODE"] = $request["code"];
 
         if (count($update) === 0) ResponseController::paramsError();
 
@@ -64,13 +68,22 @@ class MainConfigController extends Controller
         $updateConfigData = $updateConfig->getData(true);
         if ($updateConfigData["code"] !== 200) return $updateConfig;
 
+        $http = new Client();
+
         // 测试
         try {
-            $http = new Client();
-            $res  = $http->post(config("94list.main_server") . "/api/checkCode", ["json" => ["code" => config("94list.code")]]);
+            $res = $http->post(config("94list.main_server") . "/api/checkCode", ["query" => ["code" => config("94list.code")]]);
             return JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
-            return JSON::decode($e->getResponse()->getBody()->getContents());
+            try {
+                $res      = $http->get(config("94list.main_server") . "/api/ip");
+                $response = $res->getBody()->getContents();
+            } catch (GuzzleException $e) {
+                return ResponseController::networkError("连接解析服务器");
+            }
+            $errmsg       = JSON::decode($e->getResponse()->getBody()->getContents());
+            $errmsg["data"]["ip"] = $response;
+            return $errmsg;
         } catch (GuzzleException $e) {
             return ResponseController::networkError("连接解析服务器");
         }
