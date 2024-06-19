@@ -261,8 +261,8 @@ class ParseController extends Controller
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
-            $reason   = $response["message"] ?? "未知原因";
-            if ($reason !== "授权码已过期") {
+            $reason   = $response["message"] ?? "未知原因,请充实";
+            if ($reason !== "授权码已过期" && $reason !== "未知原因,请充实") {
                 Account::query()->find($cookieData["data"]["id"])->update([
                     "switch" => 0,
                     "reason" => $reason,
@@ -273,6 +273,7 @@ class ParseController extends Controller
             return ResponseController::networkError("连接解析服务器");
         }
 
+        if (!$response) return ResponseController::errorFromMainServer("未知原因");
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
