@@ -275,7 +275,12 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return $response;
         $responseData = $response["data"];
 
+        Account::query()->find($cookie["data"]["id"])->update([
+            "last_use_at" => date("Y-m-d H:i:s")
+        ]);
+
         foreach ($request["fs_ids"] as $index => $fs_id) {
+            $responseData[$index]["fs_id"] = $fs_id;
             RecordController::addRecord([
                 "ip"                => $request->ip(),
                 "fs_id"             => $fs_id,
