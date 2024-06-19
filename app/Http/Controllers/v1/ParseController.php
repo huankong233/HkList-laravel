@@ -152,6 +152,7 @@ class ParseController extends Controller
 
         // 保存所有文件到数据库
         foreach ($response["data"]["list"] as $file) {
+            if ($file["isdir"] == 1 || $file["isdir"] == "1") continue;
             $find = FileList::query()->firstWhere("fs_id", $file["fs_id"]);
             if ($find) {
                 if ($find["md5"] !== $file["md5"]) {
