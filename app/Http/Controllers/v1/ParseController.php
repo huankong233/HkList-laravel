@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\v1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\UtilsController;
 use App\Models\Account;
 use App\Models\FileList;
 use App\Models\Group;
@@ -26,15 +27,16 @@ class ParseController extends Controller
         $config = config("94list");
 
         return ResponseController::success([
-            "show_announce" => $config["announce"] !== null && $config["announce"] !== "",
-            "announce"      => $config["announce"],
-            "user_agent"    => $config["user_agent"],
-            "debug"         => config("app.debug"),
-            "max_once"      => $config["max_once"],
-            "have_account"  => self::getRandomCookie()->getData(true)["code"] === 200,
-            "have_login"    => Auth::check(),
-            "need_inv_code" => $config["need_inv_code"],
-            "need_password" => $config["password"] !== ""
+            "show_announce"  => $config["announce"] !== null && $config["announce"] !== "",
+            "announce"       => $config["announce"],
+            "user_agent"     => $config["user_agent"],
+            "debug"          => config("app.debug"),
+            "max_once"       => $config["max_once"],
+            "have_account"   => self::getRandomCookie()->getData(true)["code"] === 200,
+            "have_login"     => Auth::check(),
+            "need_inv_code"  => $config["need_inv_code"],
+            "need_password"  => $config["password"] !== "",
+            "show_copyright" => $config["show_copyright"],
         ]);
     }
 
@@ -196,7 +198,7 @@ class ParseController extends Controller
                       ->find(Auth::check() ? Auth::user()["group_id"] : -1);
 
         $records = Record::withTrashed()
-                         ->where("ip", $request->ip())
+                         ->where("ip", UtilsController::getIp())
                          ->whereDate("created_at", now())
                          ->get();
 
@@ -261,8 +263,8 @@ class ParseController extends Controller
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
-            $reason   = $response["message"] ?? "未知原因";
-            if ($reason !== "授权码已过期") {
+            $reason   = $response["message"] ?? "未知原因,请充实";
+            if ($reason !== "授权码已过期" && $reason !== "未知原因,请充实") {
                 Account::query()->find($cookieData["data"]["id"])->update([
                     "switch" => 0,
                     "reason" => $reason,
@@ -273,6 +275,7 @@ class ParseController extends Controller
             return ResponseController::networkError("连接解析服务器");
         }
 
+        if (!$response) return ResponseController::errorFromMainServer("未知原因");
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
@@ -283,7 +286,7 @@ class ParseController extends Controller
         foreach ($request["fs_ids"] as $index => $fs_id) {
             $responseData[$index]["fs_id"] = $fs_id;
             RecordController::addRecord([
-                "ip"                => $request->ip(),
+                "ip"                => UtilsController::getIp(),
                 "fs_id"             => $fs_id,
                 "filename"          => $responseData[$index]["filename"],
                 "user_id"           => Auth::user()["id"] ?? -1,

@@ -69,7 +69,7 @@ class RecordController extends Controller
         foreach ($request["record_ids"] as $record_id) {
             $record = Record::query()->find($record_id);
             if (!$record) return ResponseController::recordNotExists();
-            $record->delete();
+            $record->forceDelete();
         }
 
         return ResponseController::success();
