@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\UtilsController;
 use App\Http\Controllers\v1\ResponseController;
 use App\Models\Ip;
 use Closure;
@@ -19,10 +20,10 @@ class IpFilter
     {
         if (config("94list.whitelist_mode")) {
             // 白名单
-            $ip = Ip::query()->firstWhere(['ip' => $request->ip(), 'mode' => 1]);
+            $ip = Ip::query()->firstWhere(['ip' => UtilsController::getIp(), 'mode' => 1]);
             if (!$ip) return ResponseController::notInWhiteList();
         } else {
-            $ip = Ip::query()->firstWhere(['ip' => $request->ip(), 'mode' => 0]);
+            $ip = Ip::query()->firstWhere(['ip' => UtilsController::getIp(), 'mode' => 0]);
             if ($ip) return ResponseController::inBlackList();
         }
 

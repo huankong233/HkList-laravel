@@ -13,6 +13,7 @@ return [
     "user_agent"     => env("_94LIST_USER_AGENT", "netdisk;7.42.0.5;PC;PC-Windows;10.0.18362;WindowsBaiduYunGuanJia"),
     "need_inv_code"  => (bool)env("_94LIST_NEED_INV_CODE", false),
     "whitelist_mode" => (bool)env("_94LIST_WHITELIST_MODE", false),
+    "show_copyright" => (bool)env("_94LIST_SHOW_COPYRIGHT", true),
 
     "main_server" => env("_94LIST_MAIN_SERVER", "https://bd.huankong.top"),
     "code"        => env("_94LIST_CODE", ""),

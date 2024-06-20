@@ -36,7 +36,8 @@ class MainConfigController extends Controller
             "debug"          => "bool",
             "name"           => "string",
             "main_server"    => "string",
-            "code"           => "string"
+            "code"           => "string",
+            "show_copyright" => "bool",
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -54,6 +55,7 @@ class MainConfigController extends Controller
         if (isset($request["name"])) $update["APP_NAME"] = $request["name"];
         if (isset($request["main_server"])) $update["_94LIST_MAIN_SERVER"] = $request["main_server"];
         if (isset($request["code"])) $update["_94LIST_CODE"] = $request["code"];
+        if (isset($request["show_copyright"])) $update["_94LIST_SHOW_COPYRIGHT"] = $request["show_copyright"];
 
         if (count($update) === 0) ResponseController::paramsError();
 
