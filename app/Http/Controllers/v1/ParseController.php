@@ -219,6 +219,7 @@ class ParseController extends Controller
             "shareid"  => "required|numeric",
             "fs_ids"   => "required|array",
             "fs_ids.*" => "required|numeric",
+            "url"      => "required|string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -257,7 +258,8 @@ class ParseController extends Controller
                     "randsk"   => $request["randsk"],
                     "uk"       => $request["uk"],
                     "shareid"  => $request["shareid"],
-                    "ua"       => $ua
+                    "ua"       => $ua,
+                    "url"      => $request["url"]
                 ]
             ]);
             $response = JSON::decode($res->getBody()->getContents());
