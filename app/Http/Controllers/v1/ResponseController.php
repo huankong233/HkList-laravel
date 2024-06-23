@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\v1;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Casts\Json;
 
 class ResponseController extends Controller
 {
@@ -158,9 +159,9 @@ class ResponseController extends Controller
         return self::response(10028, 403, "普通用户账户不足");
     }
 
-    public static function svipAccountIsNotEnough($bool = false)
+    public static function svipAccountIsNotEnough($bool = false, $name = ["超级会员"])
     {
-        if ($bool) return self::response(10029, 403, "超级会员账户不足");
+        if ($bool) return self::response(10029, 403, "[" . join(",", $name) . "]账户不足");
         return "超级会员账户不足";
     }
 
@@ -274,5 +275,15 @@ class ResponseController extends Controller
     public static function errorFromMainServer($reason)
     {
         return self::response(10050, 500, "解析服务器提示: $reason");
+    }
+
+    public static function getVcodeError()
+    {
+        return self::response(10051, 500, "获取验证码失败");
+    }
+
+    public static function unknownParseMode()
+    {
+        return self::response(10052, 500, "未知解析模式");
     }
 }
