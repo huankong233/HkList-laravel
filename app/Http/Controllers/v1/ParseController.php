@@ -94,7 +94,7 @@ class ParseController extends Controller
                           ->inRandomOrder()
                           ->first();
 
-        if (!$account) return ResponseController::svipAccountIsNotEnough(true);
+        if (!$account) return ResponseController::svipAccountIsNotEnough(true, $vipType);
 
         return ResponseController::success($account);
     }
@@ -214,16 +214,13 @@ class ParseController extends Controller
     public function getDownloadLinks(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "randsk"   => "required|string",
-            "uk"       => "required|numeric",
-            "shareid"  => "required|numeric",
             "fs_ids"   => "required|array",
-            "fs_ids.*" => "required|numeric",
-            "url"      => "required|string"
+            "fs_ids.*" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
+        // 不能超出最大解析限制
         if (count($request["fs_ids"]) > config("94list.max_once")) return ResponseController::linksOverloaded();
 
         // 检查限制还能不能解析
@@ -242,6 +239,29 @@ class ParseController extends Controller
         // 检查文件大小是否符合用户组配额
         if (collect($fileList)->sum("size") > $checkLimitData["data"]["size"]) return ResponseController::groupQuotaSizeIsNotEnough();
 
+        $parse_mode = config("94list.parse_mode");
+
+        return match ($parse_mode) {
+            1       => self::getDownloadLinksByDisk($request),
+//            2       => self::getDownloadLinksByShare($request),
+            2       => ResponseController::response(50000, 500, "暂未完成"),
+            default => ResponseController::unknownParseMode()
+        };
+    }
+
+    public function getDownloadLinksByDisk(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "randsk"   => "required|string",
+            "uk"       => "required|numeric",
+            "shareid"  => "required|numeric",
+            "fs_ids"   => "required|array",
+            "fs_ids.*" => "required|numeric",
+            "url"      => "required|string"
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
         $cookie     = self::getRandomCookie();
         $cookieData = $cookie->getData(true);
         if ($cookieData["code"] !== 200) return $cookie;
@@ -249,9 +269,11 @@ class ParseController extends Controller
         $ua = config("94list.user_agent");
 
         try {
-            $http     = new Client();
+            $http = new Client();
+
             $res      = $http->post(config("94list.main_server") . "/api/parseUrl", [
                 "json" => [
+                    "type"     => 1,
                     "fsidlist" => $request["fs_ids"],
                     "code"     => config("94list.code"),
                     "cookie"   => $cookieData["data"]["cookie"],
@@ -265,12 +287,14 @@ class ParseController extends Controller
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
-            $reason   = $response["message"] ?? "未知原因,请充实";
-            if ($reason !== "授权码已过期" && $reason !== "未知原因,请充实") {
-                Account::query()->find($cookieData["data"]["id"])->update([
-                    "switch" => 0,
-                    "reason" => $reason,
-                ]);
+            $reason   = $response["message"] ?? "未知原因,请重试";
+            if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试") {
+                Account::query()
+                       ->find($cookieData["data"]["id"])
+                       ->update([
+                           "switch" => 0,
+                           "reason" => $reason,
+                       ]);
             }
             return ResponseController::errorFromMainServer($reason);
         } catch (GuzzleException $e) {
@@ -281,22 +305,122 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        Account::query()->find($cookieData["data"]["id"])->update([
-            "last_use_at" => date("Y-m-d H:i:s")
-        ]);
+        Account::query()
+               ->find($cookieData["data"]["id"])
+               ->update([
+                   "last_use_at" => date("Y-m-d H:i:s")
+               ]);
 
-        foreach ($request["fs_ids"] as $index => $fs_id) {
-            $responseData[$index]["fs_id"] = $fs_id;
+        foreach ($responseData as $responseDatum) {
             RecordController::addRecord([
                 "ip"                => UtilsController::getIp(),
-                "fs_id"             => $fs_id,
-                "filename"          => $responseData[$index]["filename"],
+                "fs_id"             => $responseDatum["fs_id"] ?? 0,
+                "filename"          => $responseDatum["filename"],
                 "user_id"           => Auth::user()["id"] ?? -1,
                 "account_id"        => $cookieData["data"]["id"],
                 "normal_account_id" => 0,
-                "size"              => FileList::query()->firstWhere("fs_id", $fs_id)["size"] ?? 0,
+                "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
                 "ua"                => $ua,
-                "url"               => $responseData[$index]["url"]
+                "url"               => $responseDatum["url"]
+            ]);
+        }
+
+        return ResponseController::success($responseData);
+    }
+
+    public function getDownloadLinksByShare(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "randsk"   => "required|string",
+            "uk"       => "required|numeric",
+            "shareid"  => "required|numeric",
+            "fs_ids"   => "required|array",
+            "fs_ids.*" => "required|numeric",
+            "url"      => "required|string"
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        $ua = config("94list.user_agent");
+
+        $json = [
+            "type"     => 2,
+            "fsidlist" => $request["fs_ids"],
+            "code"     => config("94list.code"),
+            "randsk"   => $request["randsk"],
+            "uk"       => $request["uk"],
+            "shareid"  => $request["shareid"],
+            "ua"       => $ua,
+            "url"      => $request["url"]
+        ];
+
+        if ($request["vcode_input"] && $request["vcode_input"] !== "") {
+            $validator = Validator::make($request->all(), [
+                "vcode_input" => "required|string",
+                "vcode_str"   => "required|string"
+            ]);
+
+            if ($validator->fails()) return ResponseController::paramsError();
+
+            $json["vcode_input"] = $request["vcode_input"];
+            $json["vcode_str"]   = $request["vcode_str"];
+        }
+
+        $cookie     = self::getRandomCookie(["普通用户", "普通会员"]);
+        $cookieData = $cookie->getData(true);
+        if ($cookieData["code"] !== 200) return $cookie;
+        $json["cookie1"] = $cookieData["data"]["cookie"];
+        // 插入会员账号
+        $json["cookie2"] = [];
+        for ($i = 0; $i < count($request["fs_ids"]); $i++) {
+            $cookie2     = self::getRandomCookie();
+            $cookie2Data = $cookie2->getData(true);
+            if ($cookie2Data["code"] !== 200) return $cookie2;
+            $json["cookie2"][] = $cookie2Data["data"]["cookie"];
+        }
+
+        try {
+            $http     = new Client();
+            $res      = $http->post(config("94list.main_server") . "/api/parseUrl", ["json" => $json]);
+            $response = JSON::decode($res->getBody()->getContents());
+        } catch (RequestException $e) {
+            dd($e->getResponse()->getBody()->getContents());
+            $response = JSON::decode($e->getResponse()->getBody()->getContents());
+            $reason   = $response["message"] ?? "未知原因,请重试";
+            if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试" && !str_contains("触发验证码", $reason)) {
+                Account::query()
+                       ->find($cookieData["data"]["id"])
+                       ->update([
+                           "switch" => 0,
+                           "reason" => $reason,
+                       ]);
+            }
+            return ResponseController::errorFromMainServer($reason);
+        } catch (GuzzleException $e) {
+            return ResponseController::networkError("连接解析服务器");
+        }
+
+        if (!$response) return ResponseController::errorFromMainServer("未知原因");
+        if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
+        $responseData = $response["data"];
+
+        Account::query()
+               ->find($cookieData["data"]["id"])
+               ->update([
+                   "last_use_at" => date("Y-m-d H:i:s")
+               ]);
+
+        foreach ($responseData as $responseDatum) {
+            RecordController::addRecord([
+                "ip"                => UtilsController::getIp(),
+                "fs_id"             => $responseDatum["fs_id"] ?? 0,
+                "filename"          => $responseDatum["filename"],
+                "user_id"           => Auth::user()["id"] ?? -1,
+                "account_id"        => $cookieData["data"]["id"],
+                "normal_account_id" => 0,
+                "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
+                "ua"                => $ua,
+                "url"               => $responseDatum["url"]
             ]);
         }
 
