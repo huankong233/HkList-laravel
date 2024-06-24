@@ -215,6 +215,42 @@ class ParseController extends Controller
         ]);
     }
 
+    public function getVcode()
+    {
+        try {
+            $http = new Client([
+                "headers" => [
+                    "User-Agent" => config("94list.fake_user_agent"),
+                    "Cookie"     => config("94list.fake_cookie"),
+                    "Host"       => "pan.baidu.com",
+                    "Origin"     => "https://pan.baidu.com",
+                    "Referer"    => "https://pan.baidu.com/disk/home"
+                ]
+            ]);
+
+            $response = $http->get("https://pan.baidu.com/api/getvcode", [
+                "query" => [
+                    "prod"       => "pan",
+                    "channel"    => "chunlei",
+                    "web"        => 1,
+                    "app_id"     => 250528,
+                    "clienttype" => 0
+                ]
+            ]);
+
+            $response = JSON::decode($response->getBody());
+
+            return ResponseController::success([
+                "img"   => $response["img"],
+                "vcode" => $response["vcode"]
+            ]);
+        } catch (RequestException $e) {
+            return ResponseController::getVcodeError();
+        } catch (GuzzleException $e) {
+            return ResponseController::networkError("获取vcode");
+        }
+    }
+
     public function getDownloadLinks(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -247,8 +283,7 @@ class ParseController extends Controller
 
         return match ($parse_mode) {
             1       => self::getDownloadLinksByDisk($request),
-//            2       => self::getDownloadLinksByShare($request),
-            2       => ResponseController::response(50000, 500, "暂未完成"),
+            2       => self::getDownloadLinksByShare($request),
             default => ResponseController::unknownParseMode()
         };
     }
@@ -370,17 +405,16 @@ class ParseController extends Controller
             $json["vcode_str"]   = $request["vcode_str"];
         }
 
-        $cookie     = self::getRandomCookie(["普通用户", "普通会员"]);
-        $cookieData = $cookie->getData(true);
-        if ($cookieData["code"] !== 200) return $cookie;
-        $json["cookie1"] = $cookieData["data"]["cookie"];
         // 插入会员账号
-        $json["cookie2"] = [];
+        $json["cookie"] = [];
         for ($i = 0; $i < count($request["fs_ids"]); $i++) {
-            $cookie2     = self::getRandomCookie();
-            $cookie2Data = $cookie2->getData(true);
-            if ($cookie2Data["code"] !== 200) return $cookie2;
-            $json["cookie2"][] = $cookie2Data["data"]["cookie"];
+            $cookie     = self::getRandomCookie();
+            $cookieData = $cookie->getData(true);
+            if ($cookieData["code"] !== 200) return $cookie;
+            $json["cookie"][] = [
+                "id"     => $cookieData["data"]["id"],
+                "cookie" => $cookieData["data"]["cookie"]
+            ];
         }
 
         try {
@@ -388,12 +422,11 @@ class ParseController extends Controller
             $res      = $http->post(config("94list.main_server") . "/api/parseUrl", ["json" => $json]);
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
-            dd($e->getResponse()->getBody()->getContents());
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试" && !str_contains("触发验证码", $reason)) {
+            if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试" && $reason !== "百度服务器返回: 触发验证码,请重试!") {
                 Account::query()
-                       ->find($cookieData["data"]["id"])
+                       ->find($json["cookie"][0]["id"])
                        ->update([
                            "switch" => 0,
                            "reason" => $reason,
@@ -408,19 +441,28 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        Account::query()
-               ->find($cookieData["data"]["id"])
-               ->update([
-                   "last_use_at" => date("Y-m-d H:i:s")
-               ]);
-
         foreach ($responseData as $responseDatum) {
+            if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
+                Account::query()
+                       ->find($responseDatum["cookie_id"])
+                       ->update([
+                           "last_use_at" => date("Y-m-d H:i:s")
+                       ]);
+            } else {
+                Account::query()
+                       ->find($responseDatum["cookie_id"])
+                       ->update([
+                           "switch" => 0,
+                           "reason" => $responseDatum["url"],
+                       ]);
+            }
+
             RecordController::addRecord([
                 "ip"                => UtilsController::getIp(),
                 "fs_id"             => $responseDatum["fs_id"] ?? 0,
                 "filename"          => $responseDatum["filename"],
                 "user_id"           => Auth::user()["id"] ?? -1,
-                "account_id"        => $cookieData["data"]["id"],
+                "account_id"        => $responseDatum["cookie_id"],
                 "normal_account_id" => 0,
                 "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
                 "ua"                => $ua,
@@ -428,6 +470,10 @@ class ParseController extends Controller
             ]);
         }
 
-        return ResponseController::success($responseData);
+        return ResponseController::success(collect($responseData)->map(fn($v) => [
+            "url"      => $v["url"],
+            "urls"     => $v["urls"] ?? $v["url"],
+            "filename" => $v["filename"],
+        ]));
     }
 }
