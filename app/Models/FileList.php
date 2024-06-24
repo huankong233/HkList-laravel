@@ -14,4 +14,6 @@ class FileList extends Model
         "size",
         "md5"
     ];
+
+    public $timestamps = false;
 }
