@@ -38,6 +38,7 @@ class MainConfigController extends Controller
             "main_server"    => "string",
             "code"           => "string",
             "show_copyright" => "bool",
+            "parse_mode"     => "numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -56,6 +57,7 @@ class MainConfigController extends Controller
         if (isset($request["main_server"])) $update["_94LIST_MAIN_SERVER"] = $request["main_server"];
         if (isset($request["code"])) $update["_94LIST_CODE"] = $request["code"];
         if (isset($request["show_copyright"])) $update["_94LIST_SHOW_COPYRIGHT"] = $request["show_copyright"];
+        if (isset($request["parse_mode"])) $update["_94LIST_PARSE_MODE"] = $request["parse_mode"];
 
         if (count($update) === 0) ResponseController::paramsError();
 
@@ -83,7 +85,7 @@ class MainConfigController extends Controller
             } catch (GuzzleException $e) {
                 return ResponseController::networkError("连接解析服务器");
             }
-            $errmsg       = JSON::decode($e->getResponse()->getBody()->getContents());
+            $errmsg               = JSON::decode($e->getResponse()->getBody()->getContents());
             $errmsg["data"]["ip"] = $response;
             return $errmsg;
         } catch (GuzzleException $e) {

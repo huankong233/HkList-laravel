@@ -24,6 +24,7 @@ Route::middleware("NeedInstall")->group(function () {
             Route::get("/limit", [ParseController::class, "checkLimit"]);
             Route::prefix("/")->middleware(["ThrottleRequest", "NeedPassword"])->group(function () {
                 Route::post("/get_file_list", [ParseController::class, "getFileList"]);
+                Route::post("/get_vcode", [ParseController::class, "getVcode"]);
                 Route::post("/get_download_links", [ParseController::class, "getDownloadLinks"]);
             });
         });
