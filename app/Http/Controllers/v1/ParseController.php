@@ -448,6 +448,7 @@ class ParseController extends Controller
         if (!$response) return ResponseController::errorFromMainServer("未知原因");
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
+        $reason       = $response["message"] ?? "未知原因,请重试";
 
         foreach ($responseData as $responseDatum) {
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
@@ -456,32 +457,32 @@ class ParseController extends Controller
                        ->update([
                            "last_use_at" => date("Y-m-d H:i:s")
                        ]);
-            } else {
+            } else if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试" && $reason !== "百度服务器返回: 触发验证码,请重试!") {
                 Account::query()
                        ->find($responseDatum["cookie_id"])
                        ->update([
                            "switch" => 0,
                            "reason" => $responseDatum["url"],
                        ]);
+
+
+                RecordController::addRecord([
+                    "ip"                => UtilsController::getIp(),
+                    "fs_id"             => $responseDatum["fs_id"] ?? 0,
+                    "filename"          => $responseDatum["filename"],
+                    "user_id"           => Auth::user()["id"] ?? -1,
+                    "account_id"        => $responseDatum["cookie_id"],
+                    "normal_account_id" => 0,
+                    "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
+                    "ua"                => $ua,
+                    "url"               => $responseDatum["url"]
+                ]);
             }
 
-            RecordController::addRecord([
-                "ip"                => UtilsController::getIp(),
-                "fs_id"             => $responseDatum["fs_id"] ?? 0,
-                "filename"          => $responseDatum["filename"],
-                "user_id"           => Auth::user()["id"] ?? -1,
-                "account_id"        => $responseDatum["cookie_id"],
-                "normal_account_id" => 0,
-                "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
-                "ua"                => $ua,
-                "url"               => $responseDatum["url"]
-            ]);
+            return ResponseController::success(collect($responseData)->map(fn($v) => [
+                "url"      => $v["url"],
+                "urls"     => $v["urls"] ?? $v["url"],
+                "filename" => $v["filename"],
+            ]));
         }
-
-        return ResponseController::success(collect($responseData)->map(fn($v) => [
-            "url"      => $v["url"],
-            "urls"     => $v["urls"] ?? $v["url"],
-            "filename" => $v["filename"],
-        ]));
     }
-}
