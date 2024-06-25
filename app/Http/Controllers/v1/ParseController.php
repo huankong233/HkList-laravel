@@ -96,7 +96,7 @@ class ParseController extends Controller
                               $join->on('accounts.id', '=', 'records.account_id')
                                    ->whereDate('records.created_at', now());
                           })
-                          ->select('accounts.id', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
+                          ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
                           ->groupBy('accounts.id')
                           ->having('total_size', '<', config("94list.max_filesize"))
                           ->inRandomOrder()
