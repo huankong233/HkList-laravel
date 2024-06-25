@@ -26,19 +26,21 @@ class MainConfigController extends Controller
     public function updateConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "sleep"          => "numeric",
-            "max_once"       => "numeric",
-            "password"       => "nullable|string",
-            "announce"       => "nullable|string",
-            "user_agent"     => "string",
-            "need_inv_code"  => "bool",
-            "whitelist_mode" => "bool",
-            "debug"          => "bool",
-            "name"           => "string",
-            "main_server"    => "string",
-            "code"           => "string",
-            "show_copyright" => "bool",
-            "parse_mode"     => "numeric"
+            "sleep"            => "numeric",
+            "max_once"         => "numeric",
+            "password"         => "nullable|string",
+            "announce"         => "nullable|string",
+            "user_agent"       => "string",
+            "need_inv_code"    => "bool",
+            "whitelist_mode"   => "bool",
+            "debug"            => "bool",
+            "name"             => "string",
+            "main_server"      => "string",
+            "code"             => "string",
+            "show_copyright"   => "bool",
+            "custom_copyright" => "string",
+            "parse_mode"       => "numeric",
+            "max_filesize"     => "numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -58,6 +60,8 @@ class MainConfigController extends Controller
         if (isset($request["code"])) $update["_94LIST_CODE"] = $request["code"];
         if (isset($request["show_copyright"])) $update["_94LIST_SHOW_COPYRIGHT"] = $request["show_copyright"];
         if (isset($request["parse_mode"])) $update["_94LIST_PARSE_MODE"] = $request["parse_mode"];
+        if (isset($request["max_filesize"])) $update["_94LIST_MAX_FILESIZE"] = $request["max_filesize"];
+        if (isset($request["custom_copyright"])) $update["_94LIST_CUSTOM_COPYRIGHT"] = $request["custom_copyright"] === null ? "" : '"' . $request["custom_copyright"] . '"';
 
         if (count($update) === 0) ResponseController::paramsError();
 

@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -27,16 +28,17 @@ class ParseController extends Controller
         $config = config("94list");
 
         return ResponseController::success([
-            "show_announce"  => $config["announce"] !== null && $config["announce"] !== "",
-            "announce"       => $config["announce"],
-            "user_agent"     => $config["user_agent"],
-            "debug"          => config("app.debug"),
-            "max_once"       => $config["max_once"],
-            "have_account"   => self::getRandomCookie()->getData(true)["code"] === 200,
-            "have_login"     => Auth::check(),
-            "need_inv_code"  => $config["need_inv_code"],
-            "need_password"  => $config["password"] !== "",
-            "show_copyright" => $config["show_copyright"],
+            "show_announce"    => $config["announce"] !== null && $config["announce"] !== "",
+            "announce"         => $config["announce"],
+            "user_agent"       => $config["user_agent"],
+            "debug"            => config("app.debug"),
+            "max_once"         => $config["max_once"],
+            "have_account"     => self::getRandomCookie()->getData(true)["code"] === 200,
+            "have_login"       => Auth::check(),
+            "need_inv_code"    => $config["need_inv_code"],
+            "need_password"    => $config["password"] !== "",
+            "show_copyright"   => $config["show_copyright"],
+            "custom_copyright" => $config["custom_copyright"]
         ]);
     }
 
@@ -84,13 +86,19 @@ class ParseController extends Controller
             }
         }
 
+        // 判断今日解析量超了没
+        // leftJoin => having
+
         $account = Account::query()
                           ->where("switch", 1)
-                          ->where(function (Builder $query) use ($vipType) {
-                              foreach ($vipType as $type) {
-                                  $query->orWhere("vip_type", $type);
-                              }
+                          ->whereIn("vip_type", $vipType)
+                          ->leftJoin('records', function ($join) {
+                              $join->on('accounts.id', '=', 'records.account_id')
+                                   ->whereDate('records.created_at', now());
                           })
+                          ->select('accounts.id', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
+                          ->groupBy('accounts.id')
+                          ->having('total_size', '<', config("94list.max_filesize"))
                           ->inRandomOrder()
                           ->first();
 

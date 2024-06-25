@@ -5,7 +5,7 @@ return [
     "fake_wx_user_agent" => "Mozilla/5.0 (Linux; Android 7.1.1; MI 6 Build/NMF26X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/043807 Mobile Safari/537.36 MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN miniProgram",
     "fake_cookie"        => "BAIDUID=A4FDFAE43DDBF7E6956B02F6EF715373:FG=1; BAIDUID_BFESS=A4FDFAE43DDBF7E6956B02F6EF715373:FG=1; newlogin=1",
 
-    "version"        => env("_94LIST_VERSION", "0.0.0"),
+    "version"        => "1.1.17",
     "sleep"          => (int)env("_94LIST_SLEEP", 3),
     "max_once"       => (int)env("_94LIST_MAX_ONCE", 20),
     "password"       => env("_94LIST_PASSWORD", ""),
@@ -13,10 +13,13 @@ return [
     "user_agent"     => env("_94LIST_USER_AGENT", "netdisk;7.42.0.5;PC"),
     "need_inv_code"  => (bool)env("_94LIST_NEED_INV_CODE", true),
     "whitelist_mode" => (bool)env("_94LIST_WHITELIST_MODE", false),
-    "show_copyright" => (bool)env("_94LIST_SHOW_COPYRIGHT", true),
 
-    "main_server" => env("_94LIST_MAIN_SERVER", "https://bd.huankong.top"),
-    "code"        => env("_94LIST_CODE", ""),
+    "show_copyright"   => (bool)env("_94LIST_SHOW_COPYRIGHT", true),
+    "custom_copyright" => env("_94LIST_CUSTOM_COPYRIGHT", "本项目半开源, 项目地址: https://github.com/huankong233/94list-laravel"),
 
-    "parse_mode" => (int)env("_94LIST_PARSE_MODE", 1),
+    "main_server" => env("_94LIST_MAIN_SERVER", "空"),
+    "code"        => env("_94LIST_CODE", "空"),
+
+    "parse_mode"   => (int)env("_94LIST_PARSE_MODE", 1),
+    "max_filesize" => (int)env("_94LIST_MAX_FILESIZE", 536870912000)
 ];
