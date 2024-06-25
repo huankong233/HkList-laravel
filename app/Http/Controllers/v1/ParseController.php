@@ -456,6 +456,18 @@ class ParseController extends Controller
                        ->update([
                            "last_use_at" => date("Y-m-d H:i:s")
                        ]);
+
+                RecordController::addRecord([
+                    "ip"                => UtilsController::getIp(),
+                    "fs_id"             => $responseDatum["fs_id"] ?? 0,
+                    "filename"          => $responseDatum["filename"],
+                    "user_id"           => Auth::user()["id"] ?? -1,
+                    "account_id"        => $responseDatum["cookie_id"],
+                    "normal_account_id" => 0,
+                    "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
+                    "ua"                => $ua,
+                    "url"               => $responseDatum["url"]
+                ]);
             } else {
                 Account::query()
                        ->find($responseDatum["cookie_id"])
@@ -464,24 +476,14 @@ class ParseController extends Controller
                            "reason" => $responseDatum["url"],
                        ]);
             }
-
-            RecordController::addRecord([
-                "ip"                => UtilsController::getIp(),
-                "fs_id"             => $responseDatum["fs_id"] ?? 0,
-                "filename"          => $responseDatum["filename"],
-                "user_id"           => Auth::user()["id"] ?? -1,
-                "account_id"        => $responseDatum["cookie_id"],
-                "normal_account_id" => 0,
-                "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
-                "ua"                => $ua,
-                "url"               => $responseDatum["url"]
-            ]);
         }
 
-        return ResponseController::success(collect($responseData)->map(fn($v) => [
-            "url"      => $v["url"],
-            "urls"     => $v["urls"] ?? $v["url"],
-            "filename" => $v["filename"],
-        ]));
+        return ResponseController::success(
+            collect($responseData)->map(fn($v) => [
+                "url"      => $v["url"],
+                "urls"     => $v["urls"] ?? $v["url"],
+                "filename" => $v["filename"],
+            ])
+        );
     }
 }
