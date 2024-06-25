@@ -4,16 +4,25 @@ namespace App\Http\Controllers\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\Record;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class AccountController extends Controller
 {
+    public static function getParsedFileSize($account_id, $today)
+    {
+        $records = Record::query()->where('account_id', $account_id);
+        if ($today) $records->whereDate("created_at", now());
+        return $records->sum("size");
+    }
+
     public function getAccount(Request $request, $account_id = null)
     {
         if ($account_id !== null) {
@@ -23,6 +32,14 @@ class AccountController extends Controller
         }
 
         $accounts = Account::query()->paginate($request["size"]);
+
+        $accounts->getCollection()
+                 ->transform(function ($account) {
+                     $account["size"]       = self::getParsedFileSize($account["id"], true);
+                     $account["total_size"] = self::getParsedFileSize($account["id"], false);
+                     return $account;
+                 });
+
         return ResponseController::success($accounts);
     }
 
