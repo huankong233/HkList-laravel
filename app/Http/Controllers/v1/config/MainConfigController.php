@@ -40,7 +40,8 @@ class MainConfigController extends Controller
             "show_copyright"   => "bool",
             "custom_copyright" => "string",
             "parse_mode"       => "numeric",
-            "max_filesize"     => "numeric"
+            "max_filesize"     => "numeric",
+            "min_single_file"  => "numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -62,6 +63,7 @@ class MainConfigController extends Controller
         if (isset($request["parse_mode"])) $update["_94LIST_PARSE_MODE"] = $request["parse_mode"];
         if (isset($request["max_filesize"])) $update["_94LIST_MAX_FILESIZE"] = $request["max_filesize"];
         if (isset($request["custom_copyright"])) $update["_94LIST_CUSTOM_COPYRIGHT"] = $request["custom_copyright"] === null ? "" : '"' . $request["custom_copyright"] . '"';
+        if (isset($request["min_single_file"])) $update["_94LIST_MIN_SINGLE_FILESIZE"] = $request["min_single_file"];
 
         if (count($update) === 0) ResponseController::paramsError();
 
