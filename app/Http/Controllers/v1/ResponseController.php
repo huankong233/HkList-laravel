@@ -286,4 +286,9 @@ class ResponseController extends Controller
     {
         return self::response(10052, 500, "未知解析模式");
     }
+
+    public static function nullfile()
+    {
+        return self::response(10053, 400, "请求的文件数量为空");
+    }
 }
