@@ -17,7 +17,7 @@ class RecordController extends Controller
             return ResponseController::success($record);
         }
 
-        $records = Record::withTrashed()->paginate($request["size"]);
+        $records = Record::withTrashed()->orderByDesc($request["orderBy"] ?? "id")->paginate($request["size"]);
         return ResponseController::success($records);
     }
 
