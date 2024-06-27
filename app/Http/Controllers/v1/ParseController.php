@@ -445,7 +445,7 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试" && $reason !== "百度服务器返回: 触发验证码,请重试!") {
+            if (str_contains($reason, "风控")) {
                 Account::query()
                        ->find($json["cookie"][0]["id"])
                        ->update([
@@ -481,7 +481,7 @@ class ParseController extends Controller
                     "ua"                => $ua,
                     "url"               => $responseDatum["url"]
                 ]);
-            } else {
+            } else if (str_contains($responseDatum["url"], "风控")) {
                 Account::query()
                        ->find($responseDatum["cookie_id"])
                        ->update([
@@ -496,6 +496,7 @@ class ParseController extends Controller
                 "url"      => $v["url"],
                 "urls"     => $v["urls"] ?? $v["url"],
                 "filename" => $v["filename"],
+                "fs_id"    => $v["fs_id"]
             ])
         );
     }
@@ -545,7 +546,7 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试" && $reason !== "百度服务器返回: 触发验证码,请重试!") {
+            if (str_contains($reason, "风控")) {
                 Account::query()
                        ->find($json["cookie"][0]["id"])
                        ->update([
@@ -581,7 +582,7 @@ class ParseController extends Controller
                     "ua"                => $ua,
                     "url"               => $responseDatum["url"]
                 ]);
-            } else {
+            } else if (str_contains($responseDatum["url"], "风控")) {
                 Account::query()
                        ->find($responseDatum["cookie_id"])
                        ->update([
@@ -593,7 +594,11 @@ class ParseController extends Controller
 
         return ResponseController::success(
             collect($responseData)->map(function ($v) {
-                $arr = ["url" => $v["url"], "filename" => $v["filename"]];
+                $arr = [
+                    "url"      => $v["url"],
+                    "filename" => $v["filename"],
+                    "fs_id"    => $v["fs_id"]
+                ];
                 if (isset($v["urls"])) $arr["urls"] = $v["urls"];
                 return $arr;
             })

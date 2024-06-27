@@ -291,4 +291,9 @@ class ResponseController extends Controller
     {
         return self::response(10053, 400, "请求的文件数量为空");
     }
+
+    public static function TokenNotExists()
+    {
+        return self::response(10054, 404, "卡密不存在");
+    }
 }
