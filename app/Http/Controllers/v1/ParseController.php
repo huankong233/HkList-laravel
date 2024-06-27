@@ -162,26 +162,29 @@ class ParseController extends Controller
         }
 
         $errno = $response["errtype"] ?? ($response["errno"] ?? "未知");
-        if (!isset($response["data"]["uk"]) | !isset($response["data"]["shareid"]) | !isset($response["data"]["seckey"]) | !isset($response["data"]["list"])) $errno = "缺少参数,请重试";
 
         if ($errno === 0) {
-            // 保存所有文件到数据库
-            foreach ($response["data"]["list"] as $file) {
-                if ($file["isdir"] == 1 || $file["isdir"] == "1" || !isset($file["fs_id"]) || !isset($file["md5"])) continue;
-                $find = FileList::query()->firstWhere("fs_id", $file["fs_id"]);
-                if ($find) {
-                    if ($find["md5"] !== $file["md5"]) {
-                        $find->update([
-                            "size" => $file["size"],
-                            "md5"  => $file["md5"]
+            if (!isset($response["data"]["uk"]) | !isset($response["data"]["shareid"]) | !isset($response["data"]["seckey"]) | !isset($response["data"]["list"])) {
+                $errno = "百度返回信息中缺少必要参数,请重试";
+            } else {
+                // 保存所有文件到数据库
+                foreach ($response["data"]["list"] as $file) {
+                    if ($file["isdir"] == 1 || $file["isdir"] == "1" || !isset($file["fs_id"]) || !isset($file["md5"])) continue;
+                    $find = FileList::query()->firstWhere("fs_id", $file["fs_id"]);
+                    if ($find) {
+                        if ($find["md5"] !== $file["md5"]) {
+                            $find->update([
+                                "size" => $file["size"],
+                                "md5"  => $file["md5"]
+                            ]);
+                        }
+                    } else {
+                        FileList::query()->create([
+                            "fs_id" => $file["fs_id"],
+                            "size"  => $file["size"],
+                            "md5"   => $file["md5"]
                         ]);
                     }
-                } else {
-                    FileList::query()->create([
-                        "fs_id" => $file["fs_id"],
-                        "size"  => $file["size"],
-                        "md5"   => $file["md5"]
-                    ]);
                 }
             }
         }
