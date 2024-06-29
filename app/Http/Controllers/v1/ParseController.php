@@ -410,7 +410,7 @@ class ParseController extends Controller
             if (str_contains($responseDatum["url"], "dlna")) {
                 if (isset($token) && $token["expired_at"] === null) {
                     $token->update([
-                        "expired_at" => now()->addDays($token["days"])
+                        "expired_at" => now()->addDays($token["day"])
                     ]);
                 }
 
@@ -522,7 +522,7 @@ class ParseController extends Controller
 
                 if (isset($token) && $token["expired_at"] === null) {
                     $token->update([
-                        "expired_at" => now()->addDays($token["days"])
+                        "expired_at" => now()->addDays($token["day"])
                     ]);
                 }
 
@@ -636,7 +636,7 @@ class ParseController extends Controller
 
                 if (isset($token) && $token["expired_at"] === null) {
                     $token->update([
-                        "expired_at" => now()->addDays($token["days"])
+                        "expired_at" => now()->addDays($token["day"])
                     ]);
                 }
 
