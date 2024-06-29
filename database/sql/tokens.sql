@@ -30,9 +30,4 @@ CREATE TABLE "tokens" (
   "updated_at" text NOT NULL
 );
 
--- ----------------------------
--- Auto increment value for tokens
--- ----------------------------
-UPDATE "sqlite_sequence" SET seq = 99 WHERE name = 'tokens';
-
 PRAGMA foreign_keys = true;

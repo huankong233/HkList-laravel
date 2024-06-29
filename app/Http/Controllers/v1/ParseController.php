@@ -399,7 +399,7 @@ class ParseController extends Controller
                    "last_use_at" => date("Y-m-d H:i:s")
                ]);
 
-        if (isset($request["token"])) {
+        if (isset($request["token"]) && $request["token"] !== "") {
             $token   = Token::query()->firstWhere("name", $request["token"]);
             $user_id = -$token["id"];
         } else {
@@ -505,7 +505,7 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        if (isset($request["token"])) {
+        if (isset($request["token"]) && $request["token"] !== "") {
             $token   = Token::query()->firstWhere("name", $request["token"]);
             $user_id = -$token["id"];
         } else {
@@ -619,7 +619,7 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        if (isset($request["token"])) {
+        if (isset($request["token"]) && $request["token"] !== "") {
             $token   = Token::query()->firstWhere("name", $request["token"]);
             $user_id = -$token["id"];
         } else {

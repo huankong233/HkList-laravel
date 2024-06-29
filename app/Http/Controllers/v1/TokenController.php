@@ -65,12 +65,19 @@ class TokenController extends Controller
                 continue;
             }
 
-            Token::query()->create([
+            $token = Token::query()->create([
                 "name"  => $name,
                 "count" => $request["count"],
                 "size"  => $request["size"],
                 "day"   => $request["day"]
             ]);
+
+            // 傻逼Sqlite设置的自增起始值无效
+
+            if ($token["id"] === 1) {
+                $token->delete();
+                return self::generateToken($request);
+            }
         }
 
         return ResponseController::success();
