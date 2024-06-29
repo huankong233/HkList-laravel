@@ -24,7 +24,7 @@ CREATE TABLE "tokens" (
   "name" text NOT NULL,
   "count" integer NOT NULL,
   "size" integer NOT NULL,
-  "day" text NOT NULL,
+  "day" integer NOT NULL,
   "expired_at" text,
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL
