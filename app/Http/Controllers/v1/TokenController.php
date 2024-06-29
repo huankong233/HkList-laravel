@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Token;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class TokenController extends Controller
 {
@@ -26,7 +27,8 @@ class TokenController extends Controller
         $validator = Validator::make($request->all(), [
             "name"  => "required|string",
             "count" => "required|numeric",
-            "size"  => "required|numeric"
+            "size"  => "required|numeric",
+            "day"   => "required|numeric",
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -37,39 +39,74 @@ class TokenController extends Controller
         Token::query()->create([
             "name"  => $request["name"],
             "count" => $request["count"],
-            "size"  => $request["size"]
+            "size"  => $request["size"],
+            "day"   => $request["day"]
         ]);
 
         return ResponseController::success();
     }
 
-    public function updateToken(Request $request, $Token_id)
+    public function generateToken(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "name"  => "string",
-            "count" => "numeric",
-            "size"  => "numeric"
+            "token_count" => "required|numeric",
+            "count"       => "required|numeric",
+            "size"        => "required|numeric",
+            "day"         => "required|numeric",
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $Token = Token::query()->find($Token_id);
-        if (!$Token) return ResponseController::TokenNotExists();
+        for ($i = 0; $i < $request["token_count"]; $i++) {
+            $name    = Str::random();
+            $invCode = Token::query()->firstWhere("name", $name);
+            if ($invCode) {
+                $i--;
+                continue;
+            }
+
+            Token::query()->create([
+                "name"  => $name,
+                "count" => $request["count"],
+                "size"  => $request["size"],
+                "day"   => $request["day"]
+            ]);
+        }
+
+        return ResponseController::success();
+    }
+
+    public function updateToken(Request $request, $token_id)
+    {
+        $validator = Validator::make($request->all(), [
+            "name"       => "string",
+            "count"      => "numeric",
+            "size"       => "numeric",
+            "day"        => "numeric",
+            "expired_at" => "nullable|date"
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        $token = Token::query()->find($token_id);
+        if (!$token) return ResponseController::TokenNotExists();
 
         $update = [];
 
         if (isset($request["name"])) {
             $Token = Token::query()->firstWhere("name", $request["name"]);
-            if ($Token && $Token["id"] !== $Token["id"]) return ResponseController::TokenExists();
+            if ($Token && $token["id"] !== $Token["id"]) return ResponseController::TokenExists();
             $update["name"] = $request["name"];
         }
 
         if (isset($request["count"])) $update["count"] = $request["count"];
         if (isset($request["size"])) $update["size"] = $request["size"];
+        if (isset($request["day"])) $update["day"] = $request["day"];
+        if (isset($request["expired_at"])) $update["expired_at"] = $request["expired_at"];
 
         if (count($update) === 0) return ResponseController::paramsError();
 
-        $Token->update($update);
+        $token->update($update);
 
         return ResponseController::success();
     }
@@ -77,21 +114,16 @@ class TokenController extends Controller
     public function removeTokens(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "Token_ids.*" => "numeric"
+            "token_ids"   => "required|array",
+            "token_ids.*" => "numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        foreach ($request["Token_ids"] as $Token_id) {
-            if (in_array($Token_id, ["-1", "0"])) return ResponseController::TokenCanNotBeRemoved("自带分组禁止删除");
-
-            $Token = Token::query()->find($Token_id);
-            if (!$Token) return ResponseController::TokenNotExists();
-
-            $users = User::query()->where("Token_id", $Token_id)->get();
-            if ($users->count() > 0) return ResponseController::TokenCanNotBeRemoved("用户组还存在用户");
-
-            $Token->delete();
+        foreach ($request["token_ids"] as $token_id) {
+            $token = Token::query()->find($token_id);
+            if (!$token) return ResponseController::TokenNotExists();
+            $token->delete();
         }
 
         return ResponseController::success();

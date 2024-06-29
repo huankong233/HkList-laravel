@@ -8,6 +8,7 @@ use App\Http\Controllers\v1\InvCodeController;
 use App\Http\Controllers\v1\IpController;
 use App\Http\Controllers\v1\ParseController;
 use App\Http\Controllers\v1\RecordController;
+use App\Http\Controllers\v1\TokenController;
 use App\Http\Controllers\v1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -77,6 +78,15 @@ Route::middleware("NeedInstall")->group(function () {
                 Route::post("/", [IpController::class, "addIp"]);
                 Route::patch("/{ip_id}", [IpController::class, "updateIp"]);
                 Route::delete("/", [IpController::class, "removeIps"]);
+            });
+
+            Route::pattern("token_id", "[0-9]+");
+            Route::prefix("/token")->group(function () {
+                Route::get("/{token_id?}", [TokenController::class, "getToken"]);
+                Route::post("/", [TokenController::class, "addToken"]);
+                Route::post("/generate", [TokenController::class, "generateToken"]);
+                Route::patch("/{token_id}", [TokenController::class, "updateToken"]);
+                Route::delete("/", [TokenController::class, "removeTokens"]);
             });
 
             Route::prefix("/config")->group(function () {
