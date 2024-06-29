@@ -287,7 +287,7 @@ class ResponseController extends Controller
         return self::response(10052, 500, "未知解析模式");
     }
 
-    public static function nullfile()
+    public static function nullFile()
     {
         return self::response(10053, 400, "请求的文件数量为空");
     }
@@ -295,5 +295,20 @@ class ResponseController extends Controller
     public static function TokenNotExists()
     {
         return self::response(10054, 404, "卡密不存在");
+    }
+
+    public static function TokenExists()
+    {
+        return self::response(10055, 400, "卡密已存在");
+    }
+
+    public static function TokenExpired()
+    {
+        return self::response(10056, 400, "卡密已过期");
+    }
+
+    public static function TokenQuotaHasBeenUsedUp()
+    {
+        return self::response(10057, 400, "卡密配额已用完");
     }
 }

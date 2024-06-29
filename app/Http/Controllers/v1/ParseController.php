@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\FileList;
 use App\Models\Group;
 use App\Models\Record;
+use App\Models\Token;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -165,7 +166,7 @@ class ParseController extends Controller
 
         if ($errno === 0) {
             if (!isset($response["data"]["uk"]) | !isset($response["data"]["shareid"]) | !isset($response["data"]["seckey"]) | !isset($response["data"]["list"])) {
-                $errno = "百度返回信息中缺少必要参数,请重试";
+                $errno = "请检查链接是否有效并重试";
             } else {
                 // 保存所有文件到数据库
                 foreach ($response["data"]["list"] as $file) {
@@ -209,6 +210,33 @@ class ParseController extends Controller
 
     public function checkLimit(Request $request)
     {
+        if (isset($request["token"]) && $request["token"] !== "") {
+            $validator = Validator::make($request->all(), [
+                "token" => "required|string",
+            ]);
+
+            if ($validator->fails()) return ResponseController::paramsError();
+
+            $token = Token::query()->firstWhere("name", $request["token"]);
+            if (!$token) return ResponseController::TokenNotExists();
+
+            // 检查是否已经过期
+            if ($token["expired_at"] !== null && $token["expired_at"] < now()) return ResponseController::TokenExpired();
+
+            $records = Record::withTrashed()
+                             ->where("user_id", -$token["id"])
+                             ->get();
+
+            if ($records->count() >= $token["count"] || $records->sum("size") >= $token["size"] * 1073741824) return ResponseController::TokenQuotaHasBeenUsedUp();
+
+            return ResponseController::success([
+                "group_name" => $token["name"],
+                "count"      => $token["count"] - $records->count(),
+                "size"       => $token["size"] * 1073741824 - $records->sum("size"),
+                "expired_at" => $token["expired_at"] ?? "未使用"
+            ]);
+        }
+
         // 获取今日解析数量
         $group = Group::query()
                       ->find(Auth::check() ? Auth::user()["group_id"] : -1);
@@ -294,7 +322,7 @@ class ParseController extends Controller
             }
         }
 
-        if (count($request["fs_ids"]) === 0) return ResponseController::nullfile();
+        if (count($request["fs_ids"]) === 0) return ResponseController::nullFile();
 
         // 检查文件大小是否符合用户组配额
         if (collect($fileList)->sum("size") > $checkLimitData["data"]["size"]) return ResponseController::groupQuotaSizeIsNotEnough();
@@ -371,18 +399,33 @@ class ParseController extends Controller
                    "last_use_at" => date("Y-m-d H:i:s")
                ]);
 
+        if (isset($request["token"])) {
+            $token   = Token::query()->firstWhere("name", $request["token"]);
+            $user_id = -$token["id"];
+        } else {
+            $user_id = Auth::user()["id"] ?? -1;
+        }
+
         foreach ($responseData as $responseDatum) {
-            RecordController::addRecord([
-                "ip"                => UtilsController::getIp(),
-                "fs_id"             => $responseDatum["fs_id"] ?? 0,
-                "filename"          => $responseDatum["filename"],
-                "user_id"           => Auth::user()["id"] ?? -1,
-                "account_id"        => $cookieData["data"]["id"],
-                "normal_account_id" => 0,
-                "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
-                "ua"                => $ua,
-                "url"               => $responseDatum["url"]
-            ]);
+            if (str_contains($responseDatum["url"], "dlna")) {
+                if (isset($token) && $token["expired_at"] === null) {
+                    $token->update([
+                        "expired_at" => now()->addDays($token["days"])
+                    ]);
+                }
+
+                RecordController::addRecord([
+                    "ip"                => UtilsController::getIp(),
+                    "fs_id"             => $responseDatum["fs_id"] ?? 0,
+                    "filename"          => $responseDatum["filename"],
+                    "user_id"           => $user_id,
+                    "account_id"        => $cookieData["data"]["id"],
+                    "normal_account_id" => 0,
+                    "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
+                    "ua"                => $ua,
+                    "url"               => $responseDatum["url"]
+                ]);
+            }
         }
 
         return ResponseController::success($responseData);
@@ -462,6 +505,13 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
+        if (isset($request["token"])) {
+            $token   = Token::query()->firstWhere("name", $request["token"]);
+            $user_id = -$token["id"];
+        } else {
+            $user_id = Auth::user()["id"] ?? -1;
+        }
+
         foreach ($responseData as $responseDatum) {
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
                 Account::query()
@@ -470,11 +520,17 @@ class ParseController extends Controller
                            "last_use_at" => date("Y-m-d H:i:s")
                        ]);
 
+                if (isset($token) && $token["expired_at"] === null) {
+                    $token->update([
+                        "expired_at" => now()->addDays($token["days"])
+                    ]);
+                }
+
                 RecordController::addRecord([
                     "ip"                => UtilsController::getIp(),
                     "fs_id"             => $responseDatum["fs_id"] ?? 0,
                     "filename"          => $responseDatum["filename"],
-                    "user_id"           => Auth::user()["id"] ?? -1,
+                    "user_id"           => $user_id,
                     "account_id"        => $responseDatum["cookie_id"],
                     "normal_account_id" => 0,
                     "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
@@ -563,6 +619,13 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
+        if (isset($request["token"])) {
+            $token   = Token::query()->firstWhere("name", $request["token"]);
+            $user_id = -$token["id"];
+        } else {
+            $user_id = Auth::user()["id"] ?? -1;
+        }
+
         foreach ($responseData as $responseDatum) {
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
                 Account::query()
@@ -571,11 +634,17 @@ class ParseController extends Controller
                            "last_use_at" => date("Y-m-d H:i:s")
                        ]);
 
+                if (isset($token) && $token["expired_at"] === null) {
+                    $token->update([
+                        "expired_at" => now()->addDays($token["days"])
+                    ]);
+                }
+
                 RecordController::addRecord([
                     "ip"                => UtilsController::getIp(),
                     "fs_id"             => $responseDatum["fs_id"] ?? 0,
                     "filename"          => $responseDatum["filename"],
-                    "user_id"           => Auth::user()["id"] ?? -1,
+                    "user_id"           => $user_id,
                     "account_id"        => $responseDatum["cookie_id"],
                     "normal_account_id" => 0,
                     "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,

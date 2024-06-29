@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Controllers\v1\ResponseController;
 use App\Models\Group;
 use App\Models\User;
 use Closure;
@@ -10,6 +9,7 @@ use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Response;
 
 class NeedInstall
@@ -21,14 +21,8 @@ class NeedInstall
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $installLock = base_path('install.lock');
-
-        // 检查是否存在 .lock 文件
-        if (!file_exists($installLock)) {
-            $dbFile = database_path('database.sqlite');
-
-            // 如果不存在则自动创建
-            if (file_exists($dbFile)) return ResponseController::dbFileExists();
+        $dbFile = database_path('database.sqlite');
+        if (!file_exists($dbFile)) {
             file_put_contents($dbFile, '');
 
             $key = 'base64:' . base64_encode(Encrypter::generateKey(config('app.cipher')));
@@ -39,6 +33,8 @@ class NeedInstall
 
             // 导入sql
             $installSql = database_path('sql/sqlite.sql');
+            DB::unprepared(file_get_contents($installSql));
+            $installSql = database_path('sql/tokens.sql');
             DB::unprepared(file_get_contents($installSql));
 
             Group::query()->create([
@@ -63,9 +59,11 @@ class NeedInstall
                 'group_id'    => 0,
                 'inv_code_id' => -1
             ]);
+        }
 
-            // 写入安装锁
-            file_put_contents($installLock, 'install ok');
+        if (!Schema::hasTable("tokens")) {
+            $installSql = database_path('sql/tokens.sql');
+            DB::unprepared(file_get_contents($installSql));
         }
 
         return $next($request);

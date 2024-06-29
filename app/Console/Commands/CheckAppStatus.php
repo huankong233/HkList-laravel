@@ -107,10 +107,6 @@ class CheckAppStatus extends Command
         File::replace($www_env_path, $latest_env->implode("\n"));
         $this->info("完成导入配置文件");
 
-        // 重建文件锁
-        $this->info("重建文件锁");
-        File::replace($www_path . "/install.lock", "install ok");
-
         # 更新完成
         $this->info("更新完成");
     }
