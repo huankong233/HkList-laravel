@@ -41,7 +41,9 @@ class MainConfigController extends Controller
             "custom_copyright" => "string",
             "parse_mode"       => "numeric",
             "max_filesize"     => "numeric",
-            "min_single_file"  => "numeric"
+            "min_single_file"  => "numeric",
+            "token_mode"       => "bool",
+            "button_link"      => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -64,6 +66,8 @@ class MainConfigController extends Controller
         if (isset($request["max_filesize"])) $update["_94LIST_MAX_FILESIZE"] = $request["max_filesize"];
         if (isset($request["custom_copyright"])) $update["_94LIST_CUSTOM_COPYRIGHT"] = $request["custom_copyright"] === null ? "" : '"' . $request["custom_copyright"] . '"';
         if (isset($request["min_single_file"])) $update["_94LIST_MIN_SINGLE_FILESIZE"] = $request["min_single_file"];
+        if (isset($request["token_mode"])) $update["_94LIST_TOKEN_MODE"] = $request["token_mode"];
+        if (isset($request["button_link"])) $update["_94LIST_BUTTON_LINK"] = $request["button_link"];
 
         if (count($update) === 0) ResponseController::paramsError();
 

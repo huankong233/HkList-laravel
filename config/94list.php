@@ -5,7 +5,7 @@ return [
     "fake_wx_user_agent" => "Mozilla/5.0 (Linux; Android 7.1.1; MI 6 Build/NMF26X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/043807 Mobile Safari/537.36 MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN MicroMessenger/6.6.1.1220(0x26060135) NetType/4G Language/zh_CN miniProgram",
     "fake_cookie"        => "BAIDUID=A4FDFAE43DDBF7E6956B02F6EF715373:FG=1; BAIDUID_BFESS=A4FDFAE43DDBF7E6956B02F6EF715373:FG=1; newlogin=1",
 
-    "version"        => "1.1.27",
+    "version"        => "1.1.28",
     "sleep"          => (int)env("_94LIST_SLEEP", 3),
     "max_once"       => (int)env("_94LIST_MAX_ONCE", 20),
     "password"       => env("_94LIST_PASSWORD", ""),
@@ -22,5 +22,7 @@ return [
 
     "parse_mode"      => (int)env("_94LIST_PARSE_MODE", 3),
     "max_filesize"    => (int)env("_94LIST_MAX_FILESIZE", 536870912000),
-    "min_single_file" => (int)env("_94LIST_MIN_SINGLE_FILESIZE", 0)
+    "min_single_file" => (int)env("_94LIST_MIN_SINGLE_FILESIZE", 0),
+    "token_mode"      => (bool)env("_94LIST_TOKEN_MODE", true),
+    "button_link"     => env("_94LIST_BUTTON_LINK", "")
 ];
