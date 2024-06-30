@@ -83,7 +83,7 @@ class ParseController extends Controller
                             $message->to(config("mail.to.address"))->subject("有账户过期了~");
                         });
                     } catch (Exception $e) {
-                        return ResponseController::sendMailFailed($e->getMessage());
+//                        return ResponseController::sendMailFailed($e->getMessage());
                     }
                 }
             }
@@ -378,6 +378,15 @@ class ParseController extends Controller
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
             if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试") {
+                if (config("mail.switch")) {
+                    try {
+                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $cookieData["data"]["id"], function ($message) {
+                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
+                        });
+                    } catch (Exception $e) {
+                    }
+                }
+
                 Account::query()
                        ->find($cookieData["data"]["id"])
                        ->update([
@@ -427,6 +436,15 @@ class ParseController extends Controller
                     "url"               => $responseDatum["url"]
                 ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
+                if (config("mail.switch")) {
+                    try {
+                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $responseDatum["cookie_id"], function ($message) {
+                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
+                        });
+                    } catch (Exception $e) {
+                    }
+                }
+
                 Account::query()
                        ->find($cookieData["data"]["id"])
                        ->update([
@@ -497,6 +515,15 @@ class ParseController extends Controller
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
             if (str_contains($reason, "风控")) {
+                if (config("mail.switch")) {
+                    try {
+                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $json["cookie"][0]["id"], function ($message) {
+                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
+                        });
+                    } catch (Exception $e) {
+                    }
+                }
+
                 Account::query()
                        ->find($json["cookie"][0]["id"])
                        ->update([
@@ -546,6 +573,15 @@ class ParseController extends Controller
                     "url"               => $responseDatum["url"]
                 ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
+                if (config("mail.switch")) {
+                    try {
+                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $responseDatum["cookie_id"], function ($message) {
+                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
+                        });
+                    } catch (Exception $e) {
+                    }
+                }
+
                 Account::query()
                        ->find($responseDatum["cookie_id"])
                        ->update([
@@ -610,14 +646,6 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if (str_contains($reason, "风控")) {
-                Account::query()
-                       ->find($json["cookie"][0]["id"])
-                       ->update([
-                           "switch" => 0,
-                           "reason" => $reason,
-                       ]);
-            }
             return ResponseController::errorFromMainServer($reason);
         } catch (GuzzleException $e) {
             return ResponseController::networkError("连接解析服务器");
@@ -660,6 +688,15 @@ class ParseController extends Controller
                     "url"               => $responseDatum["url"]
                 ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
+                if (config("mail.switch")) {
+                    try {
+                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $responseDatum["cookie_id"], function ($message) {
+                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
+                        });
+                    } catch (Exception $e) {
+                    }
+                }
+
                 Account::query()
                        ->find($responseDatum["cookie_id"])
                        ->update([
