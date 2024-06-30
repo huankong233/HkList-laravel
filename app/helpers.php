@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 
 if (!function_exists("updateEnv")) {
@@ -37,5 +38,32 @@ if (!function_exists("updateEnv")) {
 
         $content = implode("\n", $contentArray->toArray());
         File::put($envPath, $content);
+    }
+}
+
+if (!function_exists("getVersionString")) {
+    /**
+     * get Version in the env arr
+     * @param $env_arr
+     * @return string
+     */
+    function getVersionString($env_arr): string
+    {
+        return $env_arr->filter(fn($env, $key) => $key === "_94LIST_VERSION")->first() ?? "0.0.0";
+    }
+}
+
+if (!function_exists("getEnvFile")) {
+    /**
+     * get env file arr
+     * @param $env_path
+     * @return Collection
+     */
+    function getEnvFile($env_path): Collection
+    {
+        return collect(explode("\n", File::get($env_path)))
+            ->filter(fn($line) => $line)
+            ->map(fn($line) => explode("=", $line))
+            ->mapWithKeys(fn($item) => [$item[0] => $item[1]]);
     }
 }

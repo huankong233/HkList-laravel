@@ -13,7 +13,6 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,7 +39,9 @@ class ParseController extends Controller
             "need_password"    => $config["password"] !== "",
             "show_copyright"   => $config["show_copyright"],
             "custom_copyright" => $config["custom_copyright"],
-            "min_single_file"  => $config["min_single_file"]
+            "min_single_file"  => $config["min_single_file"],
+            "token_mode"       => $config["token_mode"],
+            "button_link"      => $config["button_link"],
         ]);
     }
 
@@ -210,7 +211,7 @@ class ParseController extends Controller
 
     public function checkLimit(Request $request)
     {
-        if (isset($request["token"]) && $request["token"] !== "") {
+        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
             $validator = Validator::make($request->all(), [
                 "token" => "required|string",
             ]);
@@ -399,7 +400,7 @@ class ParseController extends Controller
                    "last_use_at" => date("Y-m-d H:i:s")
                ]);
 
-        if (isset($request["token"]) && $request["token"] !== "") {
+        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
             $token   = Token::query()->firstWhere("name", $request["token"]);
             $user_id = -$token["id"];
         } else {
@@ -408,7 +409,7 @@ class ParseController extends Controller
 
         foreach ($responseData as $responseDatum) {
             if (str_contains($responseDatum["url"], "dlna")) {
-                if (isset($token) && $token["expired_at"] === null) {
+                if (config("94list.token_mode") && isset($token) && $token["expired_at"] === null) {
                     $token->update([
                         "expired_at" => now()->addDays($token["day"])
                     ]);
@@ -425,6 +426,13 @@ class ParseController extends Controller
                     "ua"                => $ua,
                     "url"               => $responseDatum["url"]
                 ]);
+            } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
+                Account::query()
+                       ->find($cookieData["data"]["id"])
+                       ->update([
+                           "switch" => 0,
+                           "reason" => $responseDatum["url"],
+                       ]);
             }
         }
 
@@ -505,7 +513,7 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        if (isset($request["token"]) && $request["token"] !== "") {
+        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
             $token   = Token::query()->firstWhere("name", $request["token"]);
             $user_id = -$token["id"];
         } else {
@@ -520,7 +528,7 @@ class ParseController extends Controller
                            "last_use_at" => date("Y-m-d H:i:s")
                        ]);
 
-                if (isset($token) && $token["expired_at"] === null) {
+                if (config("94list.token_mode") && isset($token) && $token["expired_at"] === null) {
                     $token->update([
                         "expired_at" => now()->addDays($token["day"])
                     ]);
@@ -537,7 +545,7 @@ class ParseController extends Controller
                     "ua"                => $ua,
                     "url"               => $responseDatum["url"]
                 ]);
-            } else if (str_contains($responseDatum["url"], "风控")) {
+            } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 Account::query()
                        ->find($responseDatum["cookie_id"])
                        ->update([
@@ -619,7 +627,7 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        if (isset($request["token"]) && $request["token"] !== "") {
+        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
             $token   = Token::query()->firstWhere("name", $request["token"]);
             $user_id = -$token["id"];
         } else {
@@ -651,7 +659,7 @@ class ParseController extends Controller
                     "ua"                => $ua,
                     "url"               => $responseDatum["url"]
                 ]);
-            } else if (str_contains($responseDatum["url"], "风控")) {
+            } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 Account::query()
                        ->find($responseDatum["cookie_id"])
                        ->update([

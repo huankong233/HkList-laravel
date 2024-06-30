@@ -23,19 +23,6 @@ class CheckAppStatus extends Command
      */
     protected $description = "检查程序状态并在需要时更新";
 
-    public function getVersionString($env_arr): string
-    {
-        return $env_arr->filter(fn($env, $key) => $key === "_94LIST_VERSION")->first() ?? "0.0.0";
-    }
-
-    public function getEnvFile($env_path): Collection
-    {
-        return collect(explode("\n", File::get($env_path)))
-            ->filter(fn($line) => $line)
-            ->map(fn($line) => explode("=", $line))
-            ->mapWithKeys(fn($item) => [$item[0] => $item[1]]);
-    }
-
     /**
      * Execute the console command.
      */
@@ -51,11 +38,11 @@ class CheckAppStatus extends Command
         $www_env_path    = $www_path . "/.env";
         $latest_env_path = $latest_path . "/.env";
 
-        $www_env    = $this->getEnvFile($www_env_path);
-        $latest_env = $this->getEnvFile($latest_env_path);
+        $www_env    = getEnvFile($www_env_path);
+        $latest_env = getEnvFile($latest_env_path);
 
-        $www_version    = $this->getVersionString($www_env);
-        $latest_version = $this->getVersionString($latest_env);
+        $www_version    = getVersionString($www_env);
+        $latest_version = getVersionString($latest_env);
 
         $this->info("本地版本号：" . $www_version);
         $this->info("容器版本号：" . $latest_version);
