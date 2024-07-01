@@ -152,7 +152,7 @@ class ParseController extends Controller
                                   ->whereNull("prov")
                                   ->first();
 
-                $account->update([
+                $account?->update([
                     "prov" => $prov,
                 ]);
             }
