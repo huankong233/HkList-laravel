@@ -111,15 +111,6 @@ CREATE TABLE "records" (
 );
 
 -- ----------------------------
--- Table structure for sqlite_sequence
--- ----------------------------
-DROP TABLE IF EXISTS "sqlite_sequence";
-CREATE TABLE "sqlite_sequence" (
-  "name",
-  "seq"
-);
-
--- ----------------------------
 -- Table structure for tokens
 -- ----------------------------
 DROP TABLE IF EXISTS "tokens";
@@ -149,10 +140,5 @@ CREATE TABLE "users" (
   "updated_at" text NOT NULL,
   "deleted_at" text
 );
-
--- ----------------------------
--- Auto increment value for tokens
--- ----------------------------
-UPDATE "sqlite_sequence" SET seq = 100 WHERE name = 'tokens';
 
 PRAGMA foreign_keys = true;
