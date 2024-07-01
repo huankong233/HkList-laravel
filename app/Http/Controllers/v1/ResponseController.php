@@ -311,4 +311,9 @@ class ResponseController extends Controller
     {
         return self::response(10057, 400, "卡密配额已用完");
     }
+
+    public static function unsupportNotCNCountry()
+    {
+        return self::response(10058, 400, "不支持非中国用户使用");
+    }
 }

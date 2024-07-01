@@ -42,20 +42,52 @@ class ParseController extends Controller
             "min_single_file"  => $config["min_single_file"],
             "token_mode"       => $config["token_mode"],
             "button_link"      => $config["button_link"],
+            "prov"             => self::getProvinceFromIP(UtilsController::getIp())
         ]);
+    }
+
+    public function getProvinceFromIP($ip)
+    {
+        if ($ip === "0.0.0.0") return "上海市";
+
+        $http = new Client([
+            "headers" => [
+                "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"
+            ]
+        ]);
+
+        try {
+            $res      = $http->get("https://qifu.baidu.com/ip/geo/v1/district", [
+                "query" => [
+                    "ip" => $ip
+                ]
+            ]);
+            $response = JSON::decode($res->getBody()->getContents());
+
+            if (config("94list.limit_cn")) {
+                if (isset($response["data"]["country"]) && $response["data"]["country"] !== "中国") {
+                    return false;
+                }
+            }
+
+            return isset($response["data"]["prov"]) && $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
+        } catch (GuzzleException|Exception $e) {
+            return null;
+        }
     }
 
     public function getRandomCookie($vipType = ["超级会员"])
     {
+        $ip   = UtilsController::getIp();
+        $prov = self::getProvinceFromIP($ip);
+        if ($prov === false) return ResponseController::unsupportNotCNCountry();
+
         $vipType = is_array($vipType) ? $vipType : [$vipType];
 
         if (in_array("超级会员", $vipType)) {
             // 禁用不可用的账户
             $banAccounts = Account::query()
-                                  ->where([
-                                      "switch"   => 1,
-                                      "vip_type" => "超级会员",
-                                  ])
+                                  ->where(["switch" => 1, "vip_type" => "超级会员",])
                                   ->whereDate("svip_end_at", "<", now())
                                   ->whereTime("svip_end_at", "<", now())
                                   ->get();
@@ -89,21 +121,56 @@ class ParseController extends Controller
             }
         }
 
-        // 判断今日解析量超了没
-        // leftJoin => having
+        // 判斷是否獲取到了省份
+        if ($prov !== null) {
+            $account = Account::query()
+                              ->where("switch", 1)
+                              ->whereIn("vip_type", $vipType)
+                              ->leftJoin('records', function ($join) {
+                                  $join->on('accounts.id', '=', 'records.account_id')
+                                       ->whereDate('records.created_at', now());
+                              })
+                              ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
+                              ->groupBy('accounts.id')
+                              ->having('total_size', '<', config("94list.max_filesize"))
+                              ->inRandomOrder()
+                              ->where("prov", $prov)
+                              ->first();
 
-        $account = Account::query()
-                          ->where("switch", 1)
-                          ->whereIn("vip_type", $vipType)
-                          ->leftJoin('records', function ($join) {
-                              $join->on('accounts.id', '=', 'records.account_id')
-                                   ->whereDate('records.created_at', now());
-                          })
-                          ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
-                          ->groupBy('accounts.id')
-                          ->having('total_size', '<', config("94list.max_filesize"))
-                          ->inRandomOrder()
-                          ->first();
+            if ($account === null) {
+                $account = Account::query()
+                                  ->where("switch", 1)
+                                  ->whereIn("vip_type", $vipType)
+                                  ->leftJoin('records', function ($join) {
+                                      $join->on('accounts.id', '=', 'records.account_id')
+                                           ->whereDate('records.created_at', now());
+                                  })
+                                  ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
+                                  ->groupBy('accounts.id')
+                                  ->having('total_size', '<', config("94list.max_filesize"))
+                                  ->inRandomOrder()
+                                  ->whereNull("prov")
+                                  ->first();
+
+                $account->update([
+                    "prov" => $prov,
+                ]);
+            }
+        } else {
+            $account = Account::query()
+                              ->where("switch", 1)
+                              ->whereIn("vip_type", $vipType)
+                              ->leftJoin('records', function ($join) {
+                                  $join->on('accounts.id', '=', 'records.account_id')
+                                       ->whereDate('records.created_at', now());
+                              })
+                              ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
+                              ->groupBy('accounts.id')
+                              ->having('total_size', '<', config("94list.max_filesize"))
+                              ->inRandomOrder()
+                              ->whereNull("prov")
+                              ->first();
+        }
 
         if (!$account) return ResponseController::svipAccountIsNotEnough(true, $vipType);
 
@@ -333,7 +400,7 @@ class ParseController extends Controller
         return match ($parse_mode) {
             1       => self::getDownloadLinksByDisk($request),
             2       => self::getDownloadLinksByShare($request),
-            3       => self::getDownloadLinksByShareV2($request),
+            3, 4    => self::getDownloadLinksByShareV2($request, $parse_mode),
             default => ResponseController::unknownParseMode()
         };
     }
@@ -601,7 +668,7 @@ class ParseController extends Controller
         );
     }
 
-    public function getDownloadLinksByShareV2(Request $request)
+    public function getDownloadLinksByShareV2(Request $request, $parse_mode)
     {
         $validator = Validator::make($request->all(), [
             "fs_ids"   => "required|array",
@@ -617,7 +684,7 @@ class ParseController extends Controller
         $ua = config("94list.user_agent");
 
         $json = [
-            "type"     => 3,
+            "type"     => $parse_mode,
             "fsidlist" => $request["fs_ids"],
             "code"     => config("94list.code"),
             "ua"       => $ua,

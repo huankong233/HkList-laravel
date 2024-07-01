@@ -28,8 +28,8 @@ class MainConfigController extends Controller
         $validator = Validator::make($request->all(), [
             "sleep"            => "numeric",
             "max_once"         => "numeric",
-            "password"         => "nullable|string",
-            "announce"         => "nullable|string",
+            "password"         => "string",
+            "announce"         => "string",
             "user_agent"       => "string",
             "need_inv_code"    => "bool",
             "whitelist_mode"   => "bool",
@@ -43,7 +43,8 @@ class MainConfigController extends Controller
             "max_filesize"     => "numeric",
             "min_single_file"  => "numeric",
             "token_mode"       => "bool",
-            "button_link"      => "string"
+            "button_link"      => "string",
+            "limit_cn"         => "bool"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -68,6 +69,7 @@ class MainConfigController extends Controller
         if (isset($request["min_single_file"])) $update["_94LIST_MIN_SINGLE_FILESIZE"] = $request["min_single_file"];
         if (isset($request["token_mode"])) $update["_94LIST_TOKEN_MODE"] = $request["token_mode"];
         if (isset($request["button_link"])) $update["_94LIST_BUTTON_LINK"] = $request["button_link"];
+        if (isset($request["limit_cn"])) $update["_94LIST_LIMIT_CN"] = $request["limit_cn"];
 
         if (count($update) === 0) ResponseController::paramsError();
 

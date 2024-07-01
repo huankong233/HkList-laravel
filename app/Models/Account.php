@@ -18,6 +18,7 @@ class Account extends Model
         "vip_type",
         "switch",
         "reason",
+        "prov",
         "svip_end_at",
         "last_use_at"
     ];
