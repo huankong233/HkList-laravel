@@ -33,7 +33,7 @@ class ParseController extends Controller
             "user_agent"       => $config["user_agent"],
             "debug"            => config("app.debug"),
             "max_once"         => $config["max_once"],
-            "have_account"     => self::getRandomCookie()->getData(true)["code"] === 200,
+            "have_account"     => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
             "have_login"       => Auth::check(),
             "need_inv_code"    => $config["need_inv_code"],
             "need_password"    => $config["password"] !== "",
@@ -42,11 +42,66 @@ class ParseController extends Controller
             "min_single_file"  => $config["min_single_file"],
             "token_mode"       => $config["token_mode"],
             "button_link"      => $config["button_link"],
-            "prov"             => self::getProvinceFromIP(UtilsController::getIp())
+            // "prov"             => self::getProvinceFromIP(UtilsController::getIp())
         ]);
     }
 
     public function getProvinceFromIP($ip)
+    {
+        $prov = self::_getProvinceFromIP($ip);
+        if ($prov === null) return null;
+
+        // 省份标准名称映射表
+        $provinces = [
+            "北京"   => "北京市",
+            "天津"   => "天津市",
+            "上海"   => "上海市",
+            "重庆"   => "重庆市",
+            "河北"   => "河北省",
+            "山西"   => "山西省",
+            "内蒙古" => "内蒙古自治区",
+            "辽宁"   => "辽宁省",
+            "吉林"   => "吉林省",
+            "黑龙江" => "黑龙江省",
+            "江苏"   => "江苏省",
+            "浙江"   => "浙江省",
+            "安徽"   => "安徽省",
+            "福建"   => "福建省",
+            "江西"   => "江西省",
+            "山东"   => "山东省",
+            "河南"   => "河南省",
+            "湖北"   => "湖北省",
+            "湖南"   => "湖南省",
+            "广东"   => "广东省",
+            "广西"   => "广西壮族自治区",
+            "海南"   => "海南省",
+            "四川"   => "四川省",
+            "贵州"   => "贵州省",
+            "云南"   => "云南省",
+            "西藏"   => "西藏自治区",
+            "陕西"   => "陕西省",
+            "甘肃"   => "甘肃省",
+            "青海"   => "青海省",
+            "宁夏"   => "宁夏回族自治区",
+            "新疆"   => "新疆维吾尔自治区",
+            "香港"   => "香港特别行政区",
+            "澳门"   => "澳门特别行政区",
+            "台湾"   => "台湾省"
+        ];
+
+        // 去除多余的空白字符
+        $name = trim($prov);
+
+        // 匹配并返回标准省份名称
+        foreach ($provinces as $key => $standardName) {
+            if (str_contains($name, $key)) return $standardName;
+        }
+
+        // 若无匹配则返回原名
+        return null;
+    }
+
+    public function _getProvinceFromIP($ip)
     {
         if ($ip === "0.0.0.0") return "上海市";
 
@@ -57,26 +112,73 @@ class ParseController extends Controller
         ]);
 
         try {
-            $res      = $http->get("https://qifu.baidu.com/ip/geo/v1/district", [
-                "query" => [
-                    "ip" => $ip
-                ]
-            ]);
+            $res      = $http->get("https://api.qjqq.cn/api/district", ["query" => ["ip" => $ip]]);
             $response = JSON::decode($res->getBody()->getContents());
 
-            if (config("94list.limit_cn")) {
-                if (isset($response["data"]["country"]) && $response["data"]["country"] !== "中国") {
-                    return false;
+            if (isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
+                if (config("94list.limit_cn")) {
+                    if ($response["data"]["country"] !== "中国") {
+                        return false;
+                    }
                 }
-            }
 
-            return isset($response["data"]["prov"]) && $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
-        } catch (GuzzleException|Exception $e) {
-            return null;
+                return $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
+            }
+        } catch (GuzzleException $e) {
         }
+
+        try {
+            $res      = $http->get("https://www.ip.cn/api/index", ["query" => ["ip" => $ip, "type" => 1]]);
+            $response = JSON::decode($res->getBody()->getContents());
+
+            if (isset($response["address"])) {
+                if (config("94list.limit_cn")) {
+                    if (str_contains($response["address"], "中国")) {
+                        return false;
+                    }
+                }
+
+                return $response["address"] !== "" ? $response["address"] : null;
+            }
+        } catch (GuzzleException $e) {
+        }
+
+        try {
+            $res      = $http->get("https://api.vore.top/api/IPdata", ["query" => ["ip" => $ip]]);
+            $response = JSON::decode($res->getBody()->getContents());
+
+            if (isset($response["ipinfo"]["cnip"]) && isset($response["ipdata"]["info1"])) {
+                if (config("94list.limit_cn")) {
+                    if (!$response["ipinfo"]["cnip"]) {
+                        return false;
+                    }
+                }
+
+                return $response["ipdata"]["info1"] !== "" ? $response["ipdata"]["info1"] : null;
+            }
+        } catch (GuzzleException $e) {
+        }
+
+        try {
+            $res      = $http->get("https://qifu.baidu.com/ip/geo/v1/district", ["query" => ["ip" => $ip]]);
+            $response = JSON::decode($res->getBody()->getContents());
+
+            if (isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
+                if (config("94list.limit_cn")) {
+                    if ($response["data"]["country"] !== "中国") {
+                        return false;
+                    }
+                }
+
+                return $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
+            }
+        } catch (GuzzleException $e) {
+        }
+
+        return null;
     }
 
-    public function getRandomCookie($vipType = ["超级会员"])
+    public function getRandomCookie($vipType = ["超级会员"], $makeNew = true)
     {
         $ip   = UtilsController::getIp();
         $prov = self::getProvinceFromIP($ip);
@@ -97,7 +199,7 @@ class ParseController extends Controller
             if ($banAccounts->count() !== 0) {
                 // 更新账户状态
                 foreach ($banAccounts as $account) {
-                    $updateRes  = AccountController::updateAccount($account["id"]);
+                    $updateRes  = AccountController::updateAccountInfo($account["id"]);
                     $updateData = $updateRes->getData(true);
                     if ($updateData["code"] !== 200) {
                         $account->update([
@@ -152,9 +254,11 @@ class ParseController extends Controller
                                   ->whereNull("prov")
                                   ->first();
 
-                $account?->update([
-                    "prov" => $prov,
-                ]);
+                if ($makeNew) {
+                    $account?->update([
+                        "prov" => $prov,
+                    ]);
+                }
             }
         } else {
             $account = Account::query()
