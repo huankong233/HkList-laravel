@@ -10,7 +10,6 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -168,7 +167,25 @@ class AccountController extends Controller
         return ResponseController::success(["have_repeat" => $have_repeat]);
     }
 
-    public static function updateAccount($account_id)
+    public static function updateAccount(Request $request, $account_id)
+    {
+        $validator = Validator::make($request->all(), [
+            "prov" => ["nullable", Rule::in(["北京市", "天津市", "上海市", "重庆市", "河北省", "山西省", "内蒙古自治区", "辽宁省", "吉林省", "黑龙江省", "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省", "湖北省", "湖南省", "广东省", "广西壮族自治区", "海南省", "四川省", "贵州省", "云南省", "西藏自治区", "陕西省", "甘肃省", "青海省", "宁夏回族自治区", "新疆维吾尔自治区", "香港特别行政区", "澳门特别行政区", "台湾省"])]
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        $account = Account::query()->find($account_id);
+        if (!$account) return ResponseController::accountNotExists();
+
+        $account->update([
+            "prov" => $request["prov"],
+        ]);
+
+        return ResponseController::success();
+    }
+
+    public static function updateAccountInfo($account_id)
     {
         $account = Account::query()->find($account_id);
         if (!$account) return ResponseController::accountNotExists();
@@ -188,7 +205,7 @@ class AccountController extends Controller
         return ResponseController::success();
     }
 
-    public static function updateAccounts(Request $request)
+    public static function updateAccountsInfo(Request $request)
     {
         $validator = Validator::make($request->all(), [
             "account_ids.*" => "numeric"
@@ -197,7 +214,7 @@ class AccountController extends Controller
         if ($validator->fails()) return ResponseController::paramsError();
 
         foreach ($request["account_ids"] as $account_id) {
-            $updateAccountRes  = self::updateAccount($account_id);
+            $updateAccountRes  = self::updateAccountInfo($account_id);
             $updateAccountData = $updateAccountRes->getData(true);
             if ($updateAccountData["code"] !== 200) return $updateAccountRes;
             sleep(1);
@@ -220,7 +237,8 @@ class AccountController extends Controller
             if (!$account) return ResponseController::accountNotExists();
 
             $account->update([
-                "switch" => $request["switch"]
+                "switch" => $request["switch"],
+                "reason" => "用戶操作"
             ]);
         }
 

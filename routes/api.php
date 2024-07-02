@@ -58,7 +58,8 @@ Route::middleware("NeedInstall")->group(function () {
             Route::prefix("/account")->group(function () {
                 Route::get("/{account_id?}", [AccountController::class, "getAccount"]);
                 Route::post("/", [AccountController::class, "addAccount"]);
-                Route::patch("/", [AccountController::class, "updateAccounts"]);
+                Route::patch("/{account_id}", [AccountController::class, "updateAccount"]);
+                Route::patch("/info", [AccountController::class, "updateAccountsInfo"]);
                 Route::patch("/switch", [AccountController::class, "switchAccounts"]);
                 Route::delete("/", [AccountController::class, "removeAccounts"]);
             });

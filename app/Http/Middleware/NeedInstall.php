@@ -91,6 +91,38 @@ class NeedInstall
             DB::commit();
         }
 
+        if (!in_array("prov", Schema::getColumnListing("accounts"))) {
+            DB::beginTransaction();
+
+            Schema::rename("accounts", "accounts_old");
+
+            $sqlPath = database_path("sql/accounts.sql");
+            DB::unprepared(file_get_contents($sqlPath));
+
+            $tokens = DB::table("accounts_old")->get();
+            foreach ($tokens as $token) {
+                DB::table("accounts")->insert([
+                    "id"           => $token->id,
+                    "baidu_name"   => $token->baidu_name,
+                    "netdisk_name" => $token->netdisk_name,
+                    "cookie"       => $token->cookie,
+                    "vip_type"     => $token->vip_type,
+                    "switch"       => $token->switch,
+                    "reason"       => $token->reason,
+                    "prov"         => null,
+                    "svip_end_at"  => $token->svip_end_at,
+                    "last_use_at"  => $token->last_use_at,
+                    "created_at"   => $token->created_at,
+                    "updated_at"   => $token->updated_at,
+                    "deleted_at"   => $token->deleted_at,
+                ]);
+            }
+
+            Schema::drop("accounts_old");
+
+            DB::commit();
+        }
+
         return $next($request);
     }
 }

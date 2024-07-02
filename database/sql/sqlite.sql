@@ -1,3 +1,18 @@
+/*
+ Navicat Premium Data Transfer
+
+ Source Server         : 94list-public
+ Source Server Type    : SQLite
+ Source Server Version : 3035005 (3.35.5)
+ Source Schema         : main
+
+ Target Server Type    : SQLite
+ Target Server Version : 3035005 (3.35.5)
+ File Encoding         : 65001
+
+ Date: 01/07/2024 18:45:43
+*/
+
 PRAGMA foreign_keys = false;
 
 -- ----------------------------
@@ -12,6 +27,7 @@ CREATE TABLE "accounts" (
   "vip_type" text NOT NULL,
   "switch" integer NOT NULL,
   "reason" text,
+  "prov" text DEFAULT NULL,
   "svip_end_at" text NOT NULL,
   "last_use_at" text NOT NULL,
   "created_at" text NOT NULL,
@@ -92,6 +108,21 @@ CREATE TABLE "records" (
   "created_at" text NOT NULL,
   "updated_at" text NOT NULL,
   "deleted_at" text
+);
+
+-- ----------------------------
+-- Table structure for tokens
+-- ----------------------------
+DROP TABLE IF EXISTS "tokens";
+CREATE TABLE "tokens" (
+  "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "name" text NOT NULL,
+  "count" integer NOT NULL,
+  "size" integer NOT NULL,
+  "day" integer NOT NULL,
+  "expired_at" text,
+  "created_at" text NOT NULL,
+  "updated_at" text NOT NULL
 );
 
 -- ----------------------------

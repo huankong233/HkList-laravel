@@ -28,8 +28,8 @@ class MainConfigController extends Controller
         $validator = Validator::make($request->all(), [
             "sleep"            => "numeric",
             "max_once"         => "numeric",
-            "password"         => "nullable|string",
-            "announce"         => "nullable|string",
+            "password"         => "string",
+            "announce"         => "string",
             "user_agent"       => "string",
             "need_inv_code"    => "bool",
             "whitelist_mode"   => "bool",
@@ -43,7 +43,8 @@ class MainConfigController extends Controller
             "max_filesize"     => "numeric",
             "min_single_file"  => "numeric",
             "token_mode"       => "bool",
-            "button_link"      => "string"
+            "button_link"      => "string",
+            "limit_cn"         => "bool"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -52,8 +53,8 @@ class MainConfigController extends Controller
 
         if (isset($request["sleep"])) $update["_94LIST_SLEEP"] = $request["sleep"];
         if (isset($request["max_once"])) $update["_94LIST_MAX_ONCE"] = $request["max_once"];
-        if (isset($request["password"])) $update["_94LIST_PASSWORD"] = $request["password"] === null ? "" : '"' . $request["password"] . '"';
-        if (isset($request["announce"])) $update["_94LIST_ANNOUNCE"] = $request["announce"] === null ? "" : '"' . htmlspecialchars(str_replace("\n", "[NextLine]", $request["announce"]), ENT_QUOTES) . '"';
+        if (isset($request["password"])) $update["_94LIST_PASSWORD"] = $request["password"] === "" ? "" : '"' . $request["password"] . '"';
+        if (isset($request["announce"])) $update["_94LIST_ANNOUNCE"] = $request["announce"] === "" ? "" : '"' . htmlspecialchars(str_replace("\n", "[NextLine]", $request["announce"]), ENT_QUOTES) . '"';
         if (isset($request["user_agent"])) $update["_94LIST_USER_AGENT"] = '"' . $request["user_agent"] . '"';
         if (isset($request["need_inv_code"])) $update["_94LIST_NEED_INV_CODE"] = $request["need_inv_code"];
         if (isset($request["whitelist_mode"])) $update["_94LIST_WHITELIST_MODE"] = $request["whitelist_mode"];
@@ -64,10 +65,11 @@ class MainConfigController extends Controller
         if (isset($request["show_copyright"])) $update["_94LIST_SHOW_COPYRIGHT"] = $request["show_copyright"];
         if (isset($request["parse_mode"])) $update["_94LIST_PARSE_MODE"] = $request["parse_mode"];
         if (isset($request["max_filesize"])) $update["_94LIST_MAX_FILESIZE"] = $request["max_filesize"];
-        if (isset($request["custom_copyright"])) $update["_94LIST_CUSTOM_COPYRIGHT"] = $request["custom_copyright"] === null ? "" : '"' . $request["custom_copyright"] . '"';
+        if (isset($request["custom_copyright"])) $update["_94LIST_CUSTOM_COPYRIGHT"] = $request["custom_copyright"] === "" ? "" : '"' . $request["custom_copyright"] . '"';
         if (isset($request["min_single_file"])) $update["_94LIST_MIN_SINGLE_FILESIZE"] = $request["min_single_file"];
         if (isset($request["token_mode"])) $update["_94LIST_TOKEN_MODE"] = $request["token_mode"];
-        if (isset($request["button_link"])) $update["_94LIST_BUTTON_LINK"] = $request["button_link"];
+        if (isset($request["button_link"])) $update["_94LIST_BUTTON_LINK"] = $request["button_link"] === "" ? "" : '"' . $request["button_link"] . '"';
+        if (isset($request["limit_cn"])) $update["_94LIST_LIMIT_CN"] = $request["limit_cn"];
 
         if (count($update) === 0) ResponseController::paramsError();
 
