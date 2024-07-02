@@ -211,15 +211,7 @@ class ParseController extends Controller
                     sleep(1);
                 }
 
-                if (config("mail.switch")) {
-                    try {
-                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户已过期,详见:" . JSON::encode($updateFailedAccounts), function ($message) {
-                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
-                        });
-                    } catch (Exception $e) {
-//                        return ResponseController::sendMailFailed($e->getMessage());
-                    }
-                }
+                UtilsController::sendMail("有账户已过期,详见:" . JSON::encode($updateFailedAccounts));
             }
         }
 
@@ -548,16 +540,8 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if ($reason !== "授权码已过期" && $reason !== "未知原因,请重试") {
-                if (config("mail.switch")) {
-                    try {
-                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $cookieData["data"]["id"], function ($message) {
-                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
-                        });
-                    } catch (Exception $e) {
-                    }
-                }
-
+            if (str_contains($reason, "风控")) {
+                UtilsController::sendMail("有账户被风控,账号ID:" . $cookieData["data"]["id"]);
                 Account::query()
                        ->find($cookieData["data"]["id"])
                        ->update([
@@ -607,14 +591,7 @@ class ParseController extends Controller
                     "url"               => $responseDatum["url"]
                 ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
-                if (config("mail.switch")) {
-                    try {
-                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $responseDatum["cookie_id"], function ($message) {
-                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
-                        });
-                    } catch (Exception $e) {
-                    }
-                }
+                UtilsController::sendMail("有账户被风控,账号ID:" . $responseDatum["cookie_id"]);
 
                 Account::query()
                        ->find($cookieData["data"]["id"])
@@ -685,23 +662,6 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if (str_contains($reason, "风控")) {
-                if (config("mail.switch")) {
-                    try {
-                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $json["cookie"][0]["id"], function ($message) {
-                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
-                        });
-                    } catch (Exception $e) {
-                    }
-                }
-
-                Account::query()
-                       ->find($json["cookie"][0]["id"])
-                       ->update([
-                           "switch" => 0,
-                           "reason" => $reason,
-                       ]);
-            }
             return ResponseController::errorFromMainServer($reason);
         } catch (GuzzleException $e) {
             return ResponseController::networkError("连接解析服务器");
@@ -744,14 +704,7 @@ class ParseController extends Controller
                     "url"               => $responseDatum["url"]
                 ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
-                if (config("mail.switch")) {
-                    try {
-                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $responseDatum["cookie_id"], function ($message) {
-                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
-                        });
-                    } catch (Exception $e) {
-                    }
-                }
+                UtilsController::sendMail("有账户被风控,账号ID:" . $responseDatum["cookie_id"]);
 
                 Account::query()
                        ->find($responseDatum["cookie_id"])
@@ -833,40 +786,41 @@ class ParseController extends Controller
             $user_id = Auth::user()["id"] ?? -1;
         }
 
-        foreach ($responseData as $responseDatum) {
+        foreach ($responseData as &$responseDatum) {
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                Account::query()
-                       ->find($responseDatum["cookie_id"])
-                       ->update([
-                           "last_use_at" => date("Y-m-d H:i:s")
-                       ]);
+                $account = Account::query()->find($responseDatum["cookie_id"]);
 
-                if (isset($token) && $token["expired_at"] === null) {
-                    $token->update([
-                        "expired_at" => now()->addDays($token["day"])
+                if (str_contains($responseDatum["url"], "qdall01")) {
+                    $responseDatum["url"] = "账号被限速";
+
+                    $account->update([
+                        "last_use_at" => date("Y-m-d H:i:s"),
+                        "switch"      => 0,
+                        "reason"      => "账号被限速",
+                    ]);
+
+                    UtilsController::sendMail("有账户被限速,账号ID:" . $responseDatum["cookie_id"]);
+                } else {
+                    $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
+
+                    if (isset($token) && $token["expired_at"] === null) {
+                        $token->update(["expired_at" => now()->addDays($token["day"])]);
+                    }
+
+                    RecordController::addRecord([
+                        "ip"                => UtilsController::getIp(),
+                        "fs_id"             => $responseDatum["fs_id"] ?? 0,
+                        "filename"          => $responseDatum["filename"],
+                        "user_id"           => $user_id,
+                        "account_id"        => $responseDatum["cookie_id"],
+                        "normal_account_id" => 0,
+                        "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
+                        "ua"                => $ua,
+                        "url"               => $responseDatum["url"]
                     ]);
                 }
-
-                RecordController::addRecord([
-                    "ip"                => UtilsController::getIp(),
-                    "fs_id"             => $responseDatum["fs_id"] ?? 0,
-                    "filename"          => $responseDatum["filename"],
-                    "user_id"           => $user_id,
-                    "account_id"        => $responseDatum["cookie_id"],
-                    "normal_account_id" => 0,
-                    "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
-                    "ua"                => $ua,
-                    "url"               => $responseDatum["url"]
-                ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
-                if (config("mail.switch")) {
-                    try {
-                        Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t有账户被风控,账号ID:" . $responseDatum["cookie_id"], function ($message) {
-                            $message->to(config("mail.to.address"))->subject("有账户过期了~");
-                        });
-                    } catch (Exception $e) {
-                    }
-                }
+                UtilsController::sendMail("有账户被风控,账号ID:" . $responseDatum["cookie_id"]);
 
                 Account::query()
                        ->find($responseDatum["cookie_id"])
@@ -884,7 +838,9 @@ class ParseController extends Controller
                     "filename" => $v["filename"],
                     "fs_id"    => $v["fs_id"]
                 ];
-                if (isset($v["urls"])) $arr["urls"] = $v["urls"];
+
+                if (str_contains($v["url"], "http") && isset($v["urls"])) $arr["urls"] = $v["urls"];
+
                 return $arr;
             })
         );
