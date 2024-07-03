@@ -44,7 +44,8 @@ class MainConfigController extends Controller
             "min_single_file"  => "numeric",
             "token_mode"       => "bool",
             "button_link"      => "string",
-            "limit_cn"         => "bool"
+            "limit_cn"         => "bool",
+            "limit_prov"       => "bool"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -70,6 +71,7 @@ class MainConfigController extends Controller
         if (isset($request["token_mode"])) $update["_94LIST_TOKEN_MODE"] = $request["token_mode"];
         if (isset($request["button_link"])) $update["_94LIST_BUTTON_LINK"] = $request["button_link"] === "" ? "" : '"' . $request["button_link"] . '"';
         if (isset($request["limit_cn"])) $update["_94LIST_LIMIT_CN"] = $request["limit_cn"];
+        if (isset($request["limit_prov"])) $update["_94LIST_LIMIT_PROV"] = $request["limit_prov"];
 
         if (count($update) === 0) ResponseController::paramsError();
 

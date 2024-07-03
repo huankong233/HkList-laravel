@@ -48,8 +48,10 @@ class ParseController extends Controller
 
     public function getProvinceFromIP($ip)
     {
+        if (!config("94list.limit_prov")) return null;
+
         $prov = self::_getProvinceFromIP($ip);
-        if ($prov === null) return null;
+        if ($prov === null || $prov === false) return $prov;
 
         // 省份标准名称映射表
         $provinces = [
