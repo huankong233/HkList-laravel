@@ -30,11 +30,13 @@ class InstallController extends Controller
 
         $dbConfig = config('database');
 
-        try {
-            DB::purge();
-            DB::select("select 1 = 1");
-            return ResponseController::dbFileExists();
-        } catch (QueryException $e) {
+        if ($dbConfig["default"] !== "no") {
+            try {
+                DB::purge();
+                DB::select("select 1 = 1");
+                return ResponseController::dbFileExists();
+            } catch (QueryException $e) {
+            }
         }
 
         if ($request["db_connection"] === "mysql") {
@@ -62,7 +64,7 @@ class InstallController extends Controller
             );
 
             $postData = [
-                'APP_NAME'      => $request['app_name'],
+                'APP_NAME'      => '"' . $request['app_name'] . '"',
                 'DB_CONNECTION' => $request['db_connection'],
                 'DB_HOST'       => $request['db_host'],
                 'DB_PORT'       => $request['db_port'],
@@ -79,7 +81,7 @@ class InstallController extends Controller
             $dbConfig['connections']['sqlite'] = array_merge($dbConfig['connections']['sqlite'], ['database' => $dbFile]);
 
             $postData = [
-                'APP_NAME'      => $request['app_name'],
+                'APP_NAME'      => '"' . $request['app_name'] . '"',
                 'DB_CONNECTION' => $request['db_connection'],
                 'DB_HOST'       => "",
                 'DB_PORT'       => "",
@@ -133,7 +135,6 @@ class InstallController extends Controller
                 $table->id();
                 $table->unsignedBigInteger("group_id");
                 $table->string("name");
-                $table->unsignedBigInteger("use_count");
                 $table->unsignedBigInteger("can_count");
                 $table->timestamps();
                 $table->softDeletes();
@@ -203,22 +204,21 @@ class InstallController extends Controller
                 "size"  => 20
             ]);
 
-            $group = Group::query()->create([
+            Group::query()->create([
                 "name"  => "默认分组",
                 "count" => 10,
                 "size"  => 20
             ]);
 
-            $invCode = InvCode::query()->create([
-                "group_id"  => $group["id"],
-                "name"      => "defaultInvCode",
-                "use_count" => 1,
-                "can_count" => 1
+            InvCode::query()->create([
+                "group_id"  => 2,
+                "name"      => "默认分组邀请码",
+                "can_count" => 0
             ]);
 
             // 添加用户
             User::query()->create([
-                "inv_code_id" => $invCode["id"],
+                "inv_code_id" => 1,
                 "username"    => "admin",
                 "password"    => Hash::make("admin"),
                 "role"        => "admin"

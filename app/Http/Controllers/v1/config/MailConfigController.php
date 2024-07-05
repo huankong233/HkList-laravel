@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\v1\config;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\UtilsController;
 use App\Http\Controllers\v1\ResponseController;
 use Exception;
 use Illuminate\Http\Request;
@@ -30,8 +31,45 @@ class MailConfigController extends Controller
         ]);
     }
 
+    public function updateMailConfig(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "switch"       => "required|bool",
+            "host"         => "required|string",
+            "port"         => "required|numeric",
+            "username"     => "required|string",
+            "password"     => "required|string",
+            "encryption"   => ["required", Rule::in(["tls", "ssl"])],
+            "from_address" => "required|string",
+            "from_name"    => "required|string",
+            "to_address"   => "required|string",
+            "to_name"      => "required|string"
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        updateEnv([
+            "MAIL_SWITCH"       => $request["switch"],
+            "MAIL_HOST"         => $request["host"],
+            "MAIL_PORT"         => $request["port"],
+            "MAIL_USERNAME"     => $request["username"],
+            "MAIL_PASSWORD"     => $request["password"],
+            "MAIL_ENCRYPTION"   => $request["encryption"],
+            "MAIL_FROM_ADDRESS" => $request["from_address"],
+            "MAIL_FROM_NAME"    => $request["from_name"],
+            "MAIL_TO_ADDRESS"   => $request["to_address"],
+            "MAIL_TO_NAME"      => $request["to_name"],
+        ]);
+
+        return ResponseController::success();
+    }
+
     public function sendTestMail(Request $request)
     {
+        $update     = self::updateMailConfig($request);
+        $updateData = $update->getData(true);
+        if ($updateData["code"] !== 200) return $update;
+
         try {
             Mail::raw("亲爱的 " . config("mail.to.name") . ":\n\t这是一封来自" . config("app.name") . "的连通性测试邮件,请查收!", function ($message) {
                 $message->to(config("mail.to.address"))->subject("测试邮件");
@@ -39,43 +77,6 @@ class MailConfigController extends Controller
         } catch (Exception $e) {
             return ResponseController::sendMailFailed($e->getMessage());
         }
-
-        return ResponseController::success();
-    }
-
-    public function updateMailConfig(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            "switch"       => "bool",
-            "host"         => "string",
-            "port"         => "numeric",
-            "username"     => "string",
-            "password"     => "string",
-            "encryption"   => Rule::in(["tls", "ssl"]),
-            "from_address" => "string",
-            "from_name"    => "string",
-            "to_address"   => "string",
-            "to_name"      => "string"
-        ]);
-
-        if ($validator->fails()) return ResponseController::paramsError();
-
-        $update = [];
-
-        if (isset($request["switch"])) $update["MAIL_SWITCH"] = $request["switch"];
-        if (isset($request["host"])) $update["MAIL_HOST"] = $request["host"];
-        if (isset($request["port"])) $update["MAIL_PORT"] = $request["port"];
-        if (isset($request["username"])) $update["MAIL_USERNAME"] = $request["username"];
-        if (isset($request["password"])) $update["MAIL_PASSWORD"] = $request["password"];
-        if (isset($request["encryption"])) $update["MAIL_ENCRYPTION"] = $request["encryption"];
-        if (isset($request["from_address"])) $update["MAIL_FROM_ADDRESS"] = $request["from_address"];
-        if (isset($request["from_name"])) $update["MAIL_FROM_NAME"] = $request["from_name"];
-        if (isset($request["to_address"])) $update["MAIL_TO_ADDRESS"] = $request["to_address"];
-        if (isset($request["to_name"])) $update["MAIL_TO_NAME"] = $request["to_name"];
-
-        if (count($update) === 0) ResponseController::paramsError();
-
-        updateEnv($update);
 
         return ResponseController::success();
     }

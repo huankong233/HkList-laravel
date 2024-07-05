@@ -44,6 +44,9 @@ class UserController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
+        $user = User::query()->firstWhere("username", $request["username"]);
+        if ($user) return ResponseController::userExists();
+
         if (config("94list.need_inv_code")) {
             $validator = Validator::make($request->all(), [
                 "inv_code" => "required|string"
@@ -54,20 +57,17 @@ class UserController extends Controller
             $invCode = InvCode::query()->firstWhere("name", $request["inv_code"]);
             if (!$invCode) return ResponseController::InvCodeNotExists();
 
-            if ($invCode["use_count"] === $invCode["can_count"]) return ResponseController::InvCodeNotExists();
+            // 获取 use_count
+            $use_count = User::query()->where("inv_code_id", $invCode["id"])->count();
 
-            $invCode->increment("use_count");
+            if ($use_count >= $invCode["can_count"]) return ResponseController::invCodeQuotaHasBeenUsedUp();
         }
-
-        $user = User::query()->firstWhere("username", $request["username"]);
-        if ($user) return ResponseController::userExists();
 
         User::query()->create([
             "username"    => $request["username"],
             "password"    => Hash::make($request["password"]),
             "role"        => "user",
-            "group_id"    => isset($invCode) ? $invCode["group_id"] : 0,
-            "inv_code_id" => isset($invCode) ? $invCode["id"] : 0
+            "inv_code_id" => isset($invCode) ? $invCode["id"] : 1
         ]);
 
         return ResponseController::success();
@@ -82,14 +82,8 @@ class UserController extends Controller
         return ResponseController::success();
     }
 
-    public function getUser(Request $request, $user_id = null)
+    public function getUsers(Request $request)
     {
-        if ($user_id !== null) {
-            $user = User::query()->find($user_id);
-            if (!$user) return ResponseController::userNotExists();
-            return ResponseController::success($user);
-        }
-
         $users = User::query()->paginate($request["size"]);
         return ResponseController::success($users);
     }
@@ -97,10 +91,10 @@ class UserController extends Controller
     public function addUser(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "username" => "required|string",
-            "password" => "required|string",
-            "group_id" => "numeric",
-            "role"     => ["required", Rule::in(["admin", "user"])]
+            "username"    => "required|string",
+            "password"    => "required|string",
+            "inv_code_id" => "numeric",
+            "role"        => ["required", Rule::in(["admin", "user"])]
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -108,17 +102,16 @@ class UserController extends Controller
         $user = User::query()->firstWhere("username", $request["username"]);
         if ($user) return ResponseController::userExists();
 
-        if (isset($request["group_id"])) {
-            $group = Group::query()->find($request["group_id"]);
-            if (!$group) return ResponseController::groupNotExists();
+        if (isset($request["inv_code_id"])) {
+            $invCode = InvCode::query()->find($request["inv_code_id"]);
+            if (!$invCode) return ResponseController::invCodeNotExists();
         }
 
         User::query()->create([
             "username"    => $request["username"],
             "password"    => Hash::make($request["password"]),
             "role"        => $request["role"],
-            "group_id"    => $request["group_id"] ?? 0,
-            "inv_code_id" => -1
+            "inv_code_id" => $request["inv_code_id"] ?? 1
         ]);
 
         return ResponseController::success();
@@ -127,10 +120,10 @@ class UserController extends Controller
     public function updateUser(Request $request, $user_id)
     {
         $validator = Validator::make($request->all(), [
-            "username" => "string",
-            "password" => "string",
-            "group_id" => "numeric",
-            "role"     => Rule::in(["admin", "user"])
+            "username"    => "required|string",
+            "password"    => "required|string",
+            "inv_code_id" => "required|numeric",
+            "role"        => ["required", Rule::in(["admin", "user"])]
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -138,25 +131,14 @@ class UserController extends Controller
         $user = User::query()->find($user_id);
         if (!$user) return ResponseController::userNotExists();
 
-        $update = [];
+        $User = User::query()->firstWhere("username", $request["username"]);
+        if ($User && $user["id"] !== $User["id"]) return ResponseController::userExists();
 
-        if (isset($request["group_id"])) {
-            if (!Group::query()->find($request["group_id"])) return ResponseController::groupNotExists();
-            $update["group_id"] = $request["group_id"];
-        }
-
-        if (isset($request["username"])) {
-            $User = User::query()->firstWhere("username", $request["username"]);
-            if ($User && $user["id"] !== $User["id"]) return ResponseController::userExists();
-            $update["username"] = $request["username"];
-        }
-
-        if (isset($request["password"]) && !Hash::isHashed($request["password"])) $update["password"] = Hash::make($request["password"]);
-        if (isset($request["role"])) $update["role"] = $request["role"];
-
-        if (count($update) === 0) return ResponseController::paramsError();
-
-        $user->update($update);
+        $user->update([
+            "username" => $request["username"],
+            "password" => Hash::isHashed($request["password"]) ? $request["password"] : Hash::make($request["password"]),
+            "role"     => $request["role"],
+        ]);
 
         return ResponseController::success();
     }
@@ -164,16 +146,13 @@ class UserController extends Controller
     public function removeUsers(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "user_ids.*" => "numeric"
+            "user_ids"   => "required|array",
+            "user_ids.*" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        foreach ($request["user_ids"] as $user_id) {
-            $user = User::query()->find($user_id);
-            if (!$user) return ResponseController::userNotExists();
-            $user->delete();
-        }
+        User::query()->whereIn("id", $request["user_ids"])->delete();
 
         return ResponseController::success();
     }

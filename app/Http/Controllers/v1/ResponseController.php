@@ -80,7 +80,7 @@ class ResponseController extends Controller
 
     public static function networkError($query)
     {
-        return self::response(10013, 500, "在进行" . $query . "时出现网络错误,检查服务器网络状态");
+        return self::response(10013, 500, "在进行{$query}时出现网络错误,检查服务器网络状态");
     }
 
     public static function getAccountInfoFailed()
@@ -135,17 +135,17 @@ class ResponseController extends Controller
 
     public static function cookieError($errno)
     {
-        return self::response(10024, 500, "fakeCookie失效,code:" . $errno);
+        return self::response(10024, 500, "fakeCookie失效,code:$errno");
     }
 
     public static function getFileListError($errno)
     {
-        return self::response(10025, 500, "获取文件列表遇到未知错误,code:" . $errno);
+        return self::response(10025, 500, "获取文件列表遇到未知错误,code:$errno");
     }
 
     public static function getSignError($errno, $message)
     {
-        return self::response(10026, 500, "获取文件签名遇到未知错误,code:" . $errno . ",提示信息:" . $message);
+        return self::response(10026, 500, "获取文件签名遇到未知错误,code:$errno,提示信息:$message");
     }
 
     public static function linksOverloaded()
@@ -172,13 +172,13 @@ class ResponseController extends Controller
 
     public static function getDlinkError($code)
     {
-        return self::response(10031, 500, "在获取dlink时请求失败,code:" . $code);
+        return self::response(10031, 500, "在获取dlink时请求失败,code:$code");
     }
 
     public static function getRealLinkError($extend)
     {
         // 10032
-        return "在获取reallink时请求失败!" . $extend;
+        return "在获取reallink时请求失败!$extend";
     }
 
     public static function hitCaptcha($data = [])
@@ -319,5 +319,15 @@ class ResponseController extends Controller
     public static function dbConnectFailed($message)
     {
         return self::response(10059, 400, "数据库配置错误:$message");
+    }
+
+    public static function invCodeCanNotBeRemoved($reason)
+    {
+        return self::response(10060, 403, "邀请码不能被删除,原因:$reason");
+    }
+
+    public static function invCodeQuotaHasBeenUsedUp()
+    {
+        return self::response(10061, 403, "邀请码配额已用完");
     }
 }

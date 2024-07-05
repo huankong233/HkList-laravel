@@ -11,14 +11,8 @@ use Illuminate\Support\Str;
 
 class InvCodeController extends Controller
 {
-    public function getInvCode(Request $request, $inv_code_id = null)
+    public function getInvCodes(Request $request)
     {
-        if ($inv_code_id !== null) {
-            $invCode = InvCode::query()->find($inv_code_id);
-            if (!$invCode) return ResponseController::invCodeNotExists();
-            return ResponseController::success($invCode);
-        }
-
         $InvCodes = InvCode::query()->paginate($request["size"]);
         return ResponseController::success($InvCodes);
     }
@@ -42,7 +36,6 @@ class InvCodeController extends Controller
         InvCode::query()->create([
             "name"      => $request["name"],
             "group_id"  => $request["group_id"],
-            "use_count" => 0,
             "can_count" => $request["can_count"]
         ]);
 
@@ -73,7 +66,6 @@ class InvCodeController extends Controller
             InvCode::query()->create([
                 "name"      => $name,
                 "group_id"  => $request["group_id"],
-                "use_count" => 0,
                 "can_count" => $request["can_count"]
             ]);
         }
@@ -84,10 +76,9 @@ class InvCodeController extends Controller
     public function updateInvCode(Request $request, $inv_code_id)
     {
         $validator = Validator::make($request->all(), [
-            "name"      => "string",
-            "use_count" => "numeric",
-            "group_id"  => "numeric",
-            "can_count" => "numeric"
+            "name"      => "required|string",
+            "group_id"  => "required|numeric",
+            "can_count" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -95,26 +86,17 @@ class InvCodeController extends Controller
         $invCode = InvCode::query()->find($inv_code_id);
         if (!$invCode) return ResponseController::invCodeNotExists();
 
-        $update = [];
+        $InvCode = InvCode::query()->firstWhere("name", $request["name"]);
+        if ($InvCode && $invCode["id"] !== $InvCode["id"]) return ResponseController::invCodeExists();
 
-        if (isset($request["name"])) {
-            $InvCode = InvCode::query()->firstWhere("name", $request["name"]);
-            if ($InvCode && $invCode["id"] !== $InvCode["id"]) return ResponseController::invCodeExists();
-            $update["name"] = $request["name"];
-        }
+        $group = Group::query()->find($request["group_id"]);
+        if (!$group) return ResponseController::groupNotExists();
 
-        if (isset($request["group_id"])) {
-            $group = Group::query()->find($request["group_id"]);
-            if (!$group) return ResponseController::groupNotExists();
-            $update["group_id"] = $request["group_id"];
-        }
-
-        if (isset($request["use_count"])) $update["use_count"] = $request["use_count"];
-        if (isset($request["can_count"])) $update["can_count"] = $request["can_count"];
-
-        if (count($update) === 0) return ResponseController::paramsError();
-
-        $invCode->update($update);
+        $invCode->update([
+            "name"      => $request["name"],
+            "group_id"  => $request["group_id"],
+            "can_count" => $request["can_count"]
+        ]);
 
         return ResponseController::success();
     }
@@ -122,16 +104,15 @@ class InvCodeController extends Controller
     public function removeInvCodes(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "inv_code_ids.*" => "numeric"
+            "inv_code_ids"   => "required|array",
+            "inv_code_ids.*" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        foreach ($request["inv_code_ids"] as $inv_code_id) {
-            $invCode = InvCode::query()->find($inv_code_id);
-            if (!$invCode) return ResponseController::invCodeNotExists();
-            $invCode->delete();
-        }
+        if (in_array(1, $request["inv_code_ids"])) return ResponseController::invCodeCanNotBeRemoved("自带邀请码禁止删除");
+
+        InvCode::query()->whereIn("id", $request["inv_code_ids"])->delete();
 
         return ResponseController::success();
     }

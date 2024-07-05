@@ -10,14 +10,8 @@ use Illuminate\Validation\Rule;
 
 class IpController extends Controller
 {
-    public function getIp(Request $request, $ip_id = null)
+    public function getIps(Request $request)
     {
-        if ($ip_id !== null) {
-            $ip = Ip::query()->find($ip_id);
-            if (!$ip) return ResponseController::IpNotExists();
-            return ResponseController::success($ip);
-        }
-
         $ips = Ip::query()->paginate($request["size"]);
         return ResponseController::success($ips);
     }
@@ -35,8 +29,9 @@ class IpController extends Controller
         if ($ip) return ResponseController::IpExists();
 
         Ip::query()->create([
-            "ip"   => $request["ip"],
-            "mode" => $request["mode"]
+            "ip"     => $request["ip"],
+            "mode"   => $request["mode"],
+            "switch" => 1
         ]);
 
         return ResponseController::success();
@@ -45,8 +40,9 @@ class IpController extends Controller
     public function updateIp(Request $request, $ip_id)
     {
         $validator = Validator::make($request->all(), [
-            "ip"   => "string|ip",
-            "mode" => Rule::in([0, 1])
+            "ip"     => "required|string|ip",
+            "mode"   => ["required", Rule::in([0, 1])],
+            "switch" => "required|boolean"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -54,19 +50,14 @@ class IpController extends Controller
         $ip = Ip::query()->find($ip_id);
         if (!$ip) return ResponseController::IpNotExists();
 
-        $update = [];
+        $Ip = Ip::query()->firstWhere("ip", $request["ip"]);
+        if ($Ip && $ip["id"] !== $Ip["id"]) return ResponseController::IpExists();
 
-        if (isset($request["ip"])) {
-            $Ip = Ip::query()->firstWhere("ip", $request["ip"]);
-            if ($Ip && $ip["id"] !== $Ip["id"]) return ResponseController::IpExists();
-            $update["ip"] = $request["ip"];
-        }
-
-        if (isset($request["mode"])) $update["mode"] = $request["mode"];
-
-        if (count($update) === 0) return ResponseController::paramsError();
-
-        $ip->update($update);
+        $ip->update([
+            "ip"     => $request["ip"],
+            "mode"   => $request["mode"],
+            "switch" => $request["switch"]
+        ]);
 
         return ResponseController::success();
     }
@@ -74,16 +65,13 @@ class IpController extends Controller
     public function removeIps(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "ip_ids.*" => "numeric"
+            "ip_ids"   => "required|array",
+            "ip_ids.*" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        foreach ($request["ip_ids"] as $ip_id) {
-            $ip = Ip::query()->find($ip_id);
-            if (!$ip) return ResponseController::IpNotExists();
-            $ip->delete();
-        }
+        Ip::query()->whereIn("id", $request["ip_ids"])->delete();
 
         return ResponseController::success();
     }

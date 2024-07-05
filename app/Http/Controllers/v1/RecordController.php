@@ -6,25 +6,26 @@ use App\Http\Controllers\Controller;
 use App\Models\Record;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class RecordController extends Controller
 {
-    public function getRecord(Request $request, $record_id = null)
+    public function getRecords(Request $request)
     {
-        if ($record_id !== null) {
-            $record = Record::withTrashed()->find($record_id);
-            if (!$record) return ResponseController::recordNotExists();
-            return ResponseController::success($record);
-        }
+        $validator = Validator::make($request->all(), [
+            "orderBy" => ["required", Rule::in(["size", "id"])]
+        ]);
 
-        $records = Record::withTrashed()->orderByDesc($request["orderBy"] ?? "id")->paginate($request["size"]);
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        $records = Record::query()->orderByDesc($request["orderBy"] ?? "id")->paginate($request["size"]);
         return ResponseController::success($records);
     }
 
-    public function getRecordCount()
+    public function getRecordsCount()
     {
-        $today = Record::withTrashed()->whereDate("created_at", "=", date("Y-m-d"))->get();
-        $total = Record::withTrashed()->get();
+        $today = Record::query()->whereDate("created_at", date("Y-m-d"))->get();
+        $total = Record::query()->get();
         return ResponseController::success([
             "today" => [
                 "count" => $today->count(),
@@ -40,15 +41,13 @@ class RecordController extends Controller
     public static function addRecord($data)
     {
         $validator = Validator::make($data, [
-            "ip"                => "required|string",
-            "fs_id"             => "required|numeric",
-            "filename"          => "required|string",
-            "size"              => "required|numeric",
-            "url"               => "required|string",
-            "ua"                => "required|string",
-            "user_id"           => "required|numeric",
-            "normal_account_id" => "required|numeric",
-            "account_id"        => "required|numeric",
+            "ip"         => "required|string",
+            "fs_id"      => "required|numeric",
+            "url"        => "required|string",
+            "ua"         => "required|string",
+            "user_id"    => "required|numeric",
+            "token_id"   => "required|numeric",
+            "account_id" => "required|numeric",
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -61,16 +60,13 @@ class RecordController extends Controller
     public function removeRecords(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "record_ids.*" => "numeric"
+            "record_ids"   => "required|array",
+            "record_ids.*" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        foreach ($request["record_ids"] as $record_id) {
-            $record = Record::query()->find($record_id);
-            if (!$record) return ResponseController::recordNotExists();
-            $record->forceDelete();
-        }
+        Record::query()->whereIn("id", $request->record_ids)->delete();
 
         return ResponseController::success();
     }

@@ -10,14 +10,8 @@ use Illuminate\Support\Facades\Validator;
 
 class GroupController extends Controller
 {
-    public function getGroup(Request $request, $group_id = null)
+    public function getGroups(Request $request)
     {
-        if ($group_id !== null) {
-            $group = Group::query()->find($group_id);
-            if (!$group) return ResponseController::groupNotExists();
-            return ResponseController::success($group);
-        }
-
         $groups = Group::query()->paginate($request["size"]);
         return ResponseController::success($groups);
     }
@@ -47,9 +41,9 @@ class GroupController extends Controller
     public function updateGroup(Request $request, $group_id)
     {
         $validator = Validator::make($request->all(), [
-            "name"  => "string",
-            "count" => "numeric",
-            "size"  => "numeric"
+            "name"  => "required|string",
+            "count" => "required|numeric",
+            "size"  => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -57,20 +51,14 @@ class GroupController extends Controller
         $group = Group::query()->find($group_id);
         if (!$group) return ResponseController::groupNotExists();
 
-        $update = [];
+        $Group = Group::query()->firstWhere("name", $request["name"]);
+        if ($Group && $group["id"] !== $Group["id"]) return ResponseController::groupExists();
 
-        if (isset($request["name"])) {
-            $Group = Group::query()->firstWhere("name", $request["name"]);
-            if ($Group && $group["id"] !== $Group["id"]) return ResponseController::groupExists();
-            $update["name"] = $request["name"];
-        }
-
-        if (isset($request["count"])) $update["count"] = $request["count"];
-        if (isset($request["size"])) $update["size"] = $request["size"];
-
-        if (count($update) === 0) return ResponseController::paramsError();
-
-        $group->update($update);
+        $group->update([
+            "name"  => $request["name"],
+            "count" => $request["count"],
+            "size"  => $request["size"]
+        ]);
 
         return ResponseController::success();
     }
@@ -78,22 +66,15 @@ class GroupController extends Controller
     public function removeGroups(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "group_ids.*" => "numeric"
+            "group_ids"   => "required|array",
+            "group_ids.*" => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        foreach ($request["group_ids"] as $group_id) {
-            if (in_array($group_id, ["-1", "0"])) return ResponseController::groupCanNotBeRemoved("自带分组禁止删除");
+        if (in_array(["-1", "0"], $request["group_ids"])) return ResponseController::groupCanNotBeRemoved("自带分组禁止删除");
 
-            $group = Group::query()->find($group_id);
-            if (!$group) return ResponseController::groupNotExists();
-
-            $users = User::query()->where("group_id", $group_id)->get();
-            if ($users->count() > 0) return ResponseController::groupCanNotBeRemoved("用户组还存在用户");
-
-            $group->delete();
-        }
+        Group::query()->whereIn("id", $request["group_ids"])->delete();
 
         return ResponseController::success();
     }
