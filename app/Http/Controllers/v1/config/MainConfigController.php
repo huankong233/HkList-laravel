@@ -73,7 +73,7 @@ class MainConfigController extends Controller
         if (isset($request["limit_cn"])) $update["_94LIST_LIMIT_CN"] = $request["limit_cn"];
         if (isset($request["limit_prov"])) $update["_94LIST_LIMIT_PROV"] = $request["limit_prov"];
 
-        if ($request["parse_mode"] === 4) $update["_94LIST_USER_AGENT"] = "netdisk;P2SP;3.0.10.22";
+        if ($request["parse_mode"] === 4) $update["_94LIST_USER_AGENT"] = "netdisk;P2SP;2.2.101.161;netdisk;12.11.9;V2156A;android-android;11;JSbridge4.4.0;jointBridge;1.1.0;";
 
         if (count($update) === 0) ResponseController::paramsError();
 
