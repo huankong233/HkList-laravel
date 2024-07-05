@@ -25,7 +25,7 @@ class ResponseController extends Controller
 
     public static function dbFileExists()
     {
-        return self::response(10001, 500, "数据库文件已存在");
+        return self::response(10001, 500, "94list-laravel已安装!");
     }
 
     public static function paramsError()
@@ -248,7 +248,7 @@ class ResponseController extends Controller
 
     public static function groupCanNotBeRemoved($reason)
     {
-        return self::response(10046, 403, "用户组不能被删除,原因:" . $reason);
+        return self::response(10046, 403, "用户组不能被删除,原因:$reason");
     }
 
     public static function groupQuotaCountIsNotEnough()
@@ -263,7 +263,7 @@ class ResponseController extends Controller
 
     public static function paramsErrorFromRequest($code)
     {
-        return self::response(10048, 403, "百度服务器返回: 参数错误,code:" . $code);
+        return self::response(10048, 403, "百度服务器返回: 参数错误,code:$code");
     }
 
     public static function unknownFsId()
@@ -314,5 +314,10 @@ class ResponseController extends Controller
     public static function unsupportNotCNCountry()
     {
         return self::response(10058, 400, "不支持非中国用户使用");
+    }
+
+    public static function dbConnectFailed($message)
+    {
+        return self::response(10059, 400, "数据库配置错误:$message");
     }
 }

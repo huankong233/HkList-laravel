@@ -13,7 +13,6 @@ class Account extends Model
 
     protected $fillable = [
         "baidu_name",
-        "netdisk_name",
         "cookie",
         "vip_type",
         "switch",

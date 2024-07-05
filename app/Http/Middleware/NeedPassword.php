@@ -22,8 +22,7 @@ class NeedPassword
         if ($passwordConfig === '') return $next($request);
 
         $password = $request['password'];
-        if ($password === null) return ResponseController::parsePasswordError();
-        if ($password !== $passwordConfig) return ResponseController::parsePasswordError();
+        if ($password === null || $password !== $passwordConfig) return ResponseController::parsePasswordError();
 
         return $next($request);
     }

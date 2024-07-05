@@ -4,6 +4,7 @@ use App\Http\Controllers\v1\AccountController;
 use App\Http\Controllers\v1\config\MailConfigController;
 use App\Http\Controllers\v1\config\MainConfigController;
 use App\Http\Controllers\v1\GroupController;
+use App\Http\Controllers\v1\InstallController;
 use App\Http\Controllers\v1\InvCodeController;
 use App\Http\Controllers\v1\IpController;
 use App\Http\Controllers\v1\ParseController;
@@ -12,8 +13,11 @@ use App\Http\Controllers\v1\TokenController;
 use App\Http\Controllers\v1\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware("NeedInstall")->group(function () {
-    Route::prefix("/v1")->group(function () {
+
+Route::prefix("/v1")->group(function () {
+    Route::post("/install", [InstallController::class, "install"]);
+
+    Route::middleware("NeedInstall")->group(function () {
         Route::prefix("/user")->middleware(["ThrottleRequest"])->group(function () {
             Route::post("/login", [UserController::class, "login"]);
             Route::post("/register", [UserController::class, "register"]);

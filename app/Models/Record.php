@@ -14,12 +14,10 @@ class Record extends Model
     protected $fillable = [
         "ip",
         "fs_id",
-        "filename",
-        "size",
         "url",
         "ua",
         "user_id",
-        "account_id",
-        "normal_account_id"
+        "token_id",
+        "account_id"
     ];
 }
