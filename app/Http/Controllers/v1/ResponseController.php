@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\v1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Database\Eloquent\Casts\Json;
 
 class ResponseController extends Controller
 {
@@ -41,7 +40,7 @@ class ResponseController extends Controller
 
     public static function userNotExists()
     {
-        return self::response(10004, 404, "用户不存在");
+        return self::response(10004, 400, "用户不存在");
     }
 
     public static function userPasswordError()
@@ -61,7 +60,7 @@ class ResponseController extends Controller
 
     public static function groupNotExists()
     {
-        return self::response(10008, 404, "用户组不存在");
+        return self::response(10008, 400, "用户组不存在");
     }
 
     public static function groupExists()
@@ -71,12 +70,12 @@ class ResponseController extends Controller
 
     public static function recordNotExists()
     {
-        return self::response(10010, 404, "记录不存在");
+        return self::response(10010, 400, "记录不存在");
     }
 
     public static function accountNotExists()
     {
-        return self::response(10011, 404, "账户不存在");
+        return self::response(10011, 400, "账户不存在");
     }
 
     public static function networkError($query)
@@ -106,7 +105,7 @@ class ResponseController extends Controller
 
     public static function fileNotExists()
     {
-        return self::response(10018, 404, "百度服务器返回: 文件不存在");
+        return self::response(10018, 400, "百度服务器返回: 文件不存在");
     }
 
     public static function pwdWrong()
@@ -116,12 +115,12 @@ class ResponseController extends Controller
 
     public static function pathNotExists()
     {
-        return self::response(10020, 404, "百度服务器返回: 不存在此目录");
+        return self::response(10020, 400, "百度服务器返回: 不存在此目录");
     }
 
     public static function linkWrongOrPathNotExists()
     {
-        return self::response(10021, 404, "百度服务器返回: 不存在此分享链接或提取码错误");
+        return self::response(10021, 400, "百度服务器返回: 不存在此分享链接或提取码错误");
     }
 
     public static function linkNotValid()
@@ -209,7 +208,7 @@ class ResponseController extends Controller
 
     public static function invCodeNotExists()
     {
-        return self::response(10038, 404, "邀请码不存在");
+        return self::response(10038, 400, "邀请码不存在");
     }
 
     public static function invCodeExists()
@@ -229,7 +228,7 @@ class ResponseController extends Controller
 
     public static function IpNotExists()
     {
-        return self::response(10042, 404, "ip不存在");
+        return self::response(10042, 400, "ip不存在");
     }
 
     public static function IpExists()
@@ -269,7 +268,7 @@ class ResponseController extends Controller
 
     public static function unknownFsId()
     {
-        return self::response(10049, 404, "未记录的fs_id");
+        return self::response(10049, 400, "未记录的fs_id");
     }
 
     public static function errorFromMainServer($reason)
@@ -294,7 +293,7 @@ class ResponseController extends Controller
 
     public static function TokenNotExists()
     {
-        return self::response(10054, 404, "卡密不存在");
+        return self::response(10054, 400, "卡密不存在");
     }
 
     public static function TokenExists()
