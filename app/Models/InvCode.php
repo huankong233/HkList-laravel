@@ -17,4 +17,9 @@ class InvCode extends Model
         "use_count",
         "can_count",
     ];
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class)->withTrashed();
+    }
 }

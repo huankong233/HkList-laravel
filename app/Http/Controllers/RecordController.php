@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Record;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -18,22 +17,32 @@ class RecordController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $records = Record::query()->orderByDesc($request["orderBy"] ?? "id")->paginate($request["size"]);
+        $records = Record::query()->with(["file"]);
+
+        if ($request["orderBy"] == "id") {
+            $records->orderByDesc("id");
+        } else {
+            $records = $records->select('records.*')
+                               ->join('file_lists', 'records.fs_id', '=', 'file_lists.id')
+                               ->orderByDesc('file_lists.size');
+        }
+
+        $records = $records->paginate($request["size"]);
         return ResponseController::success($records);
     }
 
     public function getRecordsCount()
     {
-        $today = Record::query()->whereDate("created_at", date("Y-m-d"))->get();
-        $total = Record::query()->get();
+        $today = Record::query()->with(["file"])->whereDate("created_at", date("Y-m-d"))->get();
+        $total = Record::query()->with(["file"])->get();
         return ResponseController::success([
             "today" => [
                 "count" => $today->count(),
-                "size"  => $today->sum("size"),
+                "size"  => $today->sum("file.size"),
             ],
             "total" => [
                 "count" => $total->count(),
-                "size"  => $total->sum("size"),
+                "size"  => $total->sum("file.size"),
             ]
         ]);
     }

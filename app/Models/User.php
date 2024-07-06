@@ -17,4 +17,14 @@ class User extends Authenticatable
         "password",
         "role"
     ];
+
+    public function inv_code()
+    {
+        return $this->belongsTo(InvCode::class)->withTrashed();
+    }
+
+    public function group()
+    {
+        return $this->hasOneThrough(Group::class, InvCode::class, "id", "id", "inv_code_id", "group_id")->withTrashed()->withTrashedParents();
+    }
 }

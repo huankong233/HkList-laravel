@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\v1\config;
+namespace App\Http\Controllers\config;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\v1\ResponseController;
-use App\Models\Account;
+use App\Http\Controllers\ResponseController;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -61,8 +60,8 @@ class MainConfigController extends Controller
         $update["_94LIST_WHITELIST_MODE"]      = $request["whitelist_mode"];
         $update["APP_DEBUG"]                   = $request["debug"];
         $update["APP_NAME"]                    = '"' . $request["name"] . '"';
-        $update["_94LIST_MAIN_SERVER"]         = $request["main_server"];
-        $update["_94LIST_CODE"]                = $request["code"];
+        $update["_94LIST_MAIN_SERVER"]         = '"' . rtrim($request["main_server"], '/') . '"';
+        $update["_94LIST_CODE"]                = '"' . $request["code"] . '"';
         $update["_94LIST_SHOW_COPYRIGHT"]      = $request["show_copyright"];
         $update["_94LIST_PARSE_MODE"]          = $request["parse_mode"];
         $update["_94LIST_MAX_FILESIZE"]        = $request["max_filesize"];

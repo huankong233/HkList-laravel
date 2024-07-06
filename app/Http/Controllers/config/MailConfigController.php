@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\v1\config;
+namespace App\Http\Controllers\config;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\UtilsController;
-use App\Http\Controllers\v1\ResponseController;
+use App\Http\Controllers\ResponseController;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -49,16 +48,16 @@ class MailConfigController extends Controller
         if ($validator->fails()) return ResponseController::paramsError();
 
         updateEnv([
-            "MAIL_SWITCH"       => $request["switch"],
-            "MAIL_HOST"         => $request["host"],
-            "MAIL_PORT"         => $request["port"],
-            "MAIL_USERNAME"     => $request["username"],
-            "MAIL_PASSWORD"     => $request["password"],
-            "MAIL_ENCRYPTION"   => $request["encryption"],
-            "MAIL_FROM_ADDRESS" => $request["from_address"],
-            "MAIL_FROM_NAME"    => $request["from_name"],
-            "MAIL_TO_ADDRESS"   => $request["to_address"],
-            "MAIL_TO_NAME"      => $request["to_name"],
+            "MAIL_SWITCH"       => '"' . $request["switch"] . '"',
+            "MAIL_HOST"         => '"' . $request["host"] . '"',
+            "MAIL_PORT"         => '"' . $request["port"] . '"',
+            "MAIL_USERNAME"     => '"' . $request["username"] . '"',
+            "MAIL_PASSWORD"     => '"' . $request["password"] . '"',
+            "MAIL_ENCRYPTION"   => '"' . $request["encryption"] . '"',
+            "MAIL_FROM_ADDRESS" => '"' . $request["from_address"] . '"',
+            "MAIL_FROM_NAME"    => '"' . $request["from_name"] . '"',
+            "MAIL_TO_ADDRESS"   => '"' . $request["to_address"] . '"',
+            "MAIL_TO_NAME"      => '"' . $request["to_name"] . '"',
         ]);
 
         return ResponseController::success();

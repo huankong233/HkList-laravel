@@ -1,10 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Group;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -51,8 +49,10 @@ class GroupController extends Controller
         $group = Group::query()->find($group_id);
         if (!$group) return ResponseController::groupNotExists();
 
-        $Group = Group::query()->firstWhere("name", $request["name"]);
-        if ($Group && $group["id"] !== $Group["id"]) return ResponseController::groupExists();
+        if (!in_array($group_id, [1, 2])) {
+            $Group = Group::query()->firstWhere("name", $request["name"]);
+            if ($Group && $group["id"] !== $Group["id"]) return ResponseController::groupExists();
+        }
 
         $group->update([
             "name"  => $request["name"],
@@ -72,7 +72,7 @@ class GroupController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        if (in_array(["-1", "0"], $request["group_ids"])) return ResponseController::groupCanNotBeRemoved("自带分组禁止删除");
+        if (in_array([1, 2], $request["group_ids"])) return ResponseController::groupCanNotBeRemoved("自带分组禁止删除");
 
         Group::query()->whereIn("id", $request["group_ids"])->delete();
 

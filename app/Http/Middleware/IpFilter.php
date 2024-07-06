@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\UtilsController;
-use App\Http\Controllers\v1\ResponseController;
 use App\Models\Ip;
 use Closure;
 use Illuminate\Http\Request;

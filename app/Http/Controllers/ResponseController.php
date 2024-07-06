@@ -1,8 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\v1;
-
-use App\Http\Controllers\Controller;
+namespace App\Http\Controllers;
 
 class ResponseController extends Controller
 {

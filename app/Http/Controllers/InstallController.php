@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\InvCode;
 use App\Models\User;
@@ -158,7 +157,7 @@ class InstallController extends Controller
                 $table->unsignedBigInteger("count");
                 $table->unsignedBigInteger("size");
                 $table->unsignedBigInteger("day");
-                $table->timestamp("expired_at");
+                $table->timestamp("expired_at")->nullable();
                 $table->timestamps();
                 $table->softDeletes();
             });

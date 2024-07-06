@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Record;
 use GuzzleHttp\Client;
@@ -17,28 +16,23 @@ class AccountController extends Controller
 {
     public function getAccounts(Request $request)
     {
-        $accounts = Account::query()->paginate($request["size"]);
+        $accounts = Account::query()->with(["records.file"])->paginate($request["size"]);
 
-        // 提前查询所有账户的大小以减少数据库查询
-        $accountIds = $accounts->getCollection()->pluck("id");
+        $accounts->getCollection()->transform(function ($account) {
+            $todaySize = 0;
+            $totalSize = 0;
 
-        $sizes = Record::query()
-                       ->whereIn('account_id', $accountIds)
-                       ->join('file_lists', 'records.fs_id', '=', 'file_lists.id')
-                       ->selectRaw('records.account_id, 
-                                SUM(file_lists.size) as total_size, 
-                                SUM(CASE WHEN DATE(records.created_at) = CURDATE() THEN file_lists.size ELSE 0 END) as today_size')
-                       ->groupBy('records.account_id')
-                       ->get()
-                       ->keyBy('account_id');
+            foreach ($account->records as $record) {
+                $fileSize  = $record["file"]["size"] ?? 0;
+                $totalSize += $fileSize;
+                if ($record->created_at->isToday()) $todaySize += $fileSize;
+            }
 
-        $accounts->getCollection()
-                 ->transform(function ($account) use ($sizes) {
-                     $accountId             = $account["id"];
-                     $account["size"]       = $sizes[$accountId]["today_size"] ?? 0;
-                     $account["total_size"] = $sizes[$accountId]["total_size"] ?? 0;
-                     return $account;
-                 });
+            $account["today_size"] = $todaySize;
+            $account["total_size"] = $totalSize;
+
+            return $account;
+        });
 
         return ResponseController::success($accounts);
     }
@@ -164,7 +158,7 @@ class AccountController extends Controller
         $account = Account::query()->find($account_id);
         if (!$account) return ResponseController::accountNotExists();
 
-        $account->update(["prov" => $request["prov"],]);
+        $account->update(["prov" => $request["prov"]]);
 
         return ResponseController::success();
     }
@@ -217,10 +211,12 @@ class AccountController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        Account::query()->whereIn("account_id", $request["account_ids"])->update([
-            "switch" => $request["switch"],
-            "reason" => "用戶操作"
-        ]);
+        Account::query()
+               ->whereIn("account_id", $request["account_ids"])
+               ->update([
+                   "switch" => $request["switch"],
+                   "reason" => "用戶操作"
+               ]);
 
         return ResponseController::success();
     }

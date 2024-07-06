@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\InvCode;
 use Illuminate\Http\Request;
@@ -13,7 +12,7 @@ class InvCodeController extends Controller
 {
     public function getInvCodes(Request $request)
     {
-        $InvCodes = InvCode::query()->paginate($request["size"]);
+        $InvCodes = InvCode::query()->with("group")->paginate($request["size"]);
         return ResponseController::success($InvCodes);
     }
 

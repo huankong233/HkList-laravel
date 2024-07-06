@@ -1,9 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Group;
 use App\Models\InvCode;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -12,11 +10,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
-/**
- * inv_code:
- * -1 表示后端直接创建
- * 0 表示创建时不需要使用邀请码
- */
 class UserController extends Controller
 {
     public function login(Request $request)
@@ -84,7 +77,7 @@ class UserController extends Controller
 
     public function getUsers(Request $request)
     {
-        $users = User::query()->paginate($request["size"]);
+        $users = User::query()->with(["inv_code", "group"])->paginate($request["size"]);
         return ResponseController::success($users);
     }
 
@@ -93,7 +86,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             "username"    => "required|string",
             "password"    => "required|string",
-            "inv_code_id" => "numeric",
+            "inv_code_id" => "nullable|numeric",
             "role"        => ["required", Rule::in(["admin", "user"])]
         ]);
 
@@ -102,7 +95,7 @@ class UserController extends Controller
         $user = User::query()->firstWhere("username", $request["username"]);
         if ($user) return ResponseController::userExists();
 
-        if (isset($request["inv_code_id"])) {
+        if (isset($request["inv_code_id"]) && $request["inv_code_id"] !== null) {
             $invCode = InvCode::query()->find($request["inv_code_id"]);
             if (!$invCode) return ResponseController::invCodeNotExists();
         }

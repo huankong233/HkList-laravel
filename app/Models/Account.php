@@ -21,4 +21,9 @@ class Account extends Model
         "svip_end_at",
         "last_use_at"
     ];
+
+    public function records()
+    {
+        return $this->hasMany(Record::class)->withTrashed();
+    }
 }

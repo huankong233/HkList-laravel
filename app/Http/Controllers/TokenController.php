@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Token;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -73,10 +74,10 @@ class TokenController extends Controller
     public function updateToken(Request $request, $token_id)
     {
         $validator = Validator::make($request->all(), [
-            "name"       => "string",
-            "count"      => "numeric",
-            "size"       => "numeric",
-            "day"        => "numeric",
+            "name"       => "required|string",
+            "count"      => "required|numeric",
+            "size"       => "required|numeric",
+            "day"        => "required|numeric",
             "expired_at" => "nullable|date"
         ]);
 
@@ -84,7 +85,6 @@ class TokenController extends Controller
 
         $token = Token::query()->find($token_id);
         if (!$token) return ResponseController::TokenNotExists();
-
 
         $Token = Token::query()->firstWhere("name", $request["name"]);
         if ($Token && $token["id"] !== $Token["id"]) return ResponseController::TokenExists();

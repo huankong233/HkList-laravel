@@ -20,4 +20,9 @@ class Record extends Model
         "token_id",
         "account_id"
     ];
+
+    public function file()
+    {
+        return $this->hasOne(FileList::class, "id", "fs_id");
+    }
 }
