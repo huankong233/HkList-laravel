@@ -127,10 +127,16 @@ class UserController extends Controller
         $User = User::query()->firstWhere("username", $request["username"]);
         if ($User && $user["id"] !== $User["id"]) return ResponseController::userExists();
 
+        $inv_code = InvCode::query()->find($request["inv_code_id"]);
+        if (!$inv_code) return ResponseController::invCodeNotExists();
+
+        if ($user_id === "1") $request["role"] = "admin";
+
         $user->update([
-            "username" => $request["username"],
-            "password" => Hash::isHashed($request["password"]) ? $request["password"] : Hash::make($request["password"]),
-            "role"     => $request["role"],
+            "username"    => $request["username"],
+            "password"    => Hash::isHashed($request["password"]) ? $request["password"] : Hash::make($request["password"]),
+            "role"        => $request["role"],
+            "inv_code_id" => $request["inv_code_id"]
         ]);
 
         return ResponseController::success();

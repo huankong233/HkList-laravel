@@ -49,7 +49,9 @@ class GroupController extends Controller
         $group = Group::query()->find($group_id);
         if (!$group) return ResponseController::groupNotExists();
 
-        if (!in_array($group_id, [1, 2])) {
+        if (in_array($group_id, [1, 2])) {
+            $request["name"] = $group["name"];
+        } else {
             $Group = Group::query()->firstWhere("name", $request["name"]);
             if ($Group && $group["id"] !== $Group["id"]) return ResponseController::groupExists();
         }

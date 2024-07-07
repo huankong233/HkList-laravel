@@ -29,8 +29,7 @@ class IpController extends Controller
 
         Ip::query()->create([
             "ip"     => $request["ip"],
-            "mode"   => $request["mode"],
-            "switch" => 1
+            "mode"   => $request["mode"]
         ]);
 
         return ResponseController::success();
@@ -40,8 +39,7 @@ class IpController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "ip"     => "required|string|ip",
-            "mode"   => ["required", Rule::in([0, 1])],
-            "switch" => "required|boolean"
+            "mode"   => ["required", Rule::in([0, 1])]
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -54,8 +52,7 @@ class IpController extends Controller
 
         $ip->update([
             "ip"     => $request["ip"],
-            "mode"   => $request["mode"],
-            "switch" => $request["switch"]
+            "mode"   => $request["mode"]
         ]);
 
         return ResponseController::success();

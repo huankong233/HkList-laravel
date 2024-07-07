@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use App\Models\InvCode;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -13,6 +14,10 @@ class InvCodeController extends Controller
     public function getInvCodes(Request $request)
     {
         $InvCodes = InvCode::query()->with("group")->paginate($request["size"]);
+        $InvCodes->getCollection()->transform(function ($item) {
+            $item["use_count"] = User::query()->where("inv_code_id", $item["id"])->count();
+            return $item;
+        });
         return ResponseController::success($InvCodes);
     }
 
@@ -85,9 +90,13 @@ class InvCodeController extends Controller
         $invCode = InvCode::query()->find($inv_code_id);
         if (!$invCode) return ResponseController::invCodeNotExists();
 
-        $InvCode = InvCode::query()->firstWhere("name", $request["name"]);
-        if ($InvCode && $invCode["id"] !== $InvCode["id"]) return ResponseController::invCodeExists();
-
+        if ($inv_code_id === "1") {
+            $request["name"] = $invCode["name"];
+        } else {
+            $InvCode = InvCode::query()->firstWhere("name", $request["name"]);
+            if ($InvCode && $invCode["id"] !== $InvCode["id"]) return ResponseController::invCodeExists();
+        }
+        
         $group = Group::query()->find($request["group_id"]);
         if (!$group) return ResponseController::groupNotExists();
 

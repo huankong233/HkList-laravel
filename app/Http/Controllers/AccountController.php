@@ -212,7 +212,7 @@ class AccountController extends Controller
         if ($validator->fails()) return ResponseController::paramsError();
 
         Account::query()
-               ->whereIn("account_id", $request["account_ids"])
+               ->whereIn("id", $request["account_ids"])
                ->update([
                    "switch" => $request["switch"],
                    "reason" => "用戶操作"
@@ -230,7 +230,7 @@ class AccountController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        Account::query()->whereIn("account_id", $request["account_ids"])->delete();
+        Account::query()->whereIn("id", $request["account_ids"])->delete();
 
         return ResponseController::success();
     }
