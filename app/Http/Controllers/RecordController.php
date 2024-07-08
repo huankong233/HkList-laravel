@@ -54,8 +54,8 @@ class RecordController extends Controller
             "fs_id"      => "required|numeric",
             "url"        => "required|string",
             "ua"         => "required|string",
-            "user_id"    => "required|numeric",
-            "token_id"   => "required|numeric",
+            "user_id"    => "nullable|numeric",
+            "token_id"   => "nullable|numeric",
             "account_id" => "required|numeric",
         ]);
 

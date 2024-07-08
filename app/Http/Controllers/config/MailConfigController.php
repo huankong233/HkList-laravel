@@ -48,7 +48,7 @@ class MailConfigController extends Controller
         if ($validator->fails()) return ResponseController::paramsError();
 
         updateEnv([
-            "MAIL_SWITCH"       => '"' . $request["switch"] . '"',
+            "MAIL_SWITCH"       => $request["switch"],
             "MAIL_HOST"         => '"' . $request["host"] . '"',
             "MAIL_PORT"         => '"' . $request["port"] . '"',
             "MAIL_USERNAME"     => '"' . $request["username"] . '"',

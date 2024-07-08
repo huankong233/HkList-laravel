@@ -181,7 +181,7 @@ class InstallController extends Controller
                 $table->id();
                 $table->string("ip");
                 $table->unsignedBigInteger("fs_id");
-                $table->string("url");
+                $table->longText("url");
                 $table->string("ua");
                 $table->unsignedBigInteger("user_id")->nullable();
                 $table->unsignedBigInteger("token_id")->nullable();

@@ -595,8 +595,8 @@ class ParseController extends Controller
                 RecordController::addRecord([
                     "ip"         => UtilsController::getIp(),
                     "fs_id"      => FileList::query()->firstWhere([
-                        "surl"  => $responseDatum["surl"],
-                        "pwd"   => $responseDatum["pwd"],
+                        "surl"  => $request["surl"],
+                        "pwd"   => $request["pwd"],
                         "fs_id" => $responseDatum["fs_id"]
                     ])["id"],
                     "url"        => $responseDatum["url"],
@@ -725,8 +725,8 @@ class ParseController extends Controller
                 RecordController::addRecord([
                     "ip"         => UtilsController::getIp(),
                     "fs_id"      => FileList::query()->firstWhere([
-                        "surl"  => $responseDatum["surl"],
-                        "pwd"   => $responseDatum["pwd"],
+                        "surl"  => $request["surl"],
+                        "pwd"   => $request["pwd"],
                         "fs_id" => $responseDatum["fs_id"]
                     ])["id"],
                     "url"        => $responseDatum["url"],
@@ -848,8 +848,8 @@ class ParseController extends Controller
                     RecordController::addRecord([
                         "ip"         => UtilsController::getIp(),
                         "fs_id"      => FileList::query()->firstWhere([
-                            "surl"  => $responseDatum["surl"],
-                            "pwd"   => $responseDatum["pwd"],
+                            "surl"  => $request["surl"],
+                            "pwd"   => $request["pwd"],
                             "fs_id" => $responseDatum["fs_id"]
                         ])["id"],
                         "url"        => $responseDatum["url"],
