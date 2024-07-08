@@ -7,6 +7,7 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\InvCodeController;
 use App\Http\Controllers\IpController;
+use App\Http\Controllers\ParseController;
 use App\Http\Controllers\RecordController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
@@ -16,15 +17,15 @@ use Illuminate\Support\Facades\Route;
 Route::post("/install", [InstallController::class, "install"]);
 
 Route::middleware("NeedInstall")->group(function () {
-//        Route::prefix("/parse")->middleware("IpFilter")->group(function () {
-//            Route::get("/config", [ParseController::class, "getConfig"]);
-//            Route::get("/limit", [ParseController::class, "checkLimit"]);
-//            Route::prefix("/")->middleware(["ThrottleRequest", "NeedPassword"])->group(function () {
-//                Route::post("/get_file_list", [ParseController::class, "getFileList"]);
-//                Route::post("/get_vcode", [ParseController::class, "getVcode"]);
-//                Route::post("/get_download_links", [ParseController::class, "getDownloadLinks"]);
-//            });
-//        });
+    Route::prefix("/parse")->middleware("IpFilter")->group(function () {
+        Route::get("/config", [ParseController::class, "getConfig"]);
+        Route::get("/limit", [ParseController::class, "checkLimit"]);
+        Route::prefix("/")->middleware(["ThrottleRequest", "NeedPassword"])->group(function () {
+            Route::post("/get_file_list", [ParseController::class, "getFileList"]);
+            Route::post("/get_vcode", [ParseController::class, "getVcode"]);
+            Route::post("/get_download_links", [ParseController::class, "getDownloadLinks"]);
+        });
+    });
 
     Route::prefix("/user")->middleware(["ThrottleRequest"])->group(function () {
         Route::post("/login", [UserController::class, "login"]);

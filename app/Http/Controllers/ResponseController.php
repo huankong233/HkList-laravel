@@ -328,4 +328,14 @@ class ResponseController extends Controller
     {
         return self::response(10061, 403, "邀请码配额已用完");
     }
+
+    public static function userCanNotBeRemoved($reason)
+    {
+        return self::response(10060, 403, "用户不能被删除,原因:$reason");
+    }
+
+    public static function userCanNotBeUpdated($reason)
+    {
+        return self::response(10060, 403, "用户不能被更新,原因:$reason");
+    }
 }

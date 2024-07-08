@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\FileList;
 use App\Models\Group;
+use App\Models\InvCode;
 use App\Models\Record;
 use App\Models\Token;
 use GuzzleHttp\Client;
@@ -26,7 +27,6 @@ class ParseController extends Controller
         return ResponseController::success([
             "show_announce"    => $config["announce"] !== null && $config["announce"] !== "",
             "announce"         => $config["announce"],
-            "user_agent"       => $config["user_agent"],
             "debug"            => config("app.debug"),
             "max_once"         => $config["max_once"],
             "have_account"     => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
@@ -37,8 +37,7 @@ class ParseController extends Controller
             "custom_copyright" => $config["custom_copyright"],
             "min_single_file"  => $config["min_single_file"],
             "token_mode"       => $config["token_mode"],
-            "button_link"      => $config["button_link"],
-            // "prov"             => self::getProvinceFromIP(UtilsController::getIp())
+            "button_link"      => $config["button_link"]
         ]);
     }
 
@@ -95,8 +94,11 @@ class ParseController extends Controller
             if (str_contains($name, $key)) return $standardName;
         }
 
-        // 若无匹配则返回原名
-        return null;
+        // 屏蔽非大陸地址
+        if (in_array($standardName, ["香港特别行政区", "澳门特别行政区", "台湾省"])) return false;
+
+        // 若无匹配则返回上海
+        return "上海市";
     }
 
     public function _getProvinceFromIP($ip)
@@ -176,6 +178,40 @@ class ParseController extends Controller
         return null;
     }
 
+    public static function _getRandomCookie($prov, $vipType)
+    {
+        return Account::query()
+                      ->where([
+                          "switch" => 1,
+                          "prov"   => $prov
+                      ])
+                      ->whereIn("vip_type", $vipType)
+                      ->leftJoin("records", function ($join) {
+                          $join->on("accounts.id", "=", "records.account_id")->whereDate("records.created_at", "=", now());
+                      })
+                      ->leftJoin("file_lists", function ($join) {
+                          $join->on("records.fs_id", "=", "file_lists.id");
+                      })
+                      ->select('accounts.*', DB::raw('IFNULL(SUM(file_lists.size), 0) as total_size'))
+                      ->groupBy(
+                          'accounts.id',
+                          'accounts.baidu_name',
+                          'accounts.cookie',
+                          'accounts.vip_type',
+                          'accounts.switch',
+                          'accounts.reason',
+                          'accounts.prov',
+                          'accounts.svip_end_at',
+                          'accounts.last_use_at',
+                          'accounts.created_at',
+                          'accounts.updated_at',
+                          'accounts.deleted_at'
+                      )
+                      ->having('total_size', '<', config('94list.max_filesize'))
+                      ->inRandomOrder()
+                      ->first();
+    }
+
     public function getRandomCookie($vipType = ["超级会员"], $makeNew = true)
     {
         $ip   = UtilsController::getIp();
@@ -215,34 +251,10 @@ class ParseController extends Controller
 
         // 判斷是否獲取到了省份
         if ($prov !== null) {
-            $account = Account::query()
-                              ->where("switch", 1)
-                              ->whereIn("vip_type", $vipType)
-                              ->leftJoin('records', function ($join) {
-                                  $join->on('accounts.id', '=', 'records.account_id')
-                                       ->whereDate('records.created_at', now());
-                              })
-                              ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
-                              ->groupBy('accounts.id')
-                              ->having('total_size', '<', config("94list.max_filesize"))
-                              ->inRandomOrder()
-                              ->where("prov", $prov)
-                              ->first();
+            $account = self::_getRandomCookie($prov, $vipType);
 
             if ($account === null) {
-                $account = Account::query()
-                                  ->where("switch", 1)
-                                  ->whereIn("vip_type", $vipType)
-                                  ->leftJoin('records', function ($join) {
-                                      $join->on('accounts.id', '=', 'records.account_id')
-                                           ->whereDate('records.created_at', now());
-                                  })
-                                  ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
-                                  ->groupBy('accounts.id')
-                                  ->having('total_size', '<', config("94list.max_filesize"))
-                                  ->inRandomOrder()
-                                  ->whereNull("prov")
-                                  ->first();
+                $account = self::_getRandomCookie(null, $vipType);
 
                 if ($makeNew) {
                     $account?->update([
@@ -251,24 +263,57 @@ class ParseController extends Controller
                 }
             }
         } else {
-            $account = Account::query()
-                              ->where("switch", 1)
-                              ->whereIn("vip_type", $vipType)
-                              ->leftJoin('records', function ($join) {
-                                  $join->on('accounts.id', '=', 'records.account_id')
-                                       ->whereDate('records.created_at', now());
-                              })
-                              ->select('accounts.*', DB::raw('IFNULL(SUM(records.size), 0) as total_size'))
-                              ->groupBy('accounts.id')
-                              ->having('total_size', '<', config("94list.max_filesize"))
-                              ->inRandomOrder()
-                              ->whereNull("prov")
-                              ->first();
+            $account = self::_getRandomCookie(null, $vipType);
         }
 
         if (!$account) return ResponseController::svipAccountIsNotEnough(true, $vipType);
 
         return ResponseController::success($account);
+    }
+
+    public function checkLimit(Request $request)
+    {
+        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
+            $validator = Validator::make($request->all(), [
+                "token" => "required|string",
+            ]);
+
+            if ($validator->fails()) return ResponseController::paramsError();
+
+            $token = Token::query()->firstWhere("name", $request["token"]);
+            if (!$token) return ResponseController::TokenNotExists();
+
+            // 检查是否已经过期
+            if ($token["expired_at"] !== null && $token["expired_at"] < now()) return ResponseController::TokenExpired();
+
+            $records = Record::withTrashed()->where("token_id", $token["id"])->get();
+
+            if ($records->count() >= $token["count"] || $records->sum("size") >= $token["size"] * 1073741824) return ResponseController::TokenQuotaHasBeenUsedUp();
+
+            return ResponseController::success([
+                "group_name" => $token["name"],
+                "count"      => $token["count"] - $records->count(),
+                "size"       => $token["size"] * 1073741824 - $records->sum("size"),
+                "expired_at" => $token["expired_at"] ?? "未使用"
+            ]);
+        }
+
+        // 获取今日解析数量
+        $group = Group::query()->find(Auth::check() ? InvCode::query()->find(Auth::user()["inv_code_id"])["group_id"] : 1);
+
+        $records = Record::withTrashed()
+                         ->where("user_id", Auth::check() ? Auth::user()["id"] : 1)
+                         ->where("ip", UtilsController::getIp())
+                         ->whereDate("created_at", now())
+                         ->get();
+
+        if ($records->count() >= $group["count"] || $records->sum("size") >= $group["size"] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
+
+        return ResponseController::success([
+            "group_name" => $group["name"],
+            "count"      => $group["count"] - $records->count(),
+            "size"       => $group["size"] * 1073741824 - $records->sum("size")
+        ]);
     }
 
     public function decodeSceKey($seckey)
@@ -332,20 +377,27 @@ class ParseController extends Controller
             } else {
                 // 保存所有文件到数据库
                 foreach ($response["data"]["list"] as $file) {
-                    if ($file["isdir"] == 1 || $file["isdir"] == "1" || !isset($file["fs_id"]) || !isset($file["md5"])) continue;
-                    $find = FileList::query()->firstWhere("fs_id", $file["fs_id"]);
+                    if ($file["isdir"] === 1 || $file["isdir"] === "1" || !isset($file["fs_id"]) || !isset($file["md5"])) continue;
+
+                    $find = FileList::query()->firstWhere([
+                        "surl"  => $request["surl"],
+                        "pwd"   => $request["pwd"],
+                        "fs_id" => $file["fs_id"]
+                    ]);
+
                     if ($find) {
-                        if ($find["md5"] !== $file["md5"]) {
-                            $find->update([
-                                "size" => $file["size"],
-                                "md5"  => $file["md5"]
-                            ]);
-                        }
+                        $find->update([
+                            "size" => $file["size"],
+                            "md5"  => $file["md5"]
+                        ]);
                     } else {
                         FileList::query()->create([
-                            "fs_id" => $file["fs_id"],
-                            "size"  => $file["size"],
-                            "md5"   => $file["md5"]
+                            "surl"     => $request["surl"],
+                            "pwd"      => $request["pwd"],
+                            "fs_id"    => $file["fs_id"],
+                            "size"     => $file["size"],
+                            "filename" => $file["server_filename"],
+                            "md5"      => $file["md5"]
                         ]);
                     }
                 }
@@ -368,53 +420,6 @@ class ParseController extends Controller
             8001, 9013, 9019      => ResponseController::cookieError($errno),
             default               => ResponseController::getFileListError($errno),
         };
-    }
-
-    public function checkLimit(Request $request)
-    {
-        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
-            $validator = Validator::make($request->all(), [
-                "token" => "required|string",
-            ]);
-
-            if ($validator->fails()) return ResponseController::paramsError();
-
-            $token = Token::query()->firstWhere("name", $request["token"]);
-            if (!$token) return ResponseController::TokenNotExists();
-
-            // 检查是否已经过期
-            if ($token["expired_at"] !== null && $token["expired_at"] < now()) return ResponseController::TokenExpired();
-
-            $records = Record::withTrashed()
-                             ->where("user_id", -$token["id"])
-                             ->get();
-
-            if ($records->count() >= $token["count"] || $records->sum("size") >= $token["size"] * 1073741824) return ResponseController::TokenQuotaHasBeenUsedUp();
-
-            return ResponseController::success([
-                "group_name" => $token["name"],
-                "count"      => $token["count"] - $records->count(),
-                "size"       => $token["size"] * 1073741824 - $records->sum("size"),
-                "expired_at" => $token["expired_at"] ?? "未使用"
-            ]);
-        }
-
-        // 获取今日解析数量
-        $group = Group::query()
-                      ->find(Auth::check() ? Auth::user()["group_id"] : -1);
-
-        $records = Record::withTrashed()
-                         ->where("ip", UtilsController::getIp())
-                         ->whereDate("created_at", now())
-                         ->get();
-
-        if ($records->count() >= $group["count"] || $records->sum("size") >= $group["size"] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
-
-        return ResponseController::success([
-            "group_name" => $group["name"],
-            "count"      => $group["count"] - $records->count(),
-            "size"       => $group["size"] * 1073741824 - $records->sum("size")
-        ]);
     }
 
     public function getVcode()
@@ -457,7 +462,9 @@ class ParseController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "fs_ids"   => "required|array",
-            "fs_ids.*" => "required|numeric"
+            "fs_ids.*" => "required|numeric",
+            "surl"     => "required|string",
+            "pwd"      => "string",
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -474,7 +481,13 @@ class ParseController extends Controller
         if (count($request["fs_ids"]) > $checkLimitData["data"]["count"]) return ResponseController::groupQuotaCountIsNotEnough();
 
         // 获取文件列表
-        $fileList = FileList::query()->whereIn("fs_id", $request["fs_ids"])->get();
+        $fileList = FileList::query()
+                            ->where([
+                                "surl" => $request["surl"],
+                                "pwd"  => $request["pwd"]
+                            ])
+                            ->whereIn("fs_id", $request["fs_ids"])
+                            ->get();
 
         if (count($fileList) !== count($request["fs_ids"])) return ResponseController::unknownFsId();
 
@@ -507,7 +520,9 @@ class ParseController extends Controller
             "shareid"  => "required|numeric",
             "fs_ids"   => "required|array",
             "fs_ids.*" => "required|numeric",
-            "url"      => "required|string"
+            "url"      => "required|string",
+            "surl"     => "required|string",
+            "pwd"      => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -562,31 +577,33 @@ class ParseController extends Controller
                    "last_use_at" => date("Y-m-d H:i:s")
                ]);
 
-        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
-            $token   = Token::query()->firstWhere("name", $request["token"]);
-            $user_id = -$token["id"];
+        if (isset($request["token"]) && $request["token"] !== "") {
+            $token    = Token::query()->firstWhere("name", $request["token"]);
+            $token_id = $token["id"];
         } else {
-            $user_id = Auth::user()["id"] ?? -1;
+            $user_id = Auth::user()["id"] ?? 1;
         }
 
         foreach ($responseData as $responseDatum) {
             if (str_contains($responseDatum["url"], "dlna")) {
-                if (config("94list.token_mode") && isset($token) && $token["expired_at"] === null) {
+                if (isset($token) && $token["expired_at"] === null) {
                     $token->update([
                         "expired_at" => now()->addDays($token["day"])
                     ]);
                 }
 
                 RecordController::addRecord([
-                    "ip"                => UtilsController::getIp(),
-                    "fs_id"             => $responseDatum["fs_id"] ?? 0,
-                    "filename"          => $responseDatum["filename"],
-                    "user_id"           => $user_id,
-                    "account_id"        => $cookieData["data"]["id"],
-                    "normal_account_id" => 0,
-                    "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
-                    "ua"                => $ua,
-                    "url"               => $responseDatum["url"]
+                    "ip"         => UtilsController::getIp(),
+                    "fs_id"      => FileList::query()->firstWhere([
+                        "surl"  => $responseDatum["surl"],
+                        "pwd"   => $responseDatum["pwd"],
+                        "fs_id" => $responseDatum["fs_id"]
+                    ])["id"],
+                    "url"        => $responseDatum["url"],
+                    "ua"         => $ua,
+                    "user_id"    => $user_id ?? null,
+                    "token_id"   => $token_id ?? null,
+                    "account_id" => $cookieData["data"]["id"]
                 ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 UtilsController::sendMail("有账户被风控,账号ID:" . $responseDatum["cookie_id"]);
@@ -600,7 +617,20 @@ class ParseController extends Controller
             }
         }
 
-        return ResponseController::success($responseData);
+        return ResponseController::success(
+            collect($responseData)->map(function ($v) use ($ua) {
+                $arr = [
+                    "url"      => $v["url"],
+                    "filename" => $v["filename"],
+                    "fs_id"    => $v["fs_id"],
+                    "ua"       => $ua
+                ];
+
+                if (str_contains($v["url"], "http") && isset($v["urls"])) $arr["urls"] = $v["urls"];
+
+                return $arr;
+            })
+        );
     }
 
     public function getDownloadLinksByShare(Request $request)
@@ -611,7 +641,9 @@ class ParseController extends Controller
             "shareid"  => "required|numeric",
             "fs_ids"   => "required|array",
             "fs_ids.*" => "required|numeric",
-            "url"      => "required|string"
+            "url"      => "required|string",
+            "surl"     => "required|string",
+            "pwd"      => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -669,11 +701,11 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
-            $token   = Token::query()->firstWhere("name", $request["token"]);
-            $user_id = -$token["id"];
+        if (isset($request["token"]) && $request["token"] !== "") {
+            $token    = Token::query()->firstWhere("name", $request["token"]);
+            $token_id = $token["id"];
         } else {
-            $user_id = Auth::user()["id"] ?? -1;
+            $user_id = Auth::user()["id"] ?? 1;
         }
 
         foreach ($responseData as $responseDatum) {
@@ -684,22 +716,24 @@ class ParseController extends Controller
                            "last_use_at" => date("Y-m-d H:i:s")
                        ]);
 
-                if (config("94list.token_mode") && isset($token) && $token["expired_at"] === null) {
+                if (isset($token) && $token["expired_at"] === null) {
                     $token->update([
                         "expired_at" => now()->addDays($token["day"])
                     ]);
                 }
 
                 RecordController::addRecord([
-                    "ip"                => UtilsController::getIp(),
-                    "fs_id"             => $responseDatum["fs_id"] ?? 0,
-                    "filename"          => $responseDatum["filename"],
-                    "user_id"           => $user_id,
-                    "account_id"        => $responseDatum["cookie_id"],
-                    "normal_account_id" => 0,
-                    "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
-                    "ua"                => $ua,
-                    "url"               => $responseDatum["url"]
+                    "ip"         => UtilsController::getIp(),
+                    "fs_id"      => FileList::query()->firstWhere([
+                        "surl"  => $responseDatum["surl"],
+                        "pwd"   => $responseDatum["pwd"],
+                        "fs_id" => $responseDatum["fs_id"]
+                    ])["id"],
+                    "url"        => $responseDatum["url"],
+                    "ua"         => $ua,
+                    "user_id"    => $user_id ?? null,
+                    "token_id"   => $token_id ?? null,
+                    "account_id" => $responseDatum["cookie_id"]
                 ]);
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 UtilsController::sendMail("有账户被风控,账号ID:" . $responseDatum["cookie_id"]);
@@ -714,12 +748,18 @@ class ParseController extends Controller
         }
 
         return ResponseController::success(
-            collect($responseData)->map(fn($v) => [
-                "url"      => $v["url"],
-                "urls"     => $v["urls"] ?? $v["url"],
-                "filename" => $v["filename"],
-                "fs_id"    => $v["fs_id"]
-            ])
+            collect($responseData)->map(function ($v) use ($ua) {
+                $arr = [
+                    "url"      => $v["url"],
+                    "filename" => $v["filename"],
+                    "fs_id"    => $v["fs_id"],
+                    "ua"       => $ua
+                ];
+
+                if (str_contains($v["url"], "http") && isset($v["urls"])) $arr["urls"] = $v["urls"];
+
+                return $arr;
+            })
         );
     }
 
@@ -777,9 +817,9 @@ class ParseController extends Controller
         if ($response["code"] !== 200) return ResponseController::errorFromMainServer($response["message"] ?? "未知原因");
         $responseData = $response["data"];
 
-        if (config("94list.token_mode") && isset($request["token"]) && $request["token"] !== "") {
-            $token   = Token::query()->firstWhere("name", $request["token"]);
-            $user_id = -$token["id"];
+        if (isset($request["token"]) && $request["token"] !== "") {
+            $token    = Token::query()->firstWhere("name", $request["token"]);
+            $token_id = $token["id"];
         } else {
             $user_id = Auth::user()["id"] ?? -1;
         }
@@ -788,7 +828,7 @@ class ParseController extends Controller
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
                 $account = Account::query()->find($responseDatum["cookie_id"]);
 
-                if (str_contains($responseDatum["url"], "qdall01")) {
+                if ($parse_mode === 4 && str_contains($responseDatum["url"], "qdall01")) {
                     $responseDatum["url"] = "账号被限速";
 
                     $account->update([
@@ -806,15 +846,17 @@ class ParseController extends Controller
                     }
 
                     RecordController::addRecord([
-                        "ip"                => UtilsController::getIp(),
-                        "fs_id"             => $responseDatum["fs_id"] ?? 0,
-                        "filename"          => $responseDatum["filename"],
-                        "user_id"           => $user_id,
-                        "account_id"        => $responseDatum["cookie_id"],
-                        "normal_account_id" => 0,
-                        "size"              => FileList::query()->firstWhere("fs_id", $responseDatum["fs_id"] ?? 0)["size"] ?? 0,
-                        "ua"                => $ua,
-                        "url"               => $responseDatum["url"]
+                        "ip"         => UtilsController::getIp(),
+                        "fs_id"      => FileList::query()->firstWhere([
+                            "surl"  => $responseDatum["surl"],
+                            "pwd"   => $responseDatum["pwd"],
+                            "fs_id" => $responseDatum["fs_id"]
+                        ])["id"],
+                        "url"        => $responseDatum["url"],
+                        "ua"         => $ua,
+                        "user_id"    => $user_id ?? null,
+                        "token_id"   => $token_id ?? null,
+                        "account_id" => $responseDatum["cookie_id"]
                     ]);
                 }
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
@@ -830,11 +872,12 @@ class ParseController extends Controller
         }
 
         return ResponseController::success(
-            collect($responseData)->map(function ($v) {
+            collect($responseData)->map(function ($v) use ($ua) {
                 $arr = [
                     "url"      => $v["url"],
                     "filename" => $v["filename"],
-                    "fs_id"    => $v["fs_id"]
+                    "fs_id"    => $v["fs_id"],
+                    "ua"       => $ua
                 ];
 
                 if (str_contains($v["url"], "http") && isset($v["urls"])) $arr["urls"] = $v["urls"];

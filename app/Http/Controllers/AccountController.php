@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
-use App\Models\Record;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -55,7 +55,7 @@ class AccountController extends Controller
             return ResponseController::networkError("获取百度账户信息");
         }
 
-        if ($response["errmsg"] === "Invalid Bduss") return ResponseController::accountExpired();
+        if (isset($response["errmsg"]) && $response["errmsg"] === "Invalid Bduss") return ResponseController::accountExpired();
         return $response ? ResponseController::success($response) : ResponseController::getAccountInfoFailed();
     }
 
@@ -77,7 +77,7 @@ class AccountController extends Controller
             return ResponseController::networkError("获取SVIP到期时间");
         }
 
-        if ($response["errmsg"] === "Invalid Bduss") return ResponseController::accountExpired();
+        if (isset($response["errmsg"]) && $response["errmsg"] === "Invalid Bduss") return ResponseController::accountExpired();
         return $response ? ResponseController::success($response) : ResponseController::getSvipEndTimeFailed();
     }
 
@@ -100,7 +100,7 @@ class AccountController extends Controller
 
             // 百度漏洞 svip到期后依然可用 #87
             if (isset($svipEndAtData["data"]["reminder"]["svip"])) {
-                $svip_end_at = ($svipEndAtData["data"]["currenttime"] ?? 0) + ($svipEndAtData["data"]["reminder"]["svip"]["leftseconds"] ?? 0);
+                $svip_end_at = Carbon::createFromTimestamp(($svipEndAtData["data"]["currenttime"] ?? 0) + ($svipEndAtData["data"]["reminder"]["svip"]["leftseconds"] ?? 0));
                 if ($svip_end_at < now()) $switch = 0;
             } else {
                 $vip_type = "假超级会员";
@@ -112,7 +112,7 @@ class AccountController extends Controller
             "cookie"      => $cookie,
             "vip_type"    => $vip_type,
             "switch"      => $switch ?? 1,
-            "svip_end_at" => $svip_end_at ?? null
+            "svip_end_at" => isset($svip_end_at) ? $svip_end_at->format('Y-m-d H:i:s.u') : null
         ]);
     }
 

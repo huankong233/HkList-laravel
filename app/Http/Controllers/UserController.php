@@ -104,7 +104,7 @@ class UserController extends Controller
             "username"    => $request["username"],
             "password"    => Hash::make($request["password"]),
             "role"        => $request["role"],
-            "inv_code_id" => $request["inv_code_id"] ?? 1
+            "inv_code_id" => $request["inv_code_id"] ?? 2
         ]);
 
         return ResponseController::success();
@@ -121,6 +121,8 @@ class UserController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
+        if ($user_id === "1") return ResponseController::userCanNotBeUpdated("游客不能被更新");
+
         $user = User::query()->find($user_id);
         if (!$user) return ResponseController::userNotExists();
 
@@ -130,7 +132,7 @@ class UserController extends Controller
         $inv_code = InvCode::query()->find($request["inv_code_id"]);
         if (!$inv_code) return ResponseController::invCodeNotExists();
 
-        if ($user_id === "1") $request["role"] = "admin";
+        if ($user_id === "2") $request["role"] = "admin";
 
         $user->update([
             "username"    => $request["username"],
@@ -150,6 +152,8 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
+
+        if (in_array(1, $request["user_ids"]) || in_array(2, $request["user_ids"])) return ResponseController::userCanNotBeRemoved("自带用户不能删除");
 
         User::query()->whereIn("id", $request["user_ids"])->delete();
 

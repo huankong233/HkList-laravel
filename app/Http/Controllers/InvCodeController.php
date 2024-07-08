@@ -90,13 +90,13 @@ class InvCodeController extends Controller
         $invCode = InvCode::query()->find($inv_code_id);
         if (!$invCode) return ResponseController::invCodeNotExists();
 
-        if ($inv_code_id === "1") {
+        if (in_array($inv_code_id, ["1", "2"])) {
             $request["name"] = $invCode["name"];
         } else {
             $InvCode = InvCode::query()->firstWhere("name", $request["name"]);
             if ($InvCode && $invCode["id"] !== $InvCode["id"]) return ResponseController::invCodeExists();
         }
-        
+
         $group = Group::query()->find($request["group_id"]);
         if (!$group) return ResponseController::groupNotExists();
 
@@ -118,7 +118,7 @@ class InvCodeController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        if (in_array(1, $request["inv_code_ids"])) return ResponseController::invCodeCanNotBeRemoved("自带邀请码禁止删除");
+        if (in_array(1, $request["inv_code_ids"]) || in_array(2, $request["inv_code_ids"])) return ResponseController::invCodeCanNotBeRemoved("自带邀请码禁止删除");
 
         InvCode::query()->whereIn("id", $request["inv_code_ids"])->delete();
 

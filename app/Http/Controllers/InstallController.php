@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class InstallController extends Controller
@@ -111,7 +112,8 @@ class InstallController extends Controller
             if (Schema::hasTable('file_lists')) Schema::drop('file_lists');
             Schema::create("file_lists", function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger("share_id");
+                $table->string("surl");
+                $table->string("pwd");
                 $table->unsignedBigInteger("fs_id");
                 $table->unsignedBigInteger("size");
                 $table->string("filename");
@@ -209,14 +211,26 @@ class InstallController extends Controller
             ]);
 
             InvCode::query()->create([
+                "group_id"  => 1,
+                "name"      => "游客分组邀请码",
+                "can_count" => 0
+            ]);
+
+            InvCode::query()->create([
                 "group_id"  => 2,
                 "name"      => "默认分组邀请码",
                 "can_count" => 0
             ]);
 
-            // 添加用户
             User::query()->create([
                 "inv_code_id" => 1,
+                "username"    => "游客",
+                "password"    => Hash::make(Str::random(32)),
+                "role"        => "user"
+            ]);
+
+            User::query()->create([
+                "inv_code_id" => 2,
                 "username"    => "admin",
                 "password"    => Hash::make("admin"),
                 "role"        => "admin"
