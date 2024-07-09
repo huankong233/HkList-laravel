@@ -338,4 +338,9 @@ class ResponseController extends Controller
     {
         return self::response(10060, 403, "用户不能被更新,原因:$reason");
     }
+
+    public static function isProcessing()
+    {
+        return self::response(10061, 403, "正在解析中，請勿重複請求");
+    }
 }

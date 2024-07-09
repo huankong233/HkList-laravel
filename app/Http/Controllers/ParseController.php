@@ -14,6 +14,7 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -459,6 +460,17 @@ class ParseController extends Controller
     }
 
     public function getDownloadLinks(Request $request)
+    {
+        $ip           = UtilsController::getIp();
+        $isProcessing = Cache::get($ip) ?? false;
+        if ($isProcessing) return ResponseController::isProcessing();
+        Cache::put($ip, true);
+        $res = self::_getDownloadLinks($request);
+        Cache::put(UtilsController::getIp(), false);
+        return $res;
+    }
+
+    public function _getDownloadLinks(Request $request)
     {
         $validator = Validator::make($request->all(), [
             "fs_ids"   => "required|array",
