@@ -821,7 +821,7 @@ class ParseController extends Controller
             $token    = Token::query()->firstWhere("name", $request["token"]);
             $token_id = $token["id"];
         } else {
-            $user_id = Auth::user()["id"] ?? -1;
+            $user_id = Auth::user()["id"] ?? 1;
         }
 
         foreach ($responseData as &$responseDatum) {
