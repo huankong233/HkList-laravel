@@ -13,7 +13,6 @@ class Account extends Model
 
     protected $fillable = [
         "baidu_name",
-        "netdisk_name",
         "cookie",
         "vip_type",
         "switch",
@@ -22,4 +21,9 @@ class Account extends Model
         "svip_end_at",
         "last_use_at"
     ];
+
+    public function records()
+    {
+        return $this->hasMany(Record::class)->withTrashed();
+    }
 }

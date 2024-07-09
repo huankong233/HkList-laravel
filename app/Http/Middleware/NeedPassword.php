@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Controllers\v1\ResponseController;
+use App\Http\Controllers\ResponseController;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,8 +22,7 @@ class NeedPassword
         if ($passwordConfig === '') return $next($request);
 
         $password = $request['password'];
-        if ($password === null) return ResponseController::parsePasswordError();
-        if ($password !== $passwordConfig) return ResponseController::parsePasswordError();
+        if ($password === null || $password !== $passwordConfig) return ResponseController::parsePasswordError();
 
         return $next($request);
     }

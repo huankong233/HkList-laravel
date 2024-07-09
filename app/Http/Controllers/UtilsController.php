@@ -25,12 +25,12 @@ class UtilsController extends Controller
         return $ip;
     }
 
-    public static function sendMail($messageText)
+    public static function sendMail($messageText, $subject = "有账户过期了~")
     {
         if (!config("mail.switch")) return;
         try {
-            Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t$messageText", function ($message) {
-                $message->to(config("mail.to.address"))->subject("有账户过期了~");
+            Mail::raw("亲爱的" . config("mail.to.name") . ":\n\t$messageText", function ($message) use ($subject) {
+                $message->to(config("mail.to.address"))->subject($subject);
             });
         } catch (Exception $e) {
             // 处理异常

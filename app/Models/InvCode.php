@@ -12,9 +12,14 @@ class InvCode extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        "group_id",
         "name",
-        "can_count",
         "use_count",
-        "group_id"
+        "can_count",
     ];
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class)->withTrashed();
+    }
 }

@@ -12,12 +12,19 @@ class User extends Authenticatable
     use SoftDeletes;
 
     protected $fillable = [
+        "inv_code_id",
         "username",
         "password",
-        "role",
-        "group_id",
-        "inv_code_id"
+        "role"
     ];
 
+    public function inv_code()
+    {
+        return $this->belongsTo(InvCode::class)->withTrashed();
+    }
 
+    public function group()
+    {
+        return $this->hasOneThrough(Group::class, InvCode::class, "id", "id", "inv_code_id", "group_id")->withTrashed()->withTrashedParents();
+    }
 }

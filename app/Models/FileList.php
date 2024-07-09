@@ -10,8 +10,11 @@ class FileList extends Model
     use HasFactory;
 
     protected $fillable = [
+        "surl",
+        "pwd",
         "fs_id",
         "size",
+        "filename",
         "md5"
     ];
 }

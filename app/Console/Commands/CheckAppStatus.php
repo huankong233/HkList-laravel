@@ -80,8 +80,12 @@ class CheckAppStatus extends Command
         $this->info("完成导入容器版本源码");
 
         $this->info("开始导入sqlite数据库");
-        if (File::exists($bak_db_file)) File::copy($bak_db_file, $www_db_file);
-        $this->info("完成导入sqlite数据库");
+        if (File::exists($bak_db_file)){
+          File::copy($bak_db_file, $www_db_file);
+          $this->info("完成导入sqlite数据库");
+        }else{
+          $this->info("取消导入sqlite数据库: 数据库不存在");
+        }
 
         $this->info("开始导入配置文件");
         // 删除配置文件
