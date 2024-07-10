@@ -311,7 +311,7 @@ class ParseController extends Controller
                              "user_id" => Auth::check() ? Auth::user()["id"] : 1,
                              "ip"      => UtilsController::getIp()
                          ])
-                         ->whereDate("created_at", now())
+                         ->whereDate("records.created_at", now())
                          ->leftJoin("file_lists", "file_lists.id", "=", "records.fs_id")
                          ->selectRaw("SUM(size) as size,COUNT(*) as count")
                          ->first();
