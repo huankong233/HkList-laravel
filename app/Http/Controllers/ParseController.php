@@ -287,14 +287,18 @@ class ParseController extends Controller
             // 检查是否已经过期
             if ($token["expired_at"] !== null && $token["expired_at"] < now()) return ResponseController::TokenExpired();
 
-            $records = Record::withTrashed()->where("token_id", $token["id"])->with("file")->get();
+            $records = Record::withTrashed()
+                             ->where("token_id", $token["id"])
+                             ->leftJoin("file_lists", "file_lists.id", "=", "records.fs_id")
+                             ->selectRaw("SUM(size) as size,COUNT(*) as count")
+                             ->first();
 
-            if ($records->count() >= $token["count"] || $records->sum("file.size") >= $token["size"] * 1073741824) return ResponseController::TokenQuotaHasBeenUsedUp();
+            if ($records["count"] >= $token["count"] || $records["size"] >= $token["size"] * 1073741824) return ResponseController::TokenQuotaHasBeenUsedUp();
 
             return ResponseController::success([
                 "group_name" => $token["name"],
-                "count"      => $token["count"] - $records->count(),
-                "size"       => $token["size"] * 1073741824 - $records->sum("file.size"),
+                "count"      => $token["count"] - $records["count"],
+                "size"       => $token["size"] * 1073741824 - $records["size"],
                 "expired_at" => $token["expired_at"] ?? "未使用"
             ]);
         }
@@ -303,18 +307,21 @@ class ParseController extends Controller
         $group = Group::query()->find(Auth::check() ? InvCode::query()->find(Auth::user()["inv_code_id"])["group_id"] : 1);
 
         $records = Record::withTrashed()
-                         ->where("user_id", Auth::check() ? Auth::user()["id"] : 1)
-                         ->where("ip", UtilsController::getIp())
+                         ->where([
+                             "user_id" => Auth::check() ? Auth::user()["id"] : 1,
+                             "ip"      => UtilsController::getIp()
+                         ])
                          ->whereDate("created_at", now())
-                         ->with("file")
-                         ->get();
+                         ->leftJoin("file_lists", "file_lists.id", "=", "records.fs_id")
+                         ->selectRaw("SUM(size) as size,COUNT(*) as count")
+                         ->first();
 
-        if ($records->count() >= $group["count"] || $records->sum("file.size") >= $group["size"] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
+        if ($records["count"] >= $group["count"] || $records["size"] >= $group["size"] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
 
         return ResponseController::success([
             "group_name" => $group["name"],
-            "count"      => $group["count"] - $records->count(),
-            "size"       => $group["size"] * 1073741824 - $records->sum("file.size")
+            "count"      => $group["count"] - $records["count"],
+            "size"       => $group["size"] * 1073741824 - $records["size"]
         ]);
     }
 
