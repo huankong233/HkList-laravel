@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Token;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -13,7 +12,23 @@ class TokenController extends Controller
 {
     public function getTokens(Request $request)
     {
-        $tokens = Token::query()->paginate($request["size"]);
+        $tokens = Token::query()
+                       ->withCount([
+                           'records as total_count',
+                           'records as today_count' => function ($query) {
+                               $query->whereDate('created_at', Carbon::today());
+                           }
+                       ])
+                       ->withSum([
+                           'records as total_size' => function ($query) {
+                               $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id');
+                           },
+                           'records as today_size' => function ($query) {
+                               $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
+                                     ->whereDate('records.created_at', Carbon::today());
+                           }
+                       ], "file_lists.size")
+                       ->paginate($request["size"]);
         return ResponseController::success($tokens);
     }
 

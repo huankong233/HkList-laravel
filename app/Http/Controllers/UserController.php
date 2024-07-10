@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InvCode;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -77,7 +78,25 @@ class UserController extends Controller
 
     public function getUsers(Request $request)
     {
-        $users = User::query()->with(["inv_code", "group"])->paginate($request["size"]);
+        $users = User::query()
+                     ->with(["inv_code", "group"])
+                     ->withCount([
+                         'records as total_count',
+                         'records as today_count' => function ($query) {
+                             $query->whereDate('created_at', Carbon::today());
+                         }
+                     ])
+                     ->withSum([
+                         'records as total_size' => function ($query) {
+                             $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id');
+                         },
+                         'records as today_size' => function ($query) {
+                             $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
+                                   ->whereDate('records.created_at', Carbon::today());
+                         }
+                     ], "file_lists.size")
+                     ->paginate($request["size"]);
+
         return ResponseController::success($users);
     }
 

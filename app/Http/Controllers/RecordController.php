@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Record;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -33,16 +34,25 @@ class RecordController extends Controller
 
     public function getRecordsCount()
     {
-        $today = Record::query()->with(["file"])->whereDate("created_at", date("Y-m-d"))->get();
-        $total = Record::query()->with(["file"])->get();
+        $total = Record::query()
+                       ->leftJoin("file_lists", "records.fs_id", "file_lists.id")
+                       ->selectRaw("SUM(size) as size,COUNT(*) as count")
+                       ->first();
+
+        $today = Record::query()
+                       ->leftJoin("file_lists", "records.fs_id", "file_lists.id")
+                       ->whereDate("records.created_at", Carbon::today())
+                       ->selectRaw("SUM(size) as size,COUNT(*) as count")
+                       ->first();
+
         return ResponseController::success([
             "today" => [
-                "count" => $today->count(),
-                "size"  => $today->sum("file.size"),
+                "count" => $today["count"],
+                "size"  => $today["size"]
             ],
             "total" => [
-                "count" => $total->count(),
-                "size"  => $total->sum("file.size"),
+                "count" => $total["count"],
+                "size"  => $total["size"]
             ]
         ]);
     }

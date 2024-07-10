@@ -44,7 +44,7 @@ class ParseController extends Controller
 
     public function getProvinceFromIP($ip)
     {
-        if (!config("94list.limit_prov")) return null;
+        if (!config("94list.limit_prov")) return "上海市";
 
         $prov = self::_getProvinceFromIP($ip);
         if ($prov === null || $prov === false) return $prov;
@@ -287,14 +287,14 @@ class ParseController extends Controller
             // 检查是否已经过期
             if ($token["expired_at"] !== null && $token["expired_at"] < now()) return ResponseController::TokenExpired();
 
-            $records = Record::withTrashed()->where("token_id", $token["id"])->get();
+            $records = Record::withTrashed()->where("token_id", $token["id"])->with("file")->get();
 
-            if ($records->count() >= $token["count"] || $records->sum("size") >= $token["size"] * 1073741824) return ResponseController::TokenQuotaHasBeenUsedUp();
+            if ($records->count() >= $token["count"] || $records->sum("file.size") >= $token["size"] * 1073741824) return ResponseController::TokenQuotaHasBeenUsedUp();
 
             return ResponseController::success([
                 "group_name" => $token["name"],
                 "count"      => $token["count"] - $records->count(),
-                "size"       => $token["size"] * 1073741824 - $records->sum("size"),
+                "size"       => $token["size"] * 1073741824 - $records->sum("file.size"),
                 "expired_at" => $token["expired_at"] ?? "未使用"
             ]);
         }
@@ -306,18 +306,19 @@ class ParseController extends Controller
                          ->where("user_id", Auth::check() ? Auth::user()["id"] : 1)
                          ->where("ip", UtilsController::getIp())
                          ->whereDate("created_at", now())
+                         ->with("file")
                          ->get();
 
-        if ($records->count() >= $group["count"] || $records->sum("size") >= $group["size"] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
+        if ($records->count() >= $group["count"] || $records->sum("file.size") >= $group["size"] * 1073741824) return ResponseController::groupQuotaHasBeenUsedUp();
 
         return ResponseController::success([
             "group_name" => $group["name"],
             "count"      => $group["count"] - $records->count(),
-            "size"       => $group["size"] * 1073741824 - $records->sum("size")
+            "size"       => $group["size"] * 1073741824 - $records->sum("file.size")
         ]);
     }
 
-    public function decodeSceKey($seckey)
+    public function decodeSecKey($seckey)
     {
         $seckey = str_replace("-", "+", $seckey);
         $seckey = str_replace("~", "=", $seckey);
@@ -409,7 +410,7 @@ class ParseController extends Controller
             0                     => ResponseController::success([
                 "uk"      => $response["data"]["uk"],
                 "shareid" => $response["data"]["shareid"],
-                "randsk"  => self::decodeSceKey($response["data"]["seckey"]),
+                "randsk"  => self::decodeSecKey($response["data"]["seckey"]),
                 "list"    => $response["data"]["list"]
             ]),
             "mis_105"             => ResponseController::fileNotExists(),

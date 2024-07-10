@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use App\Models\InvCode;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -13,11 +12,11 @@ class InvCodeController extends Controller
 {
     public function getInvCodes(Request $request)
     {
-        $InvCodes = InvCode::query()->with("group")->paginate($request["size"]);
-        $InvCodes->getCollection()->transform(function ($item) {
-            $item["use_count"] = User::query()->where("inv_code_id", $item["id"])->count();
-            return $item;
-        });
+        $InvCodes = InvCode::query()
+                           ->with("group")
+                           ->withCount("user as use_count")
+                           ->paginate($request["size"]);
+
         return ResponseController::success($InvCodes);
     }
 

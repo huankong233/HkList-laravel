@@ -22,4 +22,9 @@ class InvCode extends Model
     {
         return $this->belongsTo(Group::class)->withTrashed();
     }
+
+    public function user()
+    {
+        return $this->hasMany(User::class)->withTrashed();
+    }
 }
