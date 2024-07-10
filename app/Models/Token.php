@@ -18,4 +18,9 @@ class Token extends Model
         "day",
         "expired_at"
     ];
+
+    public function records()
+    {
+        return $this->hasMany(Record::class)->withTrashed();
+    }
 }

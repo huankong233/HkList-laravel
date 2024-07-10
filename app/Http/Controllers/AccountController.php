@@ -16,23 +16,22 @@ class AccountController extends Controller
 {
     public function getAccounts(Request $request)
     {
-        $accounts = Account::query()->with(["records.file"])->paginate($request["size"]);
-
-        $accounts->getCollection()->transform(function ($account) {
-            $todaySize = 0;
-            $totalSize = 0;
-
-            foreach ($account->records as $record) {
-                $fileSize  = $record["file"]["size"] ?? 0;
-                $totalSize += $fileSize;
-                if ($record->created_at->isToday()) $todaySize += $fileSize;
-            }
-
-            $account["today_size"] = $todaySize;
-            $account["total_size"] = $totalSize;
-
-            return $account;
-        });
+        $accounts = Account::query()
+                           ->withCount([
+                               'records as total_count',
+                               'records as today_count' => function ($query) {
+                                   $query->whereDate('created_at', Carbon::today());
+                               }
+                           ])
+                           ->withSum([
+                               'records as total_size' => function ($query) {
+                                   $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id');
+                               },
+                               'records as today_size' => function ($query) {
+                                   $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
+                                         ->whereDate('records.created_at', Carbon::today());
+                               }
+                           ], "file_lists.size")->paginate($request["size"]);
 
         return ResponseController::success($accounts);
     }
