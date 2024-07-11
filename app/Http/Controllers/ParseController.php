@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\InvCode;
 use App\Models\Record;
 use App\Models\Token;
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -463,12 +464,17 @@ class ParseController extends Controller
 
     public function getDownloadLinks(Request $request)
     {
-        $ip           = UtilsController::getIp();
-        $isProcessing = Cache::get($ip) ?? false;
+        set_time_limit(0);
+        $id           = $request["token"] !== "" ? $request["token"] : (Auth::check() ? Auth::user()["id"] : UtilsController::getIp());
+        $isProcessing = Cache::get($id, false);
         if ($isProcessing) return ResponseController::isProcessing();
-        Cache::put($ip, true);
-        $res = self::_getDownloadLinks($request);
-        Cache::put(UtilsController::getIp(), false);
+        Cache::put($id, true);
+        try {
+            $res = self::_getDownloadLinks($request);
+        } catch (Exception $exception) {
+            $res = ResponseController::unknownError($exception->getMessage());
+        }
+        Cache::put($id, false);
         return $res;
     }
 

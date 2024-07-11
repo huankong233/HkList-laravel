@@ -341,6 +341,11 @@ class ResponseController extends Controller
 
     public static function isProcessing()
     {
-        return self::response(10061, 403, "正在解析中，請勿重複請求");
+        return self::response(10061, 403, "正在解析中，請勿重複請求，如果多次提示請嘗試登陸或使用卡密");
+    }
+
+    public static function unknownError($message)
+    {
+        return self::response(10062, 500, "未知错误,错误信息:$message");
     }
 }
