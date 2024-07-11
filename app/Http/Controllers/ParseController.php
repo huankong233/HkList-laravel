@@ -465,16 +465,16 @@ class ParseController extends Controller
     public function getDownloadLinks(Request $request)
     {
         set_time_limit(0);
-        $ip           = UtilsController::getIp();
-        $isProcessing = Cache::get($ip, false);
+        $id           = $request["token"] !== "" ? $request["token"] : (Auth::check() ? Auth::user()["id"] : UtilsController::getIp());
+        $isProcessing = Cache::get($id, false);
         if ($isProcessing) return ResponseController::isProcessing();
-        Cache::put($ip, true);
+        Cache::put($id, true);
         try {
             $res = self::_getDownloadLinks($request);
         } catch (Exception $exception) {
             $res = ResponseController::unknownError($exception->getMessage());
         }
-        Cache::put($ip, false);
+        Cache::put($id, false);
         return $res;
     }
 
