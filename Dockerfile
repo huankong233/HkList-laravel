@@ -2,6 +2,7 @@
 FROM composer AS composer
 
 COPY .env.example .env
+RUN rm vendor.zip
 
 # 复制项目源码
 COPY . /app
