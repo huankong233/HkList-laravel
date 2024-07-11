@@ -57,7 +57,7 @@ class ParseController extends Controller
             $res      = $http->get("https://api.qjqq.cn/api/district", ["query" => ["ip" => $ip]]);
             $response = JSON::decode($res->getBody()->getContents());
 
-            if (isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
+            if (isset($response["code"]) && $response["code"] === 200 && isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
                 if (config("94list.limit_cn")) {
                     if ($response["data"]["country"] !== "中国") {
                         return false;
@@ -73,7 +73,7 @@ class ParseController extends Controller
             $res      = $http->get("https://www.ip.cn/api/index", ["query" => ["ip" => $ip, "type" => 1]]);
             $response = JSON::decode($res->getBody()->getContents());
 
-            if (isset($response["address"])) {
+            if (isset($response["rs"]) && $response["rs"] !== 1 && isset($response["address"])) {
                 if (config("94list.limit_cn")) {
                     if (str_contains($response["address"], "中国")) {
                         return false;
@@ -85,27 +85,27 @@ class ParseController extends Controller
         } catch (GuzzleException $e) {
         }
 
-        try {
-            $res      = $http->get("https://api.vore.top/api/IPdata", ["query" => ["ip" => $ip]]);
-            $response = JSON::decode($res->getBody()->getContents());
-
-            if (isset($response["ipinfo"]["cnip"]) && isset($response["ipdata"]["info1"])) {
-                if (config("94list.limit_cn")) {
-                    if (!$response["ipinfo"]["cnip"]) {
-                        return false;
-                    }
-                }
-
-                return $response["ipdata"]["info1"] !== "" ? $response["ipdata"]["info1"] : null;
-            }
-        } catch (GuzzleException $e) {
-        }
+//        try {
+//            $res      = $http->get("https://api.vore.top/api/IPdata", ["query" => ["ip" => $ip]]);
+//            $response = JSON::decode($res->getBody()->getContents());
+//
+//            if (isset($response["ipinfo"]["cnip"]) && isset($response["ipdata"]["info1"])) {
+//                if (config("94list.limit_cn")) {
+//                    if (!$response["ipinfo"]["cnip"]) {
+//                        return false;
+//                    }
+//                }
+//
+//                return $response["ipdata"]["info1"] !== "" ? $response["ipdata"]["info1"] : null;
+//            }
+//        } catch (GuzzleException $e) {
+//        }
 
         try {
             $res      = $http->get("https://qifu.baidu.com/ip/geo/v1/district", ["query" => ["ip" => $ip]]);
             $response = JSON::decode($res->getBody()->getContents());
 
-            if (isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
+            if (isset($response["code"]) && $response["code"] === "Success" && isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
                 if (config("94list.limit_cn")) {
                     if ($response["data"]["country"] !== "中国") {
                         return false;
