@@ -2,10 +2,10 @@
 FROM composer AS composer
 
 COPY .env.example .env
-RUN rm vendor.zip
 
 # 复制项目源码
 COPY . /app
+RUN rm vendor.zip
 
 # 开始构建
 RUN composer install --optimize-autoloader --no-interaction --no-progress
