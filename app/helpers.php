@@ -64,6 +64,6 @@ if (!function_exists("getEnvFile")) {
         return collect(explode("\n", File::get($env_path)))
             ->filter(fn($line) => $line)
             ->map(fn($line) => explode("=", $line))
-            ->mapWithKeys(fn($item) => [$item[0] => $item[1]]);
+            ->mapWithKeys(fn($item) => [$item[0] => $item[1]] ?? "");
     }
 }
