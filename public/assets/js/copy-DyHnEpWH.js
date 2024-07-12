@@ -1,0 +1,1 @@
+const c=async(t,a="复制成功")=>{if(navigator.clipboard)try{await navigator.clipboard.writeText(t)}catch{const e=document.createElement("textarea");e.value=t,document.body.appendChild(e),e.select(),document.execCommand("copy"),document.body.removeChild(e)}ElementPlus.ElMessage({message:a,type:"success"})};export{c};
