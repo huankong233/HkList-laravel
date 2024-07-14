@@ -627,7 +627,7 @@ class ParseController extends Controller
                     if (isset($token) && $token["expired_at"] === null) {
                         $token->update([
                             "expired_at" => now()->addDays($token["day"]),
-                            "ip"         => UtilsController::getIp()
+                            "ip"         => config("94list.token_bind_ip") ? UtilsController::getIp() : null
                         ]);
                     }
 

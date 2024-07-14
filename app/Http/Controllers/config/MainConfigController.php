@@ -46,6 +46,7 @@ class MainConfigController extends Controller
             "limit_cn"          => "required|bool",
             "limit_prov"        => "required|bool",
             "show_login_button" => "required|bool",
+            "token_bind_ip"     => "required|bool",
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -73,6 +74,7 @@ class MainConfigController extends Controller
         $update["_94LIST_LIMIT_CN"]            = $request["limit_cn"];
         $update["_94LIST_LIMIT_PROV"]          = $request["limit_prov"];
         $update["_94LIST_SHOW_LOGIN_BUTTON"]   = $request["show_login_button"];
+        $update["_94LIST_TOKEN_BIND_IP"]       = $request["token_bind_ip"];
 
         if ($request["parse_mode"] === 4) $update["_94LIST_USER_AGENT"] = "netdisk;P2SP;3.0.10.22";
 
