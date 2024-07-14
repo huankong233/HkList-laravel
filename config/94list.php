@@ -27,4 +27,6 @@ return [
     "button_link"     => env("_94LIST_BUTTON_LINK", ""),
     "limit_cn"        => (bool)env("_94LIST_LIMIT_CN", true),
     "limit_prov"      => (bool)env("_94LIST_LIMIT_PROV", true),
+
+    "show_login_button" => (bool)env("_94LIST_SHOW_LOGIN_BUTTON", true)
 ];

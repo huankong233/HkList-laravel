@@ -109,7 +109,7 @@ class TokenController extends Controller
             "count"      => $request["count"],
             "size"       => $request["size"],
             "day"        => $request["day"],
-            "expired_at" => $request["expired_at"]
+            "expired_at" => $request["expired_at"] ? Carbon::create($request["expired_at"])->addHours(8)->format("Y-m-d H:i:s") : null
         ]);
 
         return ResponseController::success();

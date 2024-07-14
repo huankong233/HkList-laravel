@@ -25,26 +25,27 @@ class MainConfigController extends Controller
     public function updateConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "sleep"            => "required|numeric",
-            "max_once"         => "required|numeric",
-            "password"         => "string",
-            "announce"         => "string",
-            "user_agent"       => "required|string",
-            "need_inv_code"    => "required|bool",
-            "whitelist_mode"   => "required|bool",
-            "debug"            => "required|bool",
-            "name"             => "required|string",
-            "main_server"      => "string",
-            "code"             => "string",
-            "show_copyright"   => "required|bool",
-            "custom_copyright" => "string",
-            "parse_mode"       => "required|numeric",
-            "max_filesize"     => "required|numeric",
-            "min_single_file"  => "required|numeric",
-            "token_mode"       => "required|bool",
-            "button_link"      => "string",
-            "limit_cn"         => "required|bool",
-            "limit_prov"       => "required|bool"
+            "sleep"             => "required|numeric",
+            "max_once"          => "required|numeric",
+            "password"          => "string",
+            "announce"          => "string",
+            "user_agent"        => "required|string",
+            "need_inv_code"     => "required|bool",
+            "whitelist_mode"    => "required|bool",
+            "debug"             => "required|bool",
+            "name"              => "required|string",
+            "main_server"       => "string",
+            "code"              => "string",
+            "show_copyright"    => "required|bool",
+            "custom_copyright"  => "string",
+            "parse_mode"        => "required|numeric",
+            "max_filesize"      => "required|numeric",
+            "min_single_file"   => "required|numeric",
+            "token_mode"        => "required|bool",
+            "button_link"       => "string",
+            "limit_cn"          => "required|bool",
+            "limit_prov"        => "required|bool",
+            "show_login_button" => "required|bool",
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -71,6 +72,7 @@ class MainConfigController extends Controller
         $update["_94LIST_BUTTON_LINK"]         = '"' . $request["button_link"] . '"';
         $update["_94LIST_LIMIT_CN"]            = $request["limit_cn"];
         $update["_94LIST_LIMIT_PROV"]          = $request["limit_prov"];
+        $update["_94LIST_SHOW_LOGIN_BUTTON"]   = $request["show_login_button"];
 
         if ($request["parse_mode"] === 4) $update["_94LIST_USER_AGENT"] = "netdisk;P2SP;3.0.10.22";
 

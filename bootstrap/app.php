@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AutoUpdate;
 use App\Http\Middleware\IpFilter;
 use App\Http\Middleware\NeedInstall;
 use App\Http\Middleware\NeedPassword;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
                           'IpFilter'     => IpFilter::class,
                           'NeedInstall'  => NeedInstall::class,
                           'NeedPassword' => NeedPassword::class,
+                          'AutoUpdate'   => AutoUpdate::class,
                       ]);
 
                       $middleware->web(remove: [

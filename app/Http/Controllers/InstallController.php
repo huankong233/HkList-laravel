@@ -158,6 +158,7 @@ class InstallController extends Controller
                 $table->unsignedBigInteger("count");
                 $table->unsignedBigInteger("size");
                 $table->unsignedBigInteger("day");
+                $table->string("ip")->nullable();
                 $table->timestamp("expired_at")->nullable();
                 $table->timestamps();
                 $table->softDeletes();

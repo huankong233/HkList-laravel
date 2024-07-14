@@ -85,7 +85,7 @@ class RecordController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        Record::query()->whereIn("id", $request->record_ids)->delete();
+        Record::query()->whereIn("id", $request->record_ids)->forceDelete();
 
         return ResponseController::success();
     }

@@ -49,7 +49,7 @@ class GroupController extends Controller
         $group = Group::query()->find($group_id);
         if (!$group) return ResponseController::groupNotExists();
 
-        if (in_array($group_id, [1, 2])) {
+        if ($group_id === "1") {
             $request["name"] = $group["name"];
         } else {
             $Group = Group::query()->firstWhere("name", $request["name"]);
@@ -74,7 +74,7 @@ class GroupController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        if (in_array([1, 2], $request["group_ids"])) return ResponseController::groupCanNotBeRemoved("自带分组禁止删除");
+        if (in_array(1, $request["group_ids"]) || in_array(2, $request["group_ids"])) return ResponseController::groupCanNotBeRemoved("自带分组禁止删除");
 
         Group::query()->whereIn("id", $request["group_ids"])->delete();
 
