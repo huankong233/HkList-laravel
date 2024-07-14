@@ -111,7 +111,7 @@ class AccountController extends Controller
             "cookie"      => $cookie,
             "vip_type"    => $vip_type,
             "switch"      => $switch ?? 1,
-            "svip_end_at" => isset($svip_end_at) ? $svip_end_at->format('Y-m-d H:i:s.u') : null
+            "svip_end_at" => isset($svip_end_at) ? $svip_end_at->format('Y-m-d H:i:s') : null
         ]);
     }
 

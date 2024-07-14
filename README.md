@@ -14,15 +14,30 @@ USDT-TRC20: `TJK9FLAxqQmYU583Qjtof35MpJEu8Xq8iF`
 
 ## 安装方法
 
+### 程序需求: 
+
+- Mysql >= 5.7 
+- PHP >= 8.2
+
+### 注意：
+
 默认账号密码都是 `admin`
 
-### 普通安装
+新版本需要授权使用, 购买联系 [tg](https://t.me/huan_kong)
 
-- 1.解壓 `vendor.zip`
-- 2.設置運行路徑為 `/public`
-- 3.設置偽靜態為 `laravel` , 在寶塔中為 `laravel5`
+接代安装
+
+### 普通安装（宝塔）
+
+- 1.解压 `vendor.zip`
+- 2.设置运行目录为 `/public`
+- 3.设置伪静态为 `laravel5`
 - 4.复制 `.env.example` 并重命名为 `.env`
-- 4.访问页面
+- 5.访问页面安装
+
+#### 注意! 
+
+宝塔自带的 `sqlite` 版本过低需要更新: [更新教程](https://blog.huankong.top/article/5p69qc26/)
 
 ### `docker` 安装
 

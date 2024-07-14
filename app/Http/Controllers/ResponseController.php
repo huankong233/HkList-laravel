@@ -348,4 +348,14 @@ class ResponseController extends Controller
     {
         return self::response(10062, 500, "未知错误,错误信息:$message");
     }
+
+    public static function onlyOneFile()
+    {
+        return self::response(10063, 500, "测试账号请只解析一个文件");
+    }
+
+    public static function TokenIpIsNotMatch()
+    {
+        return self::response(10064, 500, "该卡密已绑定其他ip");
+    }
 }
