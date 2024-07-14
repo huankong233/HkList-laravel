@@ -96,7 +96,7 @@ class TokenController extends Controller
             "size"       => "required|numeric",
             "day"        => "required|numeric",
             "expired_at" => "nullable|date",
-            "ip"         => "string"
+            "ip"         => "nullable|string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
