@@ -624,9 +624,9 @@ class ParseController extends Controller
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
-                    if (isset($token) && $token["expired_at"] === null) {
+                    if (isset($token)) {
                         $token->update([
-                            "expired_at" => now()->addDays($token["day"]),
+                            "expired_at" => $token["expired_at"] === null ? now()->addDays($token["day"]) : $token["expired_at"],
                             "ip"         => config("94list.token_bind_ip") ? UtilsController::getIp() : null
                         ]);
                     }
