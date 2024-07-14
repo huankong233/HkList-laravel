@@ -16,7 +16,8 @@ class Token extends Model
         "count",
         "size",
         "day",
-        "expired_at"
+        "expired_at",
+        "ip"
     ];
 
     public function records()
