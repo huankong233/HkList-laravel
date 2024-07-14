@@ -50,7 +50,8 @@ class TokenController extends Controller
             "name"  => $request["name"],
             "count" => $request["count"],
             "size"  => $request["size"],
-            "day"   => $request["day"]
+            "day"   => $request["day"],
+            "ip"    => null
         ]);
 
         return ResponseController::success();
@@ -79,7 +80,8 @@ class TokenController extends Controller
                 "name"  => $name,
                 "count" => $request["count"],
                 "size"  => $request["size"],
-                "day"   => $request["day"]
+                "day"   => $request["day"],
+                "ip"    => null
             ]);
         }
 
@@ -93,7 +95,8 @@ class TokenController extends Controller
             "count"      => "required|numeric",
             "size"       => "required|numeric",
             "day"        => "required|numeric",
-            "expired_at" => "nullable|date"
+            "expired_at" => "nullable|date",
+            "ip"         => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -109,7 +112,8 @@ class TokenController extends Controller
             "count"      => $request["count"],
             "size"       => $request["size"],
             "day"        => $request["day"],
-            "expired_at" => $request["expired_at"] ? Carbon::create($request["expired_at"])->addHours(8)->format("Y-m-d H:i:s") : null
+            "expired_at" => $request["expired_at"] ? Carbon::create($request["expired_at"])->addHours(8)->format("Y-m-d H:i:s") : null,
+            "ip"         => $request["ip"] === "" ? null : $request["ip"]
         ]);
 
         return ResponseController::success();
