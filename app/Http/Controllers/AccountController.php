@@ -20,7 +20,7 @@ class AccountController extends Controller
                            ->withCount([
                                'records as total_count',
                                'records as today_count' => function ($query) {
-                                   $query->whereDate('created_at', Carbon::today());
+                                   $query->whereDate('created_at', Carbon::today(config("app.timezone")));
                                }
                            ])
                            ->withSum([
@@ -29,7 +29,7 @@ class AccountController extends Controller
                                },
                                'records as today_size' => function ($query) {
                                    $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
-                                         ->whereDate('records.created_at', Carbon::today());
+                                         ->whereDate('records.created_at', Carbon::today(config("app.timezone")));
                                }
                            ], "file_lists.size")->paginate($request["size"]);
 
@@ -99,10 +99,15 @@ class AccountController extends Controller
 
             // 百度漏洞 svip到期后依然可用 #87
             if (isset($svipEndAtData["data"]["reminder"]["svip"])) {
-                $svip_end_at = Carbon::createFromTimestamp(($svipEndAtData["data"]["currenttime"] ?? 0) + ($svipEndAtData["data"]["reminder"]["svip"]["leftseconds"] ?? 0));
-                if ($svip_end_at < now()) $switch = 0;
+                $timestamp   = ($svipEndAtData["data"]["currenttime"] ?? 0) + ($svipEndAtData["data"]["reminder"]["svip"]["leftseconds"] ?? 0);
+                $svip_end_at = Carbon::createFromTimestamp($timestamp, config("app.timezone"));
+                if ($svip_end_at < now()) {
+                    $switch = 0;
+                    $reason = "账号会员已过期";
+                }
             } else {
-                $vip_type = "假超级会员";
+                $switch = 0;
+                $reason = "获取会员到期时间失败";
             }
         }
 
@@ -111,6 +116,7 @@ class AccountController extends Controller
             "cookie"      => $cookie,
             "vip_type"    => $vip_type,
             "switch"      => $switch ?? 1,
+            "reason"      => $reason ?? "",
             "svip_end_at" => isset($svip_end_at) ? $svip_end_at->format('Y-m-d H:i:s') : null
         ]);
     }
@@ -214,7 +220,7 @@ class AccountController extends Controller
                ->whereIn("id", $request["account_ids"])
                ->update([
                    "switch" => $request["switch"],
-                   "reason" => "用戶操作"
+                   "reason" => $request["switch"] ? "" : "用戶操作"
                ]);
 
         return ResponseController::success();

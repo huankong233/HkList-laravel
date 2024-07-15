@@ -83,7 +83,7 @@ class UserController extends Controller
                      ->withCount([
                          'records as total_count',
                          'records as today_count' => function ($query) {
-                             $query->whereDate('created_at', Carbon::today());
+                             $query->whereDate('created_at', Carbon::today(config("app.timezone")));
                          }
                      ])
                      ->withSum([
@@ -92,7 +92,7 @@ class UserController extends Controller
                          },
                          'records as today_size' => function ($query) {
                              $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
-                                   ->whereDate('records.created_at', Carbon::today());
+                                   ->whereDate('records.created_at', Carbon::today(config("app.timezone")));
                          }
                      ], "file_lists.size")
                      ->paginate($request["size"]);

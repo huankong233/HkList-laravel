@@ -16,7 +16,7 @@ class TokenController extends Controller
                        ->withCount([
                            'records as total_count',
                            'records as today_count' => function ($query) {
-                               $query->whereDate('created_at', Carbon::today());
+                               $query->whereDate('created_at', Carbon::today(config("app.timezone")));
                            }
                        ])
                        ->withSum([
@@ -25,7 +25,7 @@ class TokenController extends Controller
                            },
                            'records as today_size' => function ($query) {
                                $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
-                                     ->whereDate('records.created_at', Carbon::today());
+                                     ->whereDate('records.created_at', Carbon::today(config("app.timezone")));
                            }
                        ], "file_lists.size")
                        ->paginate($request["size"]);
@@ -112,7 +112,7 @@ class TokenController extends Controller
             "count"      => $request["count"],
             "size"       => $request["size"],
             "day"        => $request["day"],
-            "expired_at" => $request["expired_at"] ? Carbon::create($request["expired_at"])->addHours(8)->format("Y-m-d H:i:s") : null,
+            "expired_at" => $request["expired_at"] ? Carbon::createFromTimeString($request["expired_at"], config("app.timezone"))->addHours(8)->format("Y-m-d H:i:s") : null,
             "ip"         => $request["ip"] === "" ? null : $request["ip"]
         ]);
 
