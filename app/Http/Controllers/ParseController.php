@@ -605,11 +605,12 @@ class ParseController extends Controller
             $token_id = $token["id"];
             $user_id  = null;
         } else {
+            $token    = null;
             $token_id = null;
             $user_id  = Auth::user()["id"] ?? 1;
         }
 
-        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $token_id, $user_id) {
+        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id) {
             $res = [
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
@@ -635,20 +636,21 @@ class ParseController extends Controller
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
-                    if (isset($token)) {
+                    if ($token) {
                         $token->update([
                             "expired_at" => $token["expired_at"] === null ? now()->addDays($token["day"]) : $token["expired_at"],
                             "ip"         => config("94list.token_bind_ip") ? UtilsController::getIp() : null
                         ]);
                     }
 
-                    $file  = FileList::query()
-                                     ->firstWhere([
-                                         "surl"  => $request["surl"],
-                                         "pwd"   => $request["pwd"],
-                                         "fs_id" => $responseDatum["fs_id"]
-                                     ]);
-                    $fs_id = $file["id"];
+                    $file = FileList::query()
+                                    ->firstWhere([
+                                        "surl"  => $request["surl"],
+                                        "pwd"   => $request["pwd"],
+                                        "fs_id" => $responseDatum["fs_id"]
+                                    ]);
+
+                    $fs_id    = $file["id"];
 
                     RecordController::addRecord([
                         "ip"         => UtilsController::getIp(),

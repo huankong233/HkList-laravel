@@ -20,6 +20,8 @@ class AutoUpdate
     {
         // 1.3.5 迁移 添加卡密ip
         if (!Schema::hasColumn("tokens", "ip")) {
+            Schema::disableForeignKeyConstraints();
+
             Schema::rename("tokens", "tokens_old");
 
             Schema::create("tokens", function (Blueprint $table) {
@@ -50,8 +52,8 @@ class AutoUpdate
                 ]);
             }
 
-            Schema::disableForeignKeyConstraints();
             Schema::drop("tokens_old");
+            if (config("database.default") === "mysql") DB::raw("ALTER TABLE `records` DROP FOREIGN KEY `records_token_id_foreign`; ALTER TABLE `records` ADD CONSTRAINT `records_token_id_foreign` FOREIGN KEY (`token_id`) REFERENCES `tokens`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;");
             Schema::enableForeignKeyConstraints();
         }
 
