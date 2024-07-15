@@ -221,13 +221,13 @@ class ParseController extends Controller
                                   ->where([
                                       "switch"   => 1,
                                       "vip_type" => "超级会员",
-                                      ["svip_end_at", "<", Carbon::now()]
+                                      ["svip_end_at", "<", Carbon::now(config("app.timezone"))]
                                   ])
                                   ->get();
 
-            $updateFailedAccounts = [];
-
             if ($banAccounts->count() !== 0) {
+                $updateFailedAccounts = [];
+
                 // 更新账户状态
                 foreach ($banAccounts as $index => $account) {
                     $updateRes  = AccountController::updateAccountInfo($account["id"]);
@@ -242,7 +242,7 @@ class ParseController extends Controller
                     if ($index < $banAccounts->count() - 1) sleep(1);
                 }
 
-                UtilsController::sendMail("有账户已过期,详见:" . JSON::encode($updateFailedAccounts));
+                if (count($updateFailedAccounts) > 0) UtilsController::sendMail("有账户已过期,详见:" . JSON::encode($updateFailedAccounts));
             }
         }
 
@@ -603,16 +603,27 @@ class ParseController extends Controller
         if (isset($request["token"]) && $request["token"] !== "") {
             $token    = Token::query()->firstWhere("name", $request["token"]);
             $token_id = $token["id"];
+            $user_id  = null;
         } else {
-            $user_id = Auth::user()["id"] ?? 1;
+            $token_id = null;
+            $user_id  = Auth::user()["id"] ?? 1;
         }
 
-        foreach ($responseData as $responseDatum) {
+        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $token_id, $user_id) {
+            $res = [
+                "url"      => $responseDatum["url"],
+                "filename" => $responseDatum["filename"],
+                "fs_id"    => $responseDatum["fs_id"],
+                "ua"       => $ua
+            ];
+
+            if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
+
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
                 $account = Account::query()->find($responseDatum["cookie_id"]);
 
-                if ($parse_mode === 4 && str_contains($responseDatum["url"], "qdall01")) {
-                    $responseDatum["url"] = "账号被限速";
+                if (str_contains($responseDatum["url"], "qdall01")) {
+                    $res["url"] = "账号被限速";
 
                     $account->update([
                         "last_use_at" => date("Y-m-d H:i:s"),
@@ -631,17 +642,21 @@ class ParseController extends Controller
                         ]);
                     }
 
+                    $file  = FileList::query()
+                                     ->firstWhere([
+                                         "surl"  => $request["surl"],
+                                         "pwd"   => $request["pwd"],
+                                         "fs_id" => $responseDatum["fs_id"]
+                                     ]);
+                    $fs_id = $file["id"];
+
                     RecordController::addRecord([
                         "ip"         => UtilsController::getIp(),
-                        "fs_id"      => FileList::query()->firstWhere([
-                            "surl"  => $request["surl"],
-                            "pwd"   => $request["pwd"],
-                            "fs_id" => $responseDatum["fs_id"]
-                        ])["id"],
+                        "fs_id"      => $fs_id,
                         "url"        => $responseDatum["url"],
                         "ua"         => $ua,
-                        "user_id"    => $user_id ?? null,
-                        "token_id"   => $token_id ?? null,
+                        "user_id"    => $user_id,
+                        "token_id"   => $token_id,
                         "account_id" => $responseDatum["cookie_id"]
                     ]);
                 }
@@ -655,21 +670,10 @@ class ParseController extends Controller
                            "reason" => $responseDatum["url"],
                        ]);
             }
-        }
 
-        return ResponseController::success(
-            collect($responseData)->map(function ($v) use ($ua) {
-                $arr = [
-                    "url"      => $v["url"],
-                    "filename" => $v["filename"],
-                    "fs_id"    => $v["fs_id"],
-                    "ua"       => $ua
-                ];
+            return $res;
+        }, $responseData);
 
-                if (str_contains($v["url"], "http") && isset($v["urls"])) $arr["urls"] = $v["urls"];
-
-                return $arr;
-            })
-        );
+        return ResponseController::success($data);
     }
 }
