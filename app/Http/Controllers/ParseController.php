@@ -610,7 +610,9 @@ class ParseController extends Controller
             $user_id  = Auth::user()["id"] ?? 1;
         }
 
-        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id) {
+        $notified = [];
+
+        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$notified) {
             $res = [
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
@@ -620,9 +622,10 @@ class ParseController extends Controller
 
             if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
 
-            if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                $account = Account::query()->find($responseDatum["cookie_id"]);
+            $ck_id   = $responseDatum["cookie_id"];
+            $account = Account::query()->find($ck_id);
 
+            if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
                 if (str_contains($responseDatum["url"], "qdall01")) {
                     $res["url"] = "账号被限速";
 
@@ -632,7 +635,7 @@ class ParseController extends Controller
                         "reason"      => "账号被限速",
                     ]);
 
-                    UtilsController::sendMail("有账户被限速,账号ID:" . $responseDatum["cookie_id"]);
+
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
@@ -650,7 +653,7 @@ class ParseController extends Controller
                                         "fs_id" => $responseDatum["fs_id"]
                                     ]);
 
-                    $fs_id    = $file["id"];
+                    $fs_id = $file["id"];
 
                     RecordController::addRecord([
                         "ip"         => UtilsController::getIp(),
@@ -659,18 +662,25 @@ class ParseController extends Controller
                         "ua"         => $ua,
                         "user_id"    => $user_id,
                         "token_id"   => $token_id,
-                        "account_id" => $responseDatum["cookie_id"]
+                        "account_id" => $ck_id
                     ]);
+
+                    if (!in_array($ck_id, $notified)) {
+                        $notified[] = $ck_id;
+                        UtilsController::sendMail("有账户被限速,账号ID:" . $ck_id);
+                    }
                 }
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
-                UtilsController::sendMail("有账户被风控,账号ID:" . $responseDatum["cookie_id"]);
+                $account->update([
+                    "switch" => 0,
+                    "reason" => $responseDatum["url"],
+                ]);
 
-                Account::query()
-                       ->find($responseDatum["cookie_id"])
-                       ->update([
-                           "switch" => 0,
-                           "reason" => $responseDatum["url"],
-                       ]);
+                if (!in_array($ck_id, $notified)) {
+                    $notified[] = $ck_id;
+                    UtilsController::sendMail("有账户被风控,账号ID:" . $ck_id);
+                }
+
             }
 
             return $res;
