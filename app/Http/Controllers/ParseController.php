@@ -635,7 +635,10 @@ class ParseController extends Controller
                         "reason"      => "账号被限速",
                     ]);
 
-
+                    if (!in_array($ck_id, $notified)) {
+                        $notified[] = $ck_id;
+                        UtilsController::sendMail("有账户被限速,账号ID:" . $ck_id);
+                    }
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
@@ -664,11 +667,6 @@ class ParseController extends Controller
                         "token_id"   => $token_id,
                         "account_id" => $ck_id
                     ]);
-
-                    if (!in_array($ck_id, $notified)) {
-                        $notified[] = $ck_id;
-                        UtilsController::sendMail("有账户被限速,账号ID:" . $ck_id);
-                    }
                 }
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 $account->update([
