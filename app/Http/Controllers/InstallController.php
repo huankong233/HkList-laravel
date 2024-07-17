@@ -98,7 +98,7 @@ class InstallController extends Controller
             Schema::create("accounts", function (Blueprint $table) {
                 $table->id();
                 $table->string("baidu_name");
-                $table->longText("cookie");
+                $table->longText("cookie")->nullable();
                 $table->enum("vip_type", ["普通用户", "普通会员", "超级会员", "假超级会员"]);
                 $table->boolean("switch");
                 $table->string("reason")->nullable();

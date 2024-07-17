@@ -36,17 +36,17 @@ class AccountController extends Controller
         return ResponseController::success($accounts);
     }
 
-    public static function _getAccountInfo($cookie)
+    public static function _getAccountInfo($type, $cookie)
     {
         $http = new Client([
             "headers" => [
                 "User-Agent" => config("94list.fake_user_agent"),
-                "cookie"     => $cookie
+                "cookie"     => $type === 1 ? $cookie : ""
             ]
         ]);
 
         try {
-            $res      = $http->get("https://pan.baidu.com/rest/2.0/xpan/nas", ["query" => ["method" => "uinfo"]]);
+            $res      = $http->get("https://pan.baidu.com/rest/2.0/xpan/nas", ["query" => ["method" => "uinfo", "access_token" => $type === 2 ? $cookie : ""]]);
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
@@ -58,17 +58,39 @@ class AccountController extends Controller
         return $response ? ResponseController::success($response) : ResponseController::getAccountInfoFailed();
     }
 
-    public static function _getSvipEndAt($cookie)
+    public static function _getAccessToken($refresh_token)
     {
+        // 如果返回值是 -6 或 111 需要刷新 access_token
         $http = new Client([
             "headers" => [
-                "User-Agent" => config("94list.fake_user_agent"),
-                "Cookie"     => $cookie
+                "User-Agent" => "pan.baidu.com"
             ]
         ]);
 
         try {
-            $res      = $http->get("https://pan.baidu.com/rest/2.0/membership/user", ["query" => ["method" => "query", "clienttype" => 0, "app_id" => 250528, "web" => 1]]);
+            $res      = $http->get("https://openapi.baidu.com/oauth/2.0/token", ["query" => ["grant_type" => "refresh_token", "refresh_token" => $refresh_token, "client_id" => "iYCeC9g08h5vuP9UqvPHKKSVrKFXGa1v", "client_secret" => "jXiFMOPVPCWlO2M5CwWQzffpNPaGTRBG"]]);
+            $response = JSON::decode($res->getBody()->getContents());
+        } catch (RequestException $e) {
+            $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
+        } catch (GuzzleException $e) {
+            return ResponseController::networkError("换取AccessToken");
+        }
+
+        if (isset($response["error_description"])) return ResponseController::getAccessTokenFailed($response["error_description"]);
+        return $response ? ResponseController::success($response) : ResponseController::getAccessTokenFailed();
+    }
+
+    public static function _getSvipEndAt($type, $cookie)
+    {
+        $http = new Client([
+            "headers" => [
+                "User-Agent" => config("94list.fake_user_agent"),
+                "Cookie"     => $type === 1 ? $cookie : ""
+            ]
+        ]);
+
+        try {
+            $res      = $http->get("https://pan.baidu.com/rest/2.0/membership/user", ["query" => ["method" => "query", "clienttype" => 0, "app_id" => 250528, "web" => 1, "access_token" => $type === 2 ? $cookie : ""]]);
             $response = JSON::decode($res->getBody()->getContents());
         } catch (RequestException $e) {
             $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
@@ -80,9 +102,9 @@ class AccountController extends Controller
         return $response ? ResponseController::success($response) : ResponseController::getSvipEndTimeFailed();
     }
 
-    public static function _getAccountItems($cookie)
+    public static function _getAccountItems($type, $cookie)
     {
-        $accountInfoRes  = self::_getAccountInfo($cookie);
+        $accountInfoRes  = self::_getAccountInfo($type, $cookie);
         $accountInfoData = $accountInfoRes->getData(true);
         if ($accountInfoData["code"] !== 200) return $accountInfoRes;
 
@@ -93,7 +115,7 @@ class AccountController extends Controller
         };
 
         if ($vip_type === "超级会员") {
-            $svipEndAtRes  = self::_getSvipEndAt($cookie);
+            $svipEndAtRes  = self::_getSvipEndAt($type, $cookie);
             $svipEndAtData = $svipEndAtRes->getData(true);
             if ($svipEndAtData["code"] !== 200) return $svipEndAtRes;
 
@@ -124,29 +146,43 @@ class AccountController extends Controller
     public function addAccount(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "cookie" => "required"
+            "type"   => ["required", Rule::in([1, 2])],
+            "cookie" => "required|string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        $request["cookie"] = is_array($request["cookie"]) ? $request["cookie"] : [$request["cookie"]];
+        $request["cookie"] = explode("\n", $request["cookie"]);
 
         $have_repeat = false;
-        foreach ($request["cookie"] as $cookie) {
+        foreach ($request["cookie"] as $index => $cookie) {
             if (!$cookie) continue;
 
-            $accountItemsRes  = self::_getAccountItems($cookie);
+            if ($request["type"] === 2) {
+                $cookie     = self::_getAccessToken($cookie);
+                $cookieData = $cookie->getData(true);
+                if ($cookieData["code"] !== 200) return $cookie;
+                $cookie = $cookieData["data"]["access_token"];
+            }
+
+            $accountItemsRes  = self::_getAccountItems($request["type"], $cookie);
             $accountItemsData = $accountItemsRes->getData(true);
             if ($accountItemsData["code"] !== 200) return $accountItemsRes;
 
             $account = Account::query()->firstWhere("baidu_name", $accountItemsData["data"]["baidu_name"]);
             if (!$account) {
+                if ($request["type"] === 2) {
+                    $accountItemsData["data"]["account_type"]  = "access_token";
+                    $accountItemsData["data"]["access_token"]  = $cookieData["data"]["access_token"];
+                    $accountItemsData["data"]["refresh_token"] = $cookieData["data"]["refresh_token"];
+                    $accountItemsData["data"]["cookie"]        = null;
+                }
                 Account::query()->create($accountItemsData["data"]);
             } else {
                 $have_repeat = true;
             }
 
-            sleep(1);
+            if ($index < count($accountItemsData["data"]) - 1) sleep(1);
         }
 
         return ResponseController::success(["have_repeat" => $have_repeat]);
@@ -155,7 +191,15 @@ class AccountController extends Controller
     public static function updateAccount(Request $request, $account_id)
     {
         $validator = Validator::make($request->all(), [
-            "prov" => ["nullable", Rule::in(["北京市", "天津市", "上海市", "重庆市", "河北省", "山西省", "内蒙古自治区", "辽宁省", "吉林省", "黑龙江省", "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省", "湖北省", "湖南省", "广东省", "广西壮族自治区", "海南省", "四川省", "贵州省", "云南省", "西藏自治区", "陕西省", "甘肃省", "青海省", "宁夏回族自治区", "新疆维吾尔自治区", "香港特别行政区", "澳门特别行政区", "台湾省"])]
+            "baidu_name"    => "required|string",
+            "account_type"  => ["required", Rule::in(["cookie", "access_token"])],
+            "access_token"  => "nullable|string",
+            "refresh_token" => "nullable|string",
+            "cookie"        => "nullable|string",
+            "vip_type"      => ["required", Rule::in(["超级会员", "假超级会员", "普通会员", "普通用户"])],
+            "switch"        => "required|boolean",
+            "prov"          => ["nullable", Rule::in(["北京市", "天津市", "上海市", "重庆市", "河北省", "山西省", "内蒙古自治区", "辽宁省", "吉林省", "黑龙江省", "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省", "湖北省", "湖南省", "广东省", "广西壮族自治区", "海南省", "四川省", "贵州省", "云南省", "西藏自治区", "陕西省", "甘肃省", "青海省", "宁夏回族自治区", "新疆维吾尔自治区", "香港特别行政区", "澳门特别行政区", "台湾省"])],
+            "reason"        => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -163,7 +207,17 @@ class AccountController extends Controller
         $account = Account::query()->find($account_id);
         if (!$account) return ResponseController::accountNotExists();
 
-        $account->update(["prov" => $request["prov"]]);
+        $account->update([
+            "baidu_name"    => $request["baidu_name"],
+            "account_type"  => $request["account_type"],
+            "access_token"  => $request["access_token"],
+            "refresh_token" => $request["refresh_token"],
+            "cookie"        => $request["cookie"],
+            "vip_type"      => $request["vip_type"],
+            "switch"        => $request["switch"],
+            "prov"          => $request["prov"],
+            "reason"        => $request["reason"]
+        ]);
 
         return ResponseController::success();
     }
@@ -173,11 +227,27 @@ class AccountController extends Controller
         $account = Account::query()->find($account_id);
         if (!$account) return ResponseController::accountNotExists();
 
-        $cookie           = $account["cookie"];
-        $accountItemsRes  = self::_getAccountItems($cookie);
+        $type = $account["account_type"] === "cookie" ? 1 : 2;
+
+        if ($type === 1) {
+            $cookie = $account["cookie"];
+        } else {
+            $token     = self::_getAccessToken($account["refresh_token"]);
+            $tokenData = $token->getData(true);
+            if ($tokenData["code"] !== 200) return $token;
+            $cookie = $tokenData["data"]["access_token"];
+        }
+
+        $accountItemsRes  = self::_getAccountItems($type, $cookie);
         $accountItemsData = $accountItemsRes->getData(true);
 
         if ($accountItemsData["code"] === 200) {
+            if ($type === 2) {
+                $accountItemsData["data"]["account_type"]  = "access_token";
+                $accountItemsData["data"]["access_token"]  = $tokenData["data"]["access_token"];
+                $accountItemsData["data"]["refresh_token"] = $tokenData["data"]["refresh_token"];
+                $accountItemsData["data"]["cookie"]        = null;
+            }
             $account->update($accountItemsData["data"]);
         } else {
             $account->update([
@@ -198,9 +268,11 @@ class AccountController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
-        foreach ($request["account_ids"] as $account_id) {
-            self::updateAccountInfo($account_id);
-            sleep(1);
+        foreach ($request["account_ids"] as $index => $account_id) {
+            $res     = self::updateAccountInfo($account_id);
+            $resData = $res->getData(true);
+            if ($resData["code"] !== 200) return $res;
+            if ($index < count($request["account_ids"]) - 1) sleep(1);
         }
 
         return ResponseController::success();

@@ -193,7 +193,10 @@ class ParseController extends Controller
                       ->groupBy(
                           'accounts.id',
                           'accounts.baidu_name',
+                          'accounts.account_type',
                           'accounts.cookie',
+                          'accounts.access_token',
+                          'accounts.refresh_token',
                           'accounts.vip_type',
                           'accounts.switch',
                           'accounts.reason',
@@ -519,7 +522,7 @@ class ParseController extends Controller
 
         $parse_mode = config("94list.parse_mode");
 
-        if (!in_array($parse_mode, [1, 2, 3, 4])) return ResponseController::unknownParseMode();
+        if (!in_array($parse_mode, [1, 2, 3, 4, 5])) return ResponseController::unknownParseMode();
 
         $ua = config("94list.user_agent");
 
@@ -626,7 +629,7 @@ class ParseController extends Controller
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
                 "fs_id"    => $responseDatum["fs_id"],
-                "ua"       => $ua
+                "ua"       => $parse_mode === 5 ? "pan.baidu.com" : $ua
             ];
 
             if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
@@ -635,7 +638,7 @@ class ParseController extends Controller
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if (str_contains($responseDatum["url"], "qdall01")) {
+                if ($parse_mode !== 1 && str_contains($responseDatum["url"], "qdall01")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([

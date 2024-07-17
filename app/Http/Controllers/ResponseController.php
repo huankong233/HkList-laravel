@@ -358,4 +358,9 @@ class ResponseController extends Controller
     {
         return self::response(10064, 500, "该卡密已绑定其他ip");
     }
+
+    public static function getAccessTokenFailed($reason = null)
+    {
+        return self::response(10065, 500, "换取AccessToken失败" . ($reason ? ",原因:{$reason}" : ''));
+    }
 }
