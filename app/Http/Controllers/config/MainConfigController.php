@@ -76,7 +76,7 @@ class MainConfigController extends Controller
         $update["_94LIST_SHOW_LOGIN_BUTTON"]   = $request["show_login_button"];
         $update["_94LIST_TOKEN_BIND_IP"]       = $request["token_bind_ip"];
 
-        if ($request["parse_mode"] === 4) $update["_94LIST_USER_AGENT"] = "netdisk;P2SP;3.0.10.22";
+        if ($request["parse_mode"] === 4) $update["_94LIST_USER_AGENT"] = "netdisk;P2SP;3.0.20.9";
 
         updateEnv($update);
 
