@@ -537,7 +537,7 @@ class ParseController extends Controller
             "pwd"      => $request["pwd"],
         ];
 
-        if (isset($request["vcode_input"]) && $request["vcode_input"] !== "") {
+        if ($parse_mode === 2 && isset($request["vcode_input"]) && $request["vcode_input"] !== "") {
             $validator = Validator::make($request->all(), [
                 "vcode_input" => "required|string",
                 "vcode_str"   => "required|string"
@@ -591,6 +591,15 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
+            if ($parse_mode === 2 && str_contains($reason, "风控")) {
+                $account = Account::query()->find($json["cookie"][0]["id"]);
+                if ($account) {
+                    $account->update([
+                        "switch" => 0,
+                        "reason" => $reason
+                    ]);
+                }
+            }
             return ResponseController::errorFromMainServer($reason);
         } catch (GuzzleException $e) {
             return ResponseController::networkError("连接解析服务器");
