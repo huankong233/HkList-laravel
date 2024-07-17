@@ -519,7 +519,7 @@ class ParseController extends Controller
 
         $parse_mode = config("94list.parse_mode");
 
-        if (!in_array($parse_mode, [2, 3, 4])) return ResponseController::unknownParseMode();
+        if (!in_array($parse_mode, [1, 2, 3, 4])) return ResponseController::unknownParseMode();
 
         $ua = config("94list.user_agent");
 
@@ -591,7 +591,7 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if ($parse_mode === 2 && str_contains($reason, "风控")) {
+            if (str_contains($reason, "风控")) {
                 $account = Account::query()->find($json["cookie"][0]["id"]);
                 if ($account) {
                     $account->update([
