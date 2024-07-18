@@ -17,6 +17,7 @@ class Account extends Model
         "cookie",
         "access_token",
         "refresh_token",
+        "expired_at",
         "vip_type",
         "switch",
         "reason",

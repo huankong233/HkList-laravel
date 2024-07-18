@@ -35,6 +35,13 @@ class AutoUpdate
             });
         }
 
+        // 1.3.14 迁移 增加token到期时间
+        if (!Schema::hasColumn("accounts", "expired_at")) {
+            Schema::table("accounts", function (Blueprint $table) {
+                $table->timestamp("expired_at")->nullable()->after("refresh_token");
+            });
+        }
+
         return $next($request);
     }
 }

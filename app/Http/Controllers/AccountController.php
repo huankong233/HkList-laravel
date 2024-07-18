@@ -163,6 +163,13 @@ class AccountController extends Controller
                 $cookieData = $cookie->getData(true);
                 if ($cookieData["code"] !== 200) return $cookie;
                 $cookie = $cookieData["data"]["access_token"];
+            } else {
+                $cookieData = [
+                    "data" => [
+                        "access_token"  => null,
+                        "refresh_token" => null
+                    ]
+                ];
             }
 
             $accountItemsRes  = self::_getAccountItems($request["type"], $cookie);
@@ -175,6 +182,7 @@ class AccountController extends Controller
                     $accountItemsData["data"]["account_type"]  = "access_token";
                     $accountItemsData["data"]["access_token"]  = $cookieData["data"]["access_token"];
                     $accountItemsData["data"]["refresh_token"] = $cookieData["data"]["refresh_token"];
+                    $accountItemsData["data"]["expired_at"]    = now()->addSeconds($cookieData["data"]["expires_in"]);
                     $accountItemsData["data"]["cookie"]        = null;
                 }
                 Account::query()->create($accountItemsData["data"]);
@@ -229,13 +237,14 @@ class AccountController extends Controller
 
         $type = $account["account_type"] === "cookie" ? 1 : 2;
 
-        if ($type === 1) {
-            $cookie = $account["cookie"];
-        } else {
+        if ($type === 2) {
             $token     = self::_getAccessToken($account["refresh_token"]);
             $tokenData = $token->getData(true);
             if ($tokenData["code"] !== 200) return $token;
             $cookie = $tokenData["data"]["access_token"];
+        } else {
+            // fallback type => 1
+            $cookie = $account["cookie"];
         }
 
         $accountItemsRes  = self::_getAccountItems($type, $cookie);
@@ -246,6 +255,7 @@ class AccountController extends Controller
                 $accountItemsData["data"]["account_type"]  = "access_token";
                 $accountItemsData["data"]["access_token"]  = $tokenData["data"]["access_token"];
                 $accountItemsData["data"]["refresh_token"] = $tokenData["data"]["refresh_token"];
+                $accountItemsData["data"]["expired_at"]    = now()->addSeconds($tokenData["data"]["expires_in"]);
                 $accountItemsData["data"]["cookie"]        = null;
             }
             $account->update($accountItemsData["data"]);

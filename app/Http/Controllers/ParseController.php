@@ -176,9 +176,12 @@ class ParseController extends Controller
         return null;
     }
 
-    public static function _getRandomCookie($prov, $vipType)
+    public static function _getRandomCookie($prov, $vipType, $account_type)
     {
-        $where = ["switch" => 1];
+        $where = [
+            "switch"       => 1,
+            "account_type" => $account_type
+        ];
         if (config("94list.limit_prov")) $where["prov"] = $prov;
         return Account::query()
                       ->where($where)
@@ -197,6 +200,7 @@ class ParseController extends Controller
                           'accounts.cookie',
                           'accounts.access_token',
                           'accounts.refresh_token',
+                          'accounts.expired_at',
                           'accounts.vip_type',
                           'accounts.switch',
                           'accounts.reason',
@@ -218,7 +222,33 @@ class ParseController extends Controller
         $prov = self::getProvinceFromIP($ip);
         if ($prov === false) return ResponseController::unsupportNotCNCountry();
 
+        $account_type = config("94list.parse_mode") === 5 ? "access_token" : "cookie";
+
         if (in_array("超级会员", $vipType)) {
+            // 刷新令牌
+            $refreshAccounts = Account::query()
+                                      ->where([
+                                          "switch"       => 1,
+                                          "vip_type"     => $vipType,
+                                          "account_type" => $account_type,
+                                          ["expired_at", "<", Carbon::now(config("app.timezone"))->addDays(10)],
+                                      ])
+                                      ->get();
+
+            if ($refreshAccounts->count() !== 0) {
+                foreach ($refreshAccounts as $index => $refreshAccount) {
+                    $updateRes  = AccountController::updateAccountInfo($refreshAccount["id"]);
+                    $updateData = $updateRes->getData(true);
+                    if ($updateData["code"] !== 200) {
+                        $refreshAccount->update([
+                            "switch" => 0,
+                            "reason" => $updateData["message"]
+                        ]);
+                    }
+                    if ($index < $refreshAccount->count() - 1) sleep(0.5);
+                }
+            }
+
             // 禁用过期的账户
             $banAccounts = Account::query()
                                   ->where([
@@ -242,7 +272,7 @@ class ParseController extends Controller
                         ]);
                         $updateFailedAccounts[] = $account->toJson();
                     }
-                    if ($index < $banAccounts->count() - 1) sleep(1);
+                    if ($index < $banAccounts->count() - 1) sleep(0.5);
                 }
 
                 if (count($updateFailedAccounts) > 0) UtilsController::sendMail("有账户已过期,详见:" . JSON::encode($updateFailedAccounts));
@@ -251,10 +281,10 @@ class ParseController extends Controller
 
         // 判斷是否獲取到了省份
         if ($prov !== null) {
-            $account = self::_getRandomCookie($prov, $vipType);
+            $account = self::_getRandomCookie($prov, $vipType, $account_type);
 
             if ($account === null) {
-                $account = self::_getRandomCookie(null, $vipType);
+                $account = self::_getRandomCookie(null, $vipType, $account_type);
 
                 if ($makeNew) {
                     $account?->update([
@@ -263,7 +293,7 @@ class ParseController extends Controller
                 }
             }
         } else {
-            $account = self::_getRandomCookie(null, $vipType);
+            $account = self::_getRandomCookie(null, $vipType, $account_type);
         }
 
         if (!$account) return ResponseController::svipAccountIsNotEnough(true, $vipType);
