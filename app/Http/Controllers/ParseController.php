@@ -599,10 +599,13 @@ class ParseController extends Controller
             foreach ($request["account_ids"] as $account_id) {
                 $account = Account::query()->find($account_id);
                 if (!$account) return ResponseController::accountNotExists();
-                $json["cookie"][]   = [
-                    "id"     => $account_id,
-                    "cookie" => $account["cookie"]
-                ];
+                $arr = ["id" => $account_id];
+                if ($parse_mode === 5) {
+                    $arr["access_token"] = $account["access_token"];
+                } else {
+                    $arr["cookie"] = $account["cookie"];
+                }
+                $json["cookie"][]   = $arr;
                 $json["fsidlist"][] = $request["fs_ids"][0];
             }
         } else {
@@ -610,10 +613,13 @@ class ParseController extends Controller
                 $cookie     = self::getRandomCookie();
                 $cookieData = $cookie->getData(true);
                 if ($cookieData["code"] !== 200) return $cookie;
-                $json["cookie"][] = [
-                    "id"     => $cookieData["data"]["id"],
-                    "cookie" => $cookieData["data"]["cookie"]
-                ];
+                $arr = ["id" => $cookieData["data"]["id"]];
+                if ($parse_mode === 5) {
+                    $arr["access_token"] = $cookieData["data"]["access_token"];
+                } else {
+                    $arr["cookie"] = $cookieData["data"]["cookie"];
+                }
+                $json["cookie"][] = $arr;
             }
         }
 
@@ -668,7 +674,7 @@ class ParseController extends Controller
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if ($parse_mode !== 1 && str_contains($responseDatum["url"], "qdall01")) {
+                if ($parse_mode !== 1 && $parse_mode !== 5 && str_contains($responseDatum["url"], "qdall01")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([
@@ -677,8 +683,8 @@ class ParseController extends Controller
                         "reason"      => "账号被限速",
                     ]);
 
-                    if (!in_array($ck_id, $notified)) {
-                        $notified[] = $ck_id;
+                    if (!isset($notified[$ck_id])) {
+                        $notified[$ck_id] = false;
                         UtilsController::sendMail("有账户被限速,账号ID:" . $ck_id);
                     }
                 } else {
@@ -716,11 +722,10 @@ class ParseController extends Controller
                     "reason" => $responseDatum["url"],
                 ]);
 
-                if (!in_array($ck_id, $notified)) {
-                    $notified[] = $ck_id;
+                if (!isset($notified[$ck_id])) {
+                    $notified[$ck_id] = false;
                     UtilsController::sendMail("有账户被风控,账号ID:" . $ck_id);
                 }
-
             }
 
             return $res;
