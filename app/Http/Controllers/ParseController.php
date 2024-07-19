@@ -637,6 +637,7 @@ class ParseController extends Controller
                         "switch" => 0,
                         "reason" => $reason
                     ]);
+                    UtilsController::sendMail("有账户被风控,账号ID:" . $json["cookie"][0]["id"]);
                 }
             }
             return ResponseController::errorFromMainServer($reason);
@@ -658,9 +659,10 @@ class ParseController extends Controller
             $user_id  = Auth::user()["id"] ?? 1;
         }
 
-        $notified = [];
+        $banned  = [];
+        $limited = [];
 
-        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$notified) {
+        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited) {
             $res = [
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
@@ -683,10 +685,7 @@ class ParseController extends Controller
                         "reason"      => "账号被限速",
                     ]);
 
-                    if (!isset($notified[$ck_id])) {
-                        $notified[$ck_id] = false;
-                        UtilsController::sendMail("有账户被限速,账号ID:" . $ck_id);
-                    }
+                    $limited[] = $ck_id;
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
@@ -722,14 +721,14 @@ class ParseController extends Controller
                     "reason" => $responseDatum["url"],
                 ]);
 
-                if (!isset($notified[$ck_id])) {
-                    $notified[$ck_id] = false;
-                    UtilsController::sendMail("有账户被风控,账号ID:" . $ck_id);
-                }
+                $banned[] = $ck_id;
             }
 
             return $res;
         }, $responseData);
+
+        if (count($limited) !== 0) UtilsController::sendMail("有账户被限速,账号ID:" . JSON::encode($limited));
+        if (count($banned) !== 0) UtilsController::sendMail("有账户被风控,账号ID:" . JSON::encode($banned));
 
         return ResponseController::success($data);
     }
