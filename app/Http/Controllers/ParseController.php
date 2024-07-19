@@ -176,9 +176,12 @@ class ParseController extends Controller
         return null;
     }
 
-    public static function _getRandomCookie($prov, $vipType)
+    public static function _getRandomCookie($prov, $vipType, $account_type)
     {
-        $where = ["switch" => 1];
+        $where = [
+            "switch"       => 1,
+            "account_type" => $account_type
+        ];
         if (config("94list.limit_prov")) $where["prov"] = $prov;
         return Account::query()
                       ->where($where)
@@ -193,7 +196,11 @@ class ParseController extends Controller
                       ->groupBy(
                           'accounts.id',
                           'accounts.baidu_name',
+                          'accounts.account_type',
                           'accounts.cookie',
+                          'accounts.access_token',
+                          'accounts.refresh_token',
+                          'accounts.expired_at',
                           'accounts.vip_type',
                           'accounts.switch',
                           'accounts.reason',
@@ -215,7 +222,33 @@ class ParseController extends Controller
         $prov = self::getProvinceFromIP($ip);
         if ($prov === false) return ResponseController::unsupportNotCNCountry();
 
+        $account_type = config("94list.parse_mode") === 5 ? "access_token" : "cookie";
+
         if (in_array("超级会员", $vipType)) {
+            // 刷新令牌
+            $refreshAccounts = Account::query()
+                                      ->where([
+                                          "switch"       => 1,
+                                          "vip_type"     => $vipType,
+                                          "account_type" => $account_type,
+                                          ["expired_at", "<", Carbon::now(config("app.timezone"))->addDays(10)],
+                                      ])
+                                      ->get();
+
+            if ($refreshAccounts->count() !== 0) {
+                foreach ($refreshAccounts as $index => $refreshAccount) {
+                    $updateRes  = AccountController::updateAccountInfo($refreshAccount["id"]);
+                    $updateData = $updateRes->getData(true);
+                    if ($updateData["code"] !== 200) {
+                        $refreshAccount->update([
+                            "switch" => 0,
+                            "reason" => $updateData["message"]
+                        ]);
+                    }
+                    if ($index < $refreshAccount->count() - 1) sleep(0.5);
+                }
+            }
+
             // 禁用过期的账户
             $banAccounts = Account::query()
                                   ->where([
@@ -239,7 +272,7 @@ class ParseController extends Controller
                         ]);
                         $updateFailedAccounts[] = $account->toJson();
                     }
-                    if ($index < $banAccounts->count() - 1) sleep(1);
+                    if ($index < $banAccounts->count() - 1) sleep(0.5);
                 }
 
                 if (count($updateFailedAccounts) > 0) UtilsController::sendMail("有账户已过期,详见:" . JSON::encode($updateFailedAccounts));
@@ -248,10 +281,10 @@ class ParseController extends Controller
 
         // 判斷是否獲取到了省份
         if ($prov !== null) {
-            $account = self::_getRandomCookie($prov, $vipType);
+            $account = self::_getRandomCookie($prov, $vipType, $account_type);
 
             if ($account === null) {
-                $account = self::_getRandomCookie(null, $vipType);
+                $account = self::_getRandomCookie(null, $vipType, $account_type);
 
                 if ($makeNew) {
                     $account?->update([
@@ -260,7 +293,7 @@ class ParseController extends Controller
                 }
             }
         } else {
-            $account = self::_getRandomCookie(null, $vipType);
+            $account = self::_getRandomCookie(null, $vipType, $account_type);
         }
 
         if (!$account) return ResponseController::svipAccountIsNotEnough(true, $vipType);
@@ -519,7 +552,7 @@ class ParseController extends Controller
 
         $parse_mode = config("94list.parse_mode");
 
-        if (!in_array($parse_mode, [1, 2, 3, 4])) return ResponseController::unknownParseMode();
+        if (!in_array($parse_mode, [1, 2, 3, 4, 5])) return ResponseController::unknownParseMode();
 
         $ua = config("94list.user_agent");
 
@@ -566,10 +599,13 @@ class ParseController extends Controller
             foreach ($request["account_ids"] as $account_id) {
                 $account = Account::query()->find($account_id);
                 if (!$account) return ResponseController::accountNotExists();
-                $json["cookie"][]   = [
-                    "id"     => $account_id,
-                    "cookie" => $account["cookie"]
-                ];
+                $arr = ["id" => $account_id];
+                if ($parse_mode === 5) {
+                    $arr["access_token"] = $account["access_token"];
+                } else {
+                    $arr["cookie"] = $account["cookie"];
+                }
+                $json["cookie"][]   = $arr;
                 $json["fsidlist"][] = $request["fs_ids"][0];
             }
         } else {
@@ -577,10 +613,13 @@ class ParseController extends Controller
                 $cookie     = self::getRandomCookie();
                 $cookieData = $cookie->getData(true);
                 if ($cookieData["code"] !== 200) return $cookie;
-                $json["cookie"][] = [
-                    "id"     => $cookieData["data"]["id"],
-                    "cookie" => $cookieData["data"]["cookie"]
-                ];
+                $arr = ["id" => $cookieData["data"]["id"]];
+                if ($parse_mode === 5) {
+                    $arr["access_token"] = $cookieData["data"]["access_token"];
+                } else {
+                    $arr["cookie"] = $cookieData["data"]["cookie"];
+                }
+                $json["cookie"][] = $arr;
             }
         }
 
@@ -626,7 +665,7 @@ class ParseController extends Controller
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
                 "fs_id"    => $responseDatum["fs_id"],
-                "ua"       => $ua
+                "ua"       => $parse_mode === 5 ? "pan.baidu.com" : $ua
             ];
 
             if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
@@ -635,7 +674,7 @@ class ParseController extends Controller
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if (str_contains($responseDatum["url"], "qdall01")) {
+                if ($parse_mode !== 1 && str_contains($responseDatum["url"], "qdall01")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([
@@ -644,8 +683,8 @@ class ParseController extends Controller
                         "reason"      => "账号被限速",
                     ]);
 
-                    if (!in_array($ck_id, $notified)) {
-                        $notified[] = $ck_id;
+                    if (!isset($notified[$ck_id])) {
+                        $notified[$ck_id] = false;
                         UtilsController::sendMail("有账户被限速,账号ID:" . $ck_id);
                     }
                 } else {
@@ -683,11 +722,10 @@ class ParseController extends Controller
                     "reason" => $responseDatum["url"],
                 ]);
 
-                if (!in_array($ck_id, $notified)) {
-                    $notified[] = $ck_id;
+                if (!isset($notified[$ck_id])) {
+                    $notified[$ck_id] = false;
                     UtilsController::sendMail("有账户被风控,账号ID:" . $ck_id);
                 }
-
             }
 
             return $res;

@@ -13,7 +13,11 @@ class Account extends Model
 
     protected $fillable = [
         "baidu_name",
+        "account_type",
         "cookie",
+        "access_token",
+        "refresh_token",
+        "expired_at",
         "vip_type",
         "switch",
         "reason",
