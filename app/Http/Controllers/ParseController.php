@@ -676,7 +676,7 @@ class ParseController extends Controller
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if ($parse_mode !== 1 && str_contains($responseDatum["url"], "qdall01")) {
+                if ($parse_mode !== 1 && $parse_mode !== 2 && str_contains($responseDatum["url"], "qdall01")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([
