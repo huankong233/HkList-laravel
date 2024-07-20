@@ -57,7 +57,6 @@ class MainConfigController extends Controller
         $update["_94LIST_MAX_ONCE"]            = $request["max_once"];
         $update["_94LIST_PASSWORD"]            = '"' . $request["password"] . '"';
         $update["_94LIST_ANNOUNCE"]            = '"' . htmlspecialchars(str_replace("\n", "[NextLine]", $request["announce"]), ENT_QUOTES) . '"';
-        $update["_94LIST_USER_AGENT"]          = '"' . $request["user_agent"] . '"';
         $update["_94LIST_NEED_INV_CODE"]       = $request["need_inv_code"];
         $update["_94LIST_WHITELIST_MODE"]      = $request["whitelist_mode"];
         $update["APP_DEBUG"]                   = $request["debug"];
@@ -76,11 +75,12 @@ class MainConfigController extends Controller
         $update["_94LIST_SHOW_LOGIN_BUTTON"]   = $request["show_login_button"];
         $update["_94LIST_TOKEN_BIND_IP"]       = $request["token_bind_ip"];
 
-        if ($request["parse_mode"] === 4){
-            $update["_94LIST_USER_AGENT"] = "netdisk;P2SP;3.0.20.9";
-        }else if($request["parse_mode"] === 5){
-            $update["_94LIST_USER_AGENT"] = "pan.baidu.com";
-        }
+        $update["_94LIST_USER_AGENT"] = match ($request["parse_mode"]) {
+            1, 3, 4 => "netdisk;P2SP;3.0.20.9",
+            2       => "netdisk;12.11.9;23049RAD8C;android-android;13;JSbridge4.4.0;jointBridge;1.1.0;",
+            5       => "pan.baidu.com",
+            default => '"' . $request["user_agent"] . '"'
+        };
 
         updateEnv($update);
 
