@@ -60,13 +60,13 @@ class RecordController extends Controller
     public static function addRecord($data)
     {
         $validator = Validator::make($data, [
-            "ip"         => "required|string",
-            "fs_id"      => "required|numeric",
-            "url"        => "required|string",
-            "ua"         => "required|string",
-            "user_id"    => "nullable|numeric",
-            "token_id"   => "nullable|numeric",
-            "account_id" => "required|numeric",
+            "ip"                => "required|string",
+            "fs_id"             => "required|numeric",
+            "url"               => "required|string",
+            "ua"                => "required|string",
+            "user_id"           => "nullable|numeric",
+            "token_id"          => "nullable|numeric",
+            "account_id"        => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();

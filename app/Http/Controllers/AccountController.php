@@ -31,7 +31,8 @@ class AccountController extends Controller
                                    $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
                                          ->whereDate('records.created_at', Carbon::today(config("app.timezone")));
                                }
-                           ], "file_lists.size")->paginate($request["size"]);
+                           ], "file_lists.size")
+                           ->paginate($request["size"]);
 
         return ResponseController::success($accounts);
     }
