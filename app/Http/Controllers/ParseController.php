@@ -721,13 +721,14 @@ class ParseController extends Controller
                     $fs_id = $file["id"];
 
                     RecordController::addRecord([
-                        "ip"         => UtilsController::getIp(),
-                        "fs_id"      => $fs_id,
-                        "url"        => $responseDatum["url"],
-                        "ua"         => $ua,
-                        "user_id"    => $user_id,
-                        "token_id"   => $token_id,
-                        "account_id" => $ck_id
+                        "ip"                => UtilsController::getIp(),
+                        "fs_id"             => $fs_id,
+                        "url"               => $responseDatum["url"],
+                        "ua"                => $ua,
+                        "user_id"           => $user_id,
+                        "token_id"          => $token_id,
+                        "account_id"        => $ck_id,
+                        "normal_account_id" => $responseDatum["normal_cookie_id"] ?? null
                     ]);
                 }
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
