@@ -30,4 +30,14 @@ class Account extends Model
     {
         return $this->hasMany(Record::class)->withTrashed();
     }
+
+    public function superMemberRecords()
+    {
+        return $this->hasMany(Record::class, 'account_id')->withTrashed();
+    }
+
+    public function normalMemberRecords()
+    {
+        return $this->hasMany(Record::class, 'normal_account_id')->withTrashed();
+    }
 }

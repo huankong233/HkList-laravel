@@ -623,6 +623,21 @@ class ParseController extends Controller
             }
         }
 
+        if ($parse_mode === 2) {
+            $cookie     = self::getRandomCookie(["普通用户", "普通会员"]);
+            $cookieData = $cookie->getData(true);
+            if ($cookieData["code"] !== 200) {
+                // 获取一个会员账号
+                $cookie     = self::getRandomCookie();
+                $cookieData = $cookie->getData(true);
+                if ($cookieData["code"] !== 200) return $cookie;
+            }
+            $json["normal_cookie"] = [
+                "id"     => $cookieData["data"]["id"],
+                "cookie" => $cookieData["data"]["cookie"]
+            ];
+        }
+
         try {
             $http     = new Client();
             $res      = $http->post(config("94list.main_server") . "/api/parseUrl", ["json" => $json, "timeout" => 99999]);
@@ -631,7 +646,7 @@ class ParseController extends Controller
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
             if (str_contains($reason, "风控")) {
-                $account = Account::query()->find($json["cookie"][0]["id"]);
+                $account = Account::query()->find($parse_mode === 2 ? $json["normal_cookie"]["id"] : $json["cookie"][0]["id"]);
                 if ($account) {
                     $account->update([
                         "switch" => 0,

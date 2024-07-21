@@ -42,6 +42,15 @@ class AutoUpdate
             });
         }
 
+        // 1.3.18 迁移 增加record normal_account_id
+        if (!Schema::hasColumn("records", "normal_account_id")) {
+            Schema::table("records", function (Blueprint $table) {
+                $table->unsignedBigInteger("normal_account_id")->nullable()->after("token_id");
+
+                $table->foreign("normal_account_id")->references("id")->on("accounts");
+            });
+        }
+
         return $next($request);
     }
 }

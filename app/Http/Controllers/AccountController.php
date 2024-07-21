@@ -18,20 +18,47 @@ class AccountController extends Controller
     {
         $accounts = Account::query()
                            ->withCount([
-                               'records as total_count',
-                               'records as today_count' => function ($query) {
-                                   $query->whereDate('created_at', Carbon::today(config("app.timezone")));
-                               }
+                               'superMemberRecords as total_super_member_count',
+                               'normalMemberRecords as total_normal_member_count',
+                               'superMemberRecords as today_super_member_count'   => function ($query) {
+                                   $query->whereDate('created_at', Carbon::today(config('app.timezone')));
+                               },
+                               'normalMemberRecords as today_normal_member_count' => function ($query) {
+                                   $query->whereDate('created_at', Carbon::today(config('app.timezone')));
+                               },
                            ])
                            ->withSum([
-                               'records as total_size' => function ($query) {
+                               'superMemberRecords as total_super_member_size'   => function ($query) {
                                    $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id');
                                },
-                               'records as today_size' => function ($query) {
+                               'normalMemberRecords as total_normal_member_size' => function ($query) {
+                                   $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id');
+                               },
+                               'superMemberRecords as today_super_member_size'   => function ($query) {
                                    $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
-                                         ->whereDate('records.created_at', Carbon::today(config("app.timezone")));
-                               }
-                           ], "file_lists.size")->paginate($request["size"]);
+                                         ->whereDate('records.created_at', Carbon::today(config('app.timezone')));
+                               },
+                               'normalMemberRecords as today_normal_member_size' => function ($query) {
+                                   $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
+                                         ->whereDate('records.created_at', Carbon::today(config('app.timezone')));
+                               },
+                           ], 'file_lists.size')
+//                           ->withCount([
+//                               'records as total_count',
+//                               'records as today_count' => function ($query) {
+//                                   $query->whereDate('created_at', Carbon::today(config("app.timezone")));
+//                               }
+//                           ])
+//                           ->withSum([
+//                               'records as total_size' => function ($query) {
+//                                   $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id');
+//                               },
+//                               'records as today_size' => function ($query) {
+//                                   $query->leftJoin('file_lists', 'file_lists.id', '=', 'records.fs_id')
+//                                         ->whereDate('records.created_at', Carbon::today(config("app.timezone")));
+//                               }
+//                           ], "file_lists.size")
+                           ->paginate($request["size"]);
 
         return ResponseController::success($accounts);
     }
