@@ -1,1 +1,0 @@
-import{k as r,m as o}from"./index-CbkZ6ACS.js";const f=Pinia.defineStore("aria2Store",()=>{const e=Vue.ref(!1),i=Vue.ref(r()),a=Vue.ref(null);return{aria2ConfigDialogVisible:e,aria2ConfigForm:i,aria2ConfigFormRef:a,saveAria2Config:async()=>{!a.value||!await a.value.validate()||(o(i.value),ElementPlus.ElMessage.success("保存成功"),e.value=!1)}}});export{f as u};

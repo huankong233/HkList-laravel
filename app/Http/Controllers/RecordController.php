@@ -66,8 +66,7 @@ class RecordController extends Controller
             "ua"                => "required|string",
             "user_id"           => "nullable|numeric",
             "token_id"          => "nullable|numeric",
-            "account_id"        => "required|numeric",
-            "normal_account_id" => "nullable|numeric"
+            "account_id"        => "required|numeric"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
