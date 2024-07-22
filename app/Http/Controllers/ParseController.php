@@ -198,6 +198,7 @@ class ParseController extends Controller
                           'accounts.baidu_name',
                           'accounts.account_type',
                           'accounts.cookie',
+                          'accounts.uk',
                           'accounts.access_token',
                           'accounts.refresh_token',
                           'accounts.expired_at',

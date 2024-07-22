@@ -135,6 +135,7 @@ class AccountController extends Controller
         }
 
         return ResponseController::success([
+            "uk"          => $accountInfoData["data"]["uk"],
             "baidu_name"  => $accountInfoData["data"]["baidu_name"],
             "cookie"      => $cookie,
             "vip_type"    => $vip_type,
@@ -177,7 +178,7 @@ class AccountController extends Controller
             $accountItemsData = $accountItemsRes->getData(true);
             if ($accountItemsData["code"] !== 200) return $accountItemsRes;
 
-            $account = Account::query()->firstWhere("baidu_name", $accountItemsData["data"]["baidu_name"]);
+            $account = Account::query()->firstWhere("uk", $accountItemsData["data"]["uk"]);
             if (!$account) {
                 if ($request["type"] === 2) {
                     $accountItemsData["data"]["account_type"]  = "access_token";
