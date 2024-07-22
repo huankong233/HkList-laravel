@@ -42,6 +42,13 @@ class AutoUpdate
             });
         }
 
+        // 1.3.19 迁移 增加用户uk
+        if (!Schema::hasColumn("accounts", "uk")) {
+            Schema::table("accounts", function (Blueprint $table) {
+                $table->string("uk")->nullable()->after("cookie");
+            });
+        }
+
         return $next($request);
     }
 }

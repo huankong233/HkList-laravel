@@ -23,7 +23,8 @@ class Account extends Model
         "reason",
         "prov",
         "svip_end_at",
-        "last_use_at"
+        "last_use_at",
+        "uk"
     ];
 
     public function records()
