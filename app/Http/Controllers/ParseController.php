@@ -622,8 +622,6 @@ class ParseController extends Controller
             }
         }
 
-        dd(JSON::encode($json));
-
         try {
             $http     = new Client();
             $res      = $http->post(config("94list.main_server") . "/api/parseUrl", ["json" => $json, "timeout" => 99999]);
