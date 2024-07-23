@@ -569,7 +569,7 @@ class ParseController extends Controller
             "pwd"      => $request["pwd"],
         ];
 
-        if ($parse_mode === 2 && isset($request["vcode_input"]) && $request["vcode_input"] !== "") {
+        if (isset($request["vcode_input"]) && $request["vcode_input"] !== "") {
             $validator = Validator::make($request->all(), [
                 "vcode_input" => "required|string",
                 "vcode_str"   => "required|string"
@@ -621,6 +621,8 @@ class ParseController extends Controller
                 $json["cookie"][] = $arr;
             }
         }
+
+        dd(JSON::encode($json));
 
         try {
             $http     = new Client();
