@@ -553,8 +553,6 @@ class ParseController extends Controller
 
         $parse_mode = config("94list.parse_mode");
 
-        if (!in_array($parse_mode, [1, 2, 3, 4, 5])) return ResponseController::unknownParseMode();
-
         $ua = config("94list.user_agent");
 
         $json = [
@@ -571,7 +569,7 @@ class ParseController extends Controller
             "pwd"      => $request["pwd"],
         ];
 
-        if ($parse_mode === 2 && isset($request["vcode_input"]) && $request["vcode_input"] !== "") {
+        if (isset($request["vcode_input"]) && $request["vcode_input"] !== "") {
             $validator = Validator::make($request->all(), [
                 "vcode_input" => "required|string",
                 "vcode_str"   => "required|string"
@@ -677,7 +675,7 @@ class ParseController extends Controller
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if ($parse_mode !== 1 && $parse_mode !== 2 && str_contains($responseDatum["url"], "qdall01")) {
+                if ($parse_mode == 5 && str_contains($responseDatum["url"], "qdall01")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([
@@ -687,6 +685,8 @@ class ParseController extends Controller
                     ]);
 
                     $limited[] = $ck_id;
+
+                    unset($res["urls"]);
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
