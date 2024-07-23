@@ -76,10 +76,11 @@ class MainConfigController extends Controller
         $update["_94LIST_TOKEN_BIND_IP"]       = $request["token_bind_ip"];
 
         $update["_94LIST_USER_AGENT"] = match ($request["parse_mode"]) {
-            5       => "pan.baidu.com",
-            1, 8    => "netdisk;P2SP;3.0.10.22",
-            6, 7    => "netdisk;P2SP;3.0.10.22;netdisk;4.32.1;PC;PC-Windows;10.0.19045;UniBaiduYunGuanJia",
-            2, 9    => "netdisk;12.11.9;23049RAD8C;android-android;13;JSbridge4.4.0;jointBridge;1.1.0;"
+            5    => "pan.baidu.com",
+            1, 8 => "netdisk;P2SP;3.0.10.22",
+            6, 7 => "netdisk;P2SP;3.0.10.22;netdisk;4.32.1;PC;PC-Windows;10.0.19045;UniBaiduYunGuanJia",
+            2, 9 => "netdisk;12.11.9;23049RAD8C;android-android;13;JSbridge4.4.0;jointBridge;1.1.0;",
+            10   => "Mozilla/5.0 (94list-laravel;netdisk;svip)"
         };
 
         $update["_94LIST_USER_AGENT"] = '"' . $update["_94LIST_USER_AGENT"] . '"';

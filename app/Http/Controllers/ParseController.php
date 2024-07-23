@@ -223,7 +223,7 @@ class ParseController extends Controller
         $prov = self::getProvinceFromIP($ip);
         if ($prov === false) return ResponseController::unsupportNotCNCountry();
 
-        $account_type = config("94list.parse_mode") === 5 ? "access_token" : "cookie";
+        $account_type = in_array(config("94list.parse_mode"), [5, 10]) ? "access_token" : "cookie";
 
         if (in_array("超级会员", $vipType)) {
             // 刷新令牌
@@ -590,6 +590,7 @@ class ParseController extends Controller
             $user    = User::query()->find($user_id);
             $role    = $user["role"];
             if ($role !== "admin") return ResponseController::permissionsDenied();
+
             // 判断是否只是一个文件
             if (count($request["fs_ids"]) > 1) return ResponseController::onlyOneFile();
 
@@ -599,9 +600,11 @@ class ParseController extends Controller
                 $account = Account::query()->find($account_id);
                 if (!$account) return ResponseController::accountNotExists();
                 $arr = ["id" => $account_id];
-                if ($parse_mode === 5) {
+                if (in_array($parse_mode, [5, 10])) {
+                    if ($account["account_type"] !== "access_token") return ResponseController::accountTypeWrong($account_id);
                     $arr["access_token"] = $account["access_token"];
                 } else {
+                    if ($account["account_type"] !== "cookie") return ResponseController::accountTypeWrong($account_id);
                     $arr["cookie"] = $account["cookie"];
                 }
                 $json["cookie"][]   = $arr;
@@ -613,7 +616,7 @@ class ParseController extends Controller
                 $cookieData = $cookie->getData(true);
                 if ($cookieData["code"] !== 200) return $cookie;
                 $arr = ["id" => $cookieData["data"]["id"]];
-                if ($parse_mode === 5) {
+                if ($cookieData["data"]["account_type"] === "access_token") {
                     $arr["access_token"] = $cookieData["data"]["access_token"];
                 } else {
                     $arr["cookie"] = $cookieData["data"]["cookie"];
@@ -666,16 +669,14 @@ class ParseController extends Controller
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
                 "fs_id"    => $responseDatum["fs_id"],
-                "ua"       => $parse_mode === 5 ? "pan.baidu.com" : $ua
+                "ua"       => $responseDatum["ua"] ?? $ua
             ];
-
-            if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
 
             $ck_id   = $responseDatum["cookie_id"];
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if ($parse_mode == 5 && str_contains($responseDatum["url"], "qdall01")) {
+                if (in_array($parse_mode, [5, 10]) && str_contains($responseDatum["url"], "qdall01")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([
@@ -685,8 +686,6 @@ class ParseController extends Controller
                     ]);
 
                     $limited[] = $ck_id;
-
-                    unset($res["urls"]);
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
@@ -715,6 +714,8 @@ class ParseController extends Controller
                         "token_id"   => $token_id,
                         "account_id" => $ck_id
                     ]);
+
+                    if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
                 }
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 $account->update([
