@@ -363,4 +363,9 @@ class ResponseController extends Controller
     {
         return self::response(10065, 500, "换取AccessToken失败" . ($reason ? ",原因:{$reason}" : ''));
     }
+
+    public static function accountTypeWrong($id)
+    {
+        return self::response(10066, 500, "账号ID:{$id}的类型错误");
+    }
 }
