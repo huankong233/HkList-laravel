@@ -25,30 +25,31 @@ class MainConfigController extends Controller
     public function updateConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "sleep"             => "required|numeric",
-            "max_once"          => "required|numeric",
-            "password"          => "string",
-            "announce"          => "string",
-            "user_agent"        => "required|string",
-            "need_inv_code"     => "required|bool",
-            "whitelist_mode"    => "required|bool",
-            "debug"             => "required|bool",
-            "name"              => "required|string",
-            "main_server"       => "string",
-            "code"              => "string",
-            "show_copyright"    => "required|bool",
-            "custom_copyright"  => "string",
-            "parse_mode"        => "required|numeric",
-            "max_filesize"      => "required|numeric",
-            "min_single_file"   => "required|numeric",
-            "token_mode"        => "required|bool",
-            "button_link"       => "string",
-            "limit_cn"          => "required|bool",
-            "limit_prov"        => "required|bool",
-            "show_login_button" => "required|bool",
-            "token_bind_ip"     => "required|bool",
-            "proxy_server"      => "string",
-            "proxy_password"    => "string"
+            "sleep"               => "required|numeric",
+            "max_once"            => "required|numeric",
+            "password"            => "string",
+            "announce"            => "string",
+            "user_agent"          => "required|string",
+            "need_inv_code"       => "required|bool",
+            "whitelist_mode"      => "required|bool",
+            "debug"               => "required|bool",
+            "name"                => "required|string",
+            "main_server"         => "string",
+            "code"                => "string",
+            "show_copyright"      => "required|bool",
+            "custom_copyright"    => "string",
+            "parse_mode"          => "required|numeric",
+            "max_filesize"        => "required|numeric",
+            "min_single_filesize" => "required|numeric",
+            "max_single_filesize" => "required|numeric",
+            "token_mode"          => "required|bool",
+            "button_link"         => "string",
+            "limit_cn"            => "required|bool",
+            "limit_prov"          => "required|bool",
+            "show_login_button"   => "required|bool",
+            "token_bind_ip"       => "required|bool",
+            "proxy_server"        => "string",
+            "proxy_password"      => "string"
         ]);
 
         if ($validator->fails()) return ResponseController::paramsError();
@@ -69,7 +70,8 @@ class MainConfigController extends Controller
         $update["_94LIST_PARSE_MODE"]          = $request["parse_mode"];
         $update["_94LIST_MAX_FILESIZE"]        = $request["max_filesize"];
         $update["_94LIST_CUSTOM_COPYRIGHT"]    = '"' . $request["custom_copyright"] . '"';
-        $update["_94LIST_MIN_SINGLE_FILESIZE"] = $request["min_single_file"];
+        $update["_94LIST_MIN_SINGLE_FILESIZE"] = $request["min_single_filesize"];
+        $update["_94LIST_MAX_SINGLE_FILESIZE"] = $request["max_single_filesize"];
         $update["_94LIST_TOKEN_MODE"]          = $request["token_mode"];
         $update["_94LIST_BUTTON_LINK"]         = '"' . $request["button_link"] . '"';
         $update["_94LIST_LIMIT_CN"]            = $request["limit_cn"];
@@ -77,8 +79,8 @@ class MainConfigController extends Controller
         $update["_94LIST_SHOW_LOGIN_BUTTON"]   = $request["show_login_button"];
         $update["_94LIST_TOKEN_BIND_IP"]       = $request["token_bind_ip"];
         $update["_94LIST_USER_AGENT"]          = '"' . $request["user_agent"] . '"';
-        $update["HKLIST_PROXY_SERVER"]        = '"' . $request["proxy_server"] . '"';
-        $update["HKLIST_PROXY_PASSWORD"]      = '"' . $request["proxy_password"] . '"';
+        $update["HKLIST_PROXY_SERVER"]         = '"' . $request["proxy_server"] . '"';
+        $update["HKLIST_PROXY_PASSWORD"]       = '"' . $request["proxy_password"] . '"';
 
         updateEnv($update);
 

@@ -27,20 +27,21 @@ class ParseController extends Controller
         $config = config("94list");
 
         return ResponseController::success([
-            "show_announce"     => $config["announce"] !== null && $config["announce"] !== "",
-            "announce"          => $config["announce"],
-            "debug"             => config("app.debug"),
-            "max_once"          => $config["max_once"],
-            "have_account"      => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
-            "have_login"        => Auth::check(),
-            "need_inv_code"     => $config["need_inv_code"],
-            "need_password"     => $config["password"] !== "",
-            "show_copyright"    => $config["show_copyright"],
-            "custom_copyright"  => $config["custom_copyright"],
-            "min_single_file"   => $config["min_single_file"],
-            "token_mode"        => $config["token_mode"],
-            "button_link"       => $config["button_link"],
-            "show_login_button" => $config["show_login_button"]
+            "show_announce"       => $config["announce"] !== null && $config["announce"] !== "",
+            "announce"            => $config["announce"],
+            "debug"               => config("app.debug"),
+            "max_once"            => $config["max_once"],
+            "have_account"        => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
+            "have_login"          => Auth::check(),
+            "need_inv_code"       => $config["need_inv_code"],
+            "need_password"       => $config["password"] !== "",
+            "show_copyright"      => $config["show_copyright"],
+            "custom_copyright"    => $config["custom_copyright"],
+            "min_single_filesize" => $config["min_single_filesize"],
+            "max_single_filesize" => $config["max_single_filesize"],
+            "token_mode"          => $config["token_mode"],
+            "button_link"         => $config["button_link"],
+            "show_login_button"   => $config["show_login_button"]
         ]);
     }
 
@@ -554,7 +555,11 @@ class ParseController extends Controller
         if (count($fileList) !== count($request["fs_ids"])) return ResponseController::unknownFsId();
 
         foreach ($fileList as $file) {
-            if ($file["size"] < config("94list.min_single_file")) {
+            if ($file["size"] < config("94list.min_single_filesize")) {
+                $request["fs_ids"] = array_filter($request["fs_ids"], fn($v) => $v === $file["fs_ids"]);
+            }
+
+            if ($file["size"] > config("94list.max_single_filesize")) {
                 $request["fs_ids"] = array_filter($request["fs_ids"], fn($v) => $v === $file["fs_ids"]);
             }
         }

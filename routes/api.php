@@ -60,6 +60,7 @@ Route::middleware(["NeedInstall", "AutoUpdate"])->group(function () {
             Route::post("/", [AccountController::class, "addAccount"]);
             Route::patch("/{id}", [AccountController::class, "updateAccount"]);
             Route::patch("/info", [AccountController::class, "updateAccountsInfo"]);
+            Route::get("/ban", [AccountController::class, "getAccountsBan"]);
             Route::patch("/switch", [AccountController::class, "switchAccounts"]);
             Route::delete("/", [AccountController::class, "removeAccounts"]);
         });
