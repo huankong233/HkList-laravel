@@ -323,4 +323,42 @@ class AccountController extends Controller
 
         return ResponseController::success();
     }
+
+    public function getAccountsBan(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "account_id" => "required|numeric",
+        ]);
+
+        if ($validator->fails()) return ResponseController::paramsError();
+
+        $account = Account::query()->find($request["account_id"]);
+        if (!$account) return ResponseController::accountNotExists();
+
+        $http = new Client([
+            "headers" => [
+                "User-Agent" => config("94list.fake_user_agent"),
+                "cookie"     => $account["account_type"] === "cookie" ? $account["cookie"] : ""
+            ]
+        ]);
+
+        try {
+            $res      = $http->get("https://pan.baidu.com/api/checkapl/download", [
+                "query" => [
+                    "clienttype"   => 8,
+                    "channel"      => "Windows%5f10%2e0%2e19045%5fUniyunguanjia%5fnetdisk%5f00000000000000000000000000000002",
+                    "version"      => "4.32.1",
+                    "devuid"       => "",
+                    "access_token" => $account["account_type"] === "cookie" ? "" : $account["access_token"]
+                ]
+            ]);
+            $response = JSON::decode($res->getBody()->getContents());
+        } catch (RequestException $e) {
+            $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
+        } catch (GuzzleException $e) {
+            return ResponseController::networkError("获取百度账户信息");
+        }
+
+        return ResponseController::success($response);
+    }
 }

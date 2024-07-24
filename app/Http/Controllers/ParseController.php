@@ -27,20 +27,21 @@ class ParseController extends Controller
         $config = config("94list");
 
         return ResponseController::success([
-            "show_announce"     => $config["announce"] !== null && $config["announce"] !== "",
-            "announce"          => $config["announce"],
-            "debug"             => config("app.debug"),
-            "max_once"          => $config["max_once"],
-            "have_account"      => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
-            "have_login"        => Auth::check(),
-            "need_inv_code"     => $config["need_inv_code"],
-            "need_password"     => $config["password"] !== "",
-            "show_copyright"    => $config["show_copyright"],
-            "custom_copyright"  => $config["custom_copyright"],
-            "min_single_file"   => $config["min_single_file"],
-            "token_mode"        => $config["token_mode"],
-            "button_link"       => $config["button_link"],
-            "show_login_button" => $config["show_login_button"]
+            "show_announce"       => $config["announce"] !== null && $config["announce"] !== "",
+            "announce"            => $config["announce"],
+            "debug"               => config("app.debug"),
+            "max_once"            => $config["max_once"],
+            "have_account"        => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
+            "have_login"          => Auth::check(),
+            "need_inv_code"       => $config["need_inv_code"],
+            "need_password"       => $config["password"] !== "",
+            "show_copyright"      => $config["show_copyright"],
+            "custom_copyright"    => $config["custom_copyright"],
+            "min_single_filesize" => $config["min_single_filesize"],
+            "max_single_filesize" => $config["max_single_filesize"],
+            "token_mode"          => $config["token_mode"],
+            "button_link"         => $config["button_link"],
+            "show_login_button"   => $config["show_login_button"]
         ]);
     }
 
@@ -501,6 +502,19 @@ class ParseController extends Controller
         }
     }
 
+    public static function xorEncrypt($data, $key)
+    {
+        $keyLength  = strlen($key);
+        $dataLength = strlen($data);
+        $output     = '';
+
+        for ($i = 0; $i < $dataLength; $i++) {
+            $output .= $data[$i] ^ $key[$i % $keyLength];
+        }
+
+        return bin2hex($output);
+    }
+
     public function getDownloadLinks(Request $request)
     {
         set_time_limit(0);
@@ -541,7 +555,11 @@ class ParseController extends Controller
         if (count($fileList) !== count($request["fs_ids"])) return ResponseController::unknownFsId();
 
         foreach ($fileList as $file) {
-            if ($file["size"] < config("94list.min_single_file")) {
+            if ($file["size"] < config("94list.min_single_filesize")) {
+                $request["fs_ids"] = array_filter($request["fs_ids"], fn($v) => $v === $file["fs_ids"]);
+            }
+
+            if ($file["size"] > config("94list.max_single_filesize")) {
                 $request["fs_ids"] = array_filter($request["fs_ids"], fn($v) => $v === $file["fs_ids"]);
             }
         }
@@ -663,14 +681,22 @@ class ParseController extends Controller
 
         $banned  = [];
         $limited = [];
+        $key     = config("94list.proxy_password");
+        if ($key === "") $key = "download";
+        $server = config("94list.proxy_server");
 
-        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited) {
+        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited, $server, $key) {
             $res = [
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
                 "fs_id"    => $responseDatum["fs_id"],
                 "ua"       => $responseDatum["ua"] ?? $ua
             ];
+
+            if ($server !== "") {
+                $json       = JSON::encode(["url" => $responseDatum["url"], "ua" => $ua]);
+                $res["url"] = $server . "?data=" . self::xorEncrypt($json, $key);
+            }
 
             $ck_id   = $responseDatum["cookie_id"];
             $account = Account::query()->find($ck_id);
@@ -715,7 +741,13 @@ class ParseController extends Controller
                         "account_id" => $ck_id
                     ]);
 
-                    if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
+                    if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = array_map(function ($item) use ($server, $key, $ua) {
+                        if ($server !== "") {
+                            $json = JSON::encode(["url" => $item, "ua" => $ua]);
+                            $item = $server . "?data=" . self::xorEncrypt($json, $key);
+                        }
+                        return $item;
+                    }, $responseDatum["urls"]);
                 }
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 $account->update([
