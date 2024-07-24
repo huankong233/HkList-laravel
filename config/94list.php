@@ -29,5 +29,8 @@ return [
     "limit_prov"      => (bool)env("_94LIST_LIMIT_PROV", false),
 
     "show_login_button" => (bool)env("_94LIST_SHOW_LOGIN_BUTTON", true),
-    "token_bind_ip"     => (bool)env("_94LIST_TOKEN_BIND_IP", false)
+    "token_bind_ip"     => (bool)env("_94LIST_TOKEN_BIND_IP", false),
+
+    "proxy_server"   => env("HKLIST_PROXY_SERVER", ""),
+    "proxy_password" => env("HKLIST_PROXY_PASSWORD", "download"),
 ];

@@ -501,6 +501,19 @@ class ParseController extends Controller
         }
     }
 
+    public static function xorEncrypt($data, $key)
+    {
+        $keyLength  = strlen($key);
+        $dataLength = strlen($data);
+        $output     = '';
+
+        for ($i = 0; $i < $dataLength; $i++) {
+            $output .= $data[$i] ^ $key[$i % $keyLength];
+        }
+
+        return bin2hex($output);
+    }
+
     public function getDownloadLinks(Request $request)
     {
         set_time_limit(0);
@@ -663,14 +676,22 @@ class ParseController extends Controller
 
         $banned  = [];
         $limited = [];
+        $key     = config("94list.proxy_password");
+        if ($key === "") $key = "download";
+        $server = config("94list.proxy_server");
 
-        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited) {
+        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited, $server, $key) {
             $res = [
                 "url"      => $responseDatum["url"],
                 "filename" => $responseDatum["filename"],
                 "fs_id"    => $responseDatum["fs_id"],
                 "ua"       => $responseDatum["ua"] ?? $ua
             ];
+
+            if ($server !== "") {
+                $json       = JSON::encode(["url" => $responseDatum["url"], "ua" => $ua]);
+                $res["url"] = $server . "?data=" . self::xorEncrypt($json, $key);
+            }
 
             $ck_id   = $responseDatum["cookie_id"];
             $account = Account::query()->find($ck_id);
@@ -715,7 +736,13 @@ class ParseController extends Controller
                         "account_id" => $ck_id
                     ]);
 
-                    if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = $responseDatum["urls"];
+                    if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = array_map(function ($item) use ($server, $key, $ua) {
+                        if ($server !== "") {
+                            $json = JSON::encode(["url" => $item, "ua" => $ua]);
+                            $item = $server . "?data=" . self::xorEncrypt($json, $key);
+                        }
+                        return $item;
+                    }, $responseDatum["urls"]);
                 }
             } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
                 $account->update([
