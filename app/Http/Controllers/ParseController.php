@@ -87,22 +87,6 @@ class ParseController extends Controller
         } catch (GuzzleException $e) {
         }
 
-//        try {
-//            $res      = $http->get("https://api.vore.top/api/IPdata", ["query" => ["ip" => $ip]]);
-//            $response = JSON::decode($res->getBody()->getContents());
-//
-//            if (isset($response["ipinfo"]["cnip"]) && isset($response["ipdata"]["info1"])) {
-//                if (config("94list.limit_cn")) {
-//                    if (!$response["ipinfo"]["cnip"]) {
-//                        return false;
-//                    }
-//                }
-//
-//                return $response["ipdata"]["info1"] !== "" ? $response["ipdata"]["info1"] : null;
-//            }
-//        } catch (GuzzleException $e) {
-//        }
-
         try {
             $res      = $http->get("https://qifu.baidu.com/ip/geo/v1/district", ["query" => ["ip" => $ip]]);
             $response = JSON::decode($res->getBody()->getContents());
@@ -686,15 +670,16 @@ class ParseController extends Controller
         $server = config("94list.proxy_server");
 
         $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited, $server, $key) {
+            $url = $responseDatum["url"];
             $res = [
-                "url"      => $responseDatum["url"],
+                "url"      => $url,
                 "filename" => $responseDatum["filename"],
                 "fs_id"    => $responseDatum["fs_id"],
                 "ua"       => $responseDatum["ua"] ?? $ua
             ];
 
-            if ($server !== "") {
-                $json       = JSON::encode(["url" => $responseDatum["url"], "ua" => $ua]);
+            if ($server !== "" && str_contains($url, "http")) {
+                $json       = JSON::encode(["url" => $url, "ua" => $ua]);
                 $res["url"] = $server . "?data=" . self::xorEncrypt($json, $key);
             }
 
@@ -702,7 +687,7 @@ class ParseController extends Controller
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if (in_array($parse_mode, [5, 10]) && str_contains($responseDatum["url"], "qdall01")) {
+                if (in_array($parse_mode, [5, 10]) && str_contains($url, "qdall01")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([
@@ -734,14 +719,14 @@ class ParseController extends Controller
                     RecordController::addRecord([
                         "ip"         => UtilsController::getIp(),
                         "fs_id"      => $fs_id,
-                        "url"        => $responseDatum["url"],
+                        "url"        => $url,
                         "ua"         => $ua,
                         "user_id"    => $user_id,
                         "token_id"   => $token_id,
                         "account_id" => $ck_id
                     ]);
 
-                    if (str_contains($responseDatum["url"], "http") && isset($responseDatum["urls"])) $res["urls"] = array_map(function ($item) use ($server, $key, $ua) {
+                    if (str_contains($url, "http") && isset($responseDatum["urls"])) $res["urls"] = array_map(function ($item) use ($server, $key, $ua) {
                         if ($server !== "") {
                             $json = JSON::encode(["url" => $item, "ua" => $ua]);
                             $item = $server . "?data=" . self::xorEncrypt($json, $key);
@@ -749,10 +734,10 @@ class ParseController extends Controller
                         return $item;
                     }, $responseDatum["urls"]);
                 }
-            } else if (str_contains($responseDatum["url"], "风控") || str_contains($responseDatum["url"], "invalid")) {
+            } else if (str_contains($url, "风控") || str_contains($url, "invalid")) {
                 $account->update([
                     "switch" => 0,
-                    "reason" => $responseDatum["url"],
+                    "reason" => $url,
                 ]);
 
                 $banned[] = $ck_id;
