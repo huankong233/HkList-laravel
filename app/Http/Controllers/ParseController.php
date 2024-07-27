@@ -511,6 +511,7 @@ class ParseController extends Controller
             "fs_ids.*" => "required|numeric",
             "url"      => "required|string",
             "surl"     => "required|string",
+            "dir"      => "required|string",
             "pwd"      => "string"
         ]);
 
@@ -552,6 +553,11 @@ class ParseController extends Controller
 
         // 检查文件大小是否符合用户组配额
         if (collect($fileList)->sum("size") > $checkLimitData["data"]["size"]) return ResponseController::groupQuotaSizeIsNotEnough();
+
+        // 检查链接是否有效
+        $valid     = self::getFileList($request);
+        $validData = $valid->getData(true);
+        if ($validData["code"] !== 200) return $valid;
 
         $parse_mode = config("94list.parse_mode");
 
