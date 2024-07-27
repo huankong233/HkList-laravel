@@ -9,6 +9,7 @@ use App\Models\InvCode;
 use App\Models\Record;
 use App\Models\Token;
 use App\Models\User;
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -68,7 +69,7 @@ class ParseController extends Controller
 
                 return $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
             }
-        } catch (GuzzleException $e) {
+        } catch (Exception $e) {
         }
 
         try {
@@ -84,7 +85,7 @@ class ParseController extends Controller
 
                 return $response["address"] !== "" ? $response["address"] : null;
             }
-        } catch (GuzzleException $e) {
+        } catch (Exception $e) {
         }
 
         try {
@@ -100,7 +101,7 @@ class ParseController extends Controller
 
                 return $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
             }
-        } catch (GuzzleException $e) {
+        } catch (Exception $e) {
         }
 
         return null;
@@ -204,9 +205,13 @@ class ParseController extends Controller
 
     public function getRandomCookie(array $vipType = ["超级会员"], $makeNew = true)
     {
-        $ip   = UtilsController::getIp();
-        $prov = self::getProvinceFromIP($ip);
-        if ($prov === false) return ResponseController::unsupportNotCNCountry();
+        $ip = UtilsController::getIp();
+        if (config("94list.limit_cn") || config("94list.limit_prov")) {
+            $prov = self::getProvinceFromIP($ip);
+            if ($prov === false) return ResponseController::unsupportNotCNCountry();
+        } else {
+            $prov = null;
+        }
 
         $account_type = in_array(config("94list.parse_mode"), [5, 10]) ? "access_token" : "cookie";
 
