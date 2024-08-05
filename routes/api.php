@@ -19,7 +19,7 @@ Route::middleware(["NeedInstall", "AutoUpdate"])->group(function () {
     Route::prefix("/parse")->middleware("IpFilter")->group(function () {
         Route::get("/config", [ParseController::class, "getConfig"]);
         Route::get("/limit", [ParseController::class, "checkLimit"]);
-        Route::prefix("/")->middleware(["ThrottleRequest", "NeedPassword"])->group(function () {
+        Route::prefix("/")->middleware(["NeedPassword"])->group(function () {
             Route::post("/get_file_list", [ParseController::class, "getFileList"]);
             Route::post("/get_vcode", [ParseController::class, "getVcode"]);
             Route::post("/get_download_links", [ParseController::class, "getDownloadLinks"]);
