@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post("/install", [InstallController::class, "install"]);
 
-Route::middleware(["NeedInstall", "AutoUpdate", "ThrottleRequest2"])->group(function () {
+Route::middleware(["NeedInstall", "AutoUpdate"])->group(function () {
     Route::prefix("/parse")->middleware("IpFilter")->group(function () {
         Route::get("/config", [ParseController::class, "getConfig"]);
         Route::get("/limit", [ParseController::class, "checkLimit"]);
@@ -26,7 +26,7 @@ Route::middleware(["NeedInstall", "AutoUpdate", "ThrottleRequest2"])->group(func
         });
     });
 
-    Route::prefix("/user")->middleware(["ThrottleRequest"])->group(function () {
+    Route::prefix("/user")->group(function () {
         Route::post("/login", [UserController::class, "login"]);
         Route::post("/register", [UserController::class, "register"]);
         Route::delete("/", [UserController::class, "logout"]);
