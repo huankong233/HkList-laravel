@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post("/install", [InstallController::class, "install"]);
 
-Route::middleware(["NeedInstall", "AutoUpdate"])->group(function () {
+Route::middleware(["NeedInstall", "AutoUpdate", "ThrottleRequest2"])->group(function () {
     Route::prefix("/parse")->middleware("IpFilter")->group(function () {
         Route::get("/config", [ParseController::class, "getConfig"]);
         Route::get("/limit", [ParseController::class, "checkLimit"]);
@@ -62,6 +62,7 @@ Route::middleware(["NeedInstall", "AutoUpdate"])->group(function () {
             Route::patch("/info", [AccountController::class, "updateAccountsInfo"]);
             Route::get("/ban", [AccountController::class, "getAccountsBan"]);
             Route::patch("/switch", [AccountController::class, "switchAccounts"]);
+            Route::patch("/ban", [AccountController::class, "switchBanAccounts"]);
             Route::delete("/", [AccountController::class, "removeAccounts"]);
         });
 
