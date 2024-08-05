@@ -310,6 +310,21 @@ class AccountController extends Controller
         return ResponseController::success();
     }
 
+    public function switchBanAccounts(Request $request)
+    {
+        Account::query()
+               ->where([
+                   "switch" => 0,
+                   "reason" => "账号被限速"
+               ])
+               ->update([
+                   "switch" => 1,
+                   "reason" => ""
+               ]);
+
+        return ResponseController::success();
+    }
+
     public function removeAccounts(Request $request)
     {
         $validator = Validator::make($request->all(), [
