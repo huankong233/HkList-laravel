@@ -35,11 +35,9 @@ USDT-TRC20: `TJK9FLAxqQmYU583Qjtof35MpJEu8Xq8iF`
 
 宝塔自带的 `sqlite` 版本过低需要更新: [更新教程](https://blog.huankong.top/article/5p69qc26/)
 
-项目当前进入仅维护状态,仅保证现有功能可用,授权不再出售,感谢支持
+新版本需要授权使用, 购买联系 [tg](https://t.me/huan_kong)
 
-~~新版本需要授权使用, 购买联系 [tg](https://t.me/huan_kong)~~
-
-~~接代安装~~
+接代安装
 
 ### 普通安装（宝塔）
 
