@@ -12,6 +12,7 @@ class Account extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        "id",
         "baidu_name",
         "account_type",
         "cookie",

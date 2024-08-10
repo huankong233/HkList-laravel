@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
 use Closure;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -47,6 +48,21 @@ class AutoUpdate
             Schema::table("accounts", function (Blueprint $table) {
                 $table->string("uk")->nullable()->after("cookie");
             });
+        }
+
+        // 1.3.29
+        $account = Account::query()->find(0);
+        if (!$account) {
+            Account::query()
+                   ->create([
+                       "baidu_name"   => "授权服务器提供",
+                       "account_type" => "cookie",
+                       "vip_type"     => "普通用户",
+                       "switch"       => 0
+                   ])
+                   ->update([
+                       "id" => 0
+                   ]);
         }
 
         return $next($request);
