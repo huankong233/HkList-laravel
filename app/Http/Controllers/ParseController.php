@@ -533,6 +533,11 @@ class ParseController extends Controller
         // 检查文件数量是否符合用户组配额
         if (count($request["fs_ids"]) > $checkLimitData["data"]["count"]) return ResponseController::groupQuotaCountIsNotEnough();
 
+        // 检查链接是否有效
+        $valid     = self::getFileList($request);
+        $validData = $valid->getData(true);
+        if ($validData["code"] !== 200) return $valid;
+
         // 获取文件列表
         $fileList = FileList::query()
                             ->where([
@@ -558,11 +563,6 @@ class ParseController extends Controller
 
         // 检查文件大小是否符合用户组配额
         if (collect($fileList)->sum("size") > $checkLimitData["data"]["size"]) return ResponseController::groupQuotaSizeIsNotEnough();
-
-        // 检查链接是否有效
-        $valid     = self::getFileList($request);
-        $validData = $valid->getData(true);
-        if ($validData["code"] !== 200) return $valid;
 
         $parse_mode = config("94list.parse_mode");
 
@@ -594,47 +594,49 @@ class ParseController extends Controller
             $json["vcode_str"]   = $request["vcode_str"];
         }
 
-        // 插入会员账号
-        $json["cookie"] = [];
+        if (!in_array($parse_mode, [11])) {
+            // 插入会员账号
+            $json["cookie"] = [];
 
-        // 检查是否指定了账号管理员
-        if (isset($request["account_ids"]) && $request["account_ids"] !== "") {
-            $user_id = Auth::check() ? Auth::user()["id"] : 1;
-            $user    = User::query()->find($user_id);
-            $role    = $user["role"];
-            if ($role !== "admin") return ResponseController::permissionsDenied();
+            // 检查是否指定了账号管理员
+            if (isset($request["account_ids"]) && $request["account_ids"] !== "") {
+                $user_id = Auth::check() ? Auth::user()["id"] : 1;
+                $user    = User::query()->find($user_id);
+                $role    = $user["role"];
+                if ($role !== "admin") return ResponseController::permissionsDenied();
 
-            // 判断是否只是一个文件
-            if (count($request["fs_ids"]) > 1) return ResponseController::onlyOneFile();
+                // 判断是否只是一个文件
+                if (count($request["fs_ids"]) > 1) return ResponseController::onlyOneFile();
 
-            $json["fsidlist"]       = [];
-            $request["account_ids"] = explode(",", $request["account_ids"]);
-            foreach ($request["account_ids"] as $account_id) {
-                $account = Account::query()->find($account_id);
-                if (!$account) return ResponseController::accountNotExists();
-                $arr = ["id" => $account_id];
-                if (in_array($parse_mode, [5, 10])) {
-                    if ($account["account_type"] !== "access_token") return ResponseController::accountTypeWrong($account_id);
-                    $arr["access_token"] = $account["access_token"];
-                } else {
-                    if ($account["account_type"] !== "cookie") return ResponseController::accountTypeWrong($account_id);
-                    $arr["cookie"] = $account["cookie"];
+                $json["fsidlist"]       = [];
+                $request["account_ids"] = explode(",", $request["account_ids"]);
+                foreach ($request["account_ids"] as $account_id) {
+                    $account = Account::query()->find($account_id);
+                    if (!$account) return ResponseController::accountNotExists();
+                    $arr = ["id" => $account_id];
+                    if (in_array($parse_mode, [5, 10])) {
+                        if ($account["account_type"] !== "access_token") return ResponseController::accountTypeWrong($account_id);
+                        $arr["access_token"] = $account["access_token"];
+                    } else {
+                        if ($account["account_type"] !== "cookie") return ResponseController::accountTypeWrong($account_id);
+                        $arr["cookie"] = $account["cookie"];
+                    }
+                    $json["cookie"][]   = $arr;
+                    $json["fsidlist"][] = $request["fs_ids"][0];
                 }
-                $json["cookie"][]   = $arr;
-                $json["fsidlist"][] = $request["fs_ids"][0];
-            }
-        } else {
-            for ($i = 0; $i < count($request["fs_ids"]); $i++) {
-                $cookie     = self::getRandomCookie();
-                $cookieData = $cookie->getData(true);
-                if ($cookieData["code"] !== 200) return $cookie;
-                $arr = ["id" => $cookieData["data"]["id"]];
-                if ($cookieData["data"]["account_type"] === "access_token") {
-                    $arr["access_token"] = $cookieData["data"]["access_token"];
-                } else {
-                    $arr["cookie"] = $cookieData["data"]["cookie"];
+            } else {
+                for ($i = 0; $i < count($request["fs_ids"]); $i++) {
+                    $cookie     = self::getRandomCookie();
+                    $cookieData = $cookie->getData(true);
+                    if ($cookieData["code"] !== 200) return $cookie;
+                    $arr = ["id" => $cookieData["data"]["id"]];
+                    if ($cookieData["data"]["account_type"] === "access_token") {
+                        $arr["access_token"] = $cookieData["data"]["access_token"];
+                    } else {
+                        $arr["cookie"] = $cookieData["data"]["cookie"];
+                    }
+                    $json["cookie"][] = $arr;
                 }
-                $json["cookie"][] = $arr;
             }
         }
 
@@ -694,7 +696,7 @@ class ParseController extends Controller
                 $res["url"] = $server . "?data=" . self::xorEncrypt($json, $key);
             }
 
-            $ck_id   = $responseDatum["cookie_id"];
+            $ck_id   = $responseDatum["cookie_id"] ?? 0;
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
