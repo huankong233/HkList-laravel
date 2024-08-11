@@ -368,4 +368,9 @@ class ResponseController extends Controller
     {
         return self::response(10066, 500, "账号ID:{$id}的类型错误");
     }
+
+    public static function accountCanNotBeDeleted()
+    {
+        return self::response(10067, 500, "自带账户禁止删除");
+    }
 }

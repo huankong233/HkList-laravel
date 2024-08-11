@@ -1,0 +1,1 @@
+const n=t=>new Date(t*1e3).toLocaleDateString(void 0,{year:"numeric",month:"long",day:"numeric"}),s=(t,o=2)=>{if(typeof t=="string"&&(t=parseFloat(t)),t===0)return"0 Bytes";const a=1024,r=["Bytes","KB","MB","GB","TB","PB","EB","ZB","YB"],e=Math.floor(Math.log(t)/Math.log(a));return parseFloat((t/Math.pow(a,e)).toFixed(o))+" "+r[e]};export{n as a,s as f};

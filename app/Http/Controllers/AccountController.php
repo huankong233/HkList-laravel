@@ -334,6 +334,8 @@ class AccountController extends Controller
 
         if ($validator->fails()) return ResponseController::paramsError();
 
+        if (in_array(0, $request["account_ids"])) return ResponseController::accountCanNotBeDeleted();
+
         Account::query()->whereIn("id", $request["account_ids"])->delete();
 
         return ResponseController::success();
