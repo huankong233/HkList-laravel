@@ -32,7 +32,7 @@ class ParseController extends Controller
             "announce"            => $config["announce"],
             "debug"               => config("app.debug"),
             "max_once"            => $config["max_once"],
-            "have_account"        => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
+            "have_account"        => in_array($config["parse_mode"], [11]) || self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
             "have_login"          => Auth::check(),
             "need_inv_code"       => $config["need_inv_code"],
             "need_password"       => $config["password"] !== "",

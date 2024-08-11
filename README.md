@@ -49,7 +49,7 @@ USDT-TRC20: `TJK9FLAxqQmYU583Qjtof35MpJEu8Xq8iF`
 
 ### `docker` 安装
 
-- 1.获取 [镜像](https://hub.docker.com/r/huankong233/HKlist-laravel)
+- 1.获取 [镜像](https://hub.docker.com/r/huankong233/94list-laravel)
 - 2.启动项目
 - 3.所有值可以通过修改 `.env` 文件 或者通过修改 `系统变量` 来定义
 
