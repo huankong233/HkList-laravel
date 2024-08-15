@@ -1,0 +1,1 @@
+import{E as c}from"./element-plus@2.7.7_vue@3.4.32_typescript@5.5.3_-4orX1JGZ.js";const r=async(a,t="复制成功")=>{if(navigator.clipboard)try{await navigator.clipboard.writeText(a)}catch{const e=document.createElement("textarea");e.value=a,document.body.appendChild(e),e.select(),document.execCommand("copy"),document.body.removeChild(e)}c({message:t,type:"success"})};export{r as c};
