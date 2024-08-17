@@ -647,7 +647,7 @@ class ParseController extends Controller
         } catch (RequestException $e) {
             $response = JSON::decode($e->getResponse()->getBody()->getContents());
             $reason   = $response["message"] ?? "未知原因,请重试";
-            if (str_contains($reason, "风控")) {
+            if (str_contains($reason, "风控") && $parse_mode !== 11) {
                 $account = Account::query()->find($json["cookie"][0]["id"]);
                 if ($account) {
                     $account->update([
