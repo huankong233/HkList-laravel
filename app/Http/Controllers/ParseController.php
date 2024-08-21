@@ -32,7 +32,7 @@ class ParseController extends Controller
             "announce"            => $config["announce"],
             "debug"               => config("app.debug"),
             "max_once"            => $config["max_once"],
-            "have_account"        => in_array($config["parse_mode"], [11]) || self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
+            "have_account"        => self::getRandomCookie(["超级会员"], false)->getData(true)["code"] === 200,
             "have_login"          => Auth::check(),
             "need_inv_code"       => $config["need_inv_code"],
             "need_password"       => $config["password"] !== "",
@@ -187,6 +187,7 @@ class ParseController extends Controller
                           'accounts.uk',
                           'accounts.access_token',
                           'accounts.refresh_token',
+                          'accounts.cid',
                           'accounts.expired_at',
                           'accounts.vip_type',
                           'accounts.switch',
@@ -203,7 +204,7 @@ class ParseController extends Controller
                       ->first();
     }
 
-    public function getRandomCookie(array $vipType = ["超级会员"], $makeNew = true)
+    public function getRandomCookie($vipType = ["超级会员"], $makeNew = true)
     {
         $ip = UtilsController::getIp();
         if (config("94list.limit_cn") || config("94list.limit_prov")) {
@@ -214,6 +215,7 @@ class ParseController extends Controller
         }
 
         $account_type = in_array(config("94list.parse_mode"), [5, 10]) ? "access_token" : "cookie";
+        if (config("94list.parse_mode") === 11) $account_type = "enterprise";
 
         if (in_array("超级会员", $vipType)) {
             // 刷新令牌
@@ -594,49 +596,54 @@ class ParseController extends Controller
             $json["vcode_str"]   = $request["vcode_str"];
         }
 
-        if (!in_array($parse_mode, [11])) {
-            // 插入会员账号
-            $json["cookie"] = [];
+        // 插入会员账号
+        $json["cookie"] = [];
 
-            // 检查是否指定了账号管理员
-            if (isset($request["account_ids"]) && $request["account_ids"] !== "") {
-                $user_id = Auth::check() ? Auth::user()["id"] : 1;
-                $user    = User::query()->find($user_id);
-                $role    = $user["role"];
-                if ($role !== "admin") return ResponseController::permissionsDenied();
+        // 检查是否指定了账号管理员
+        if (isset($request["account_ids"]) && $request["account_ids"] !== "") {
+            $user_id = Auth::check() ? Auth::user()["id"] : 1;
+            $user    = User::query()->find($user_id);
+            $role    = $user["role"];
+            if ($role !== "admin") return ResponseController::permissionsDenied();
 
-                // 判断是否只是一个文件
-                if (count($request["fs_ids"]) > 1) return ResponseController::onlyOneFile();
+            // 判断是否只是一个文件
+            if (count($request["fs_ids"]) > 1) return ResponseController::onlyOneFile();
 
-                $json["fsidlist"]       = [];
-                $request["account_ids"] = explode(",", $request["account_ids"]);
-                foreach ($request["account_ids"] as $account_id) {
-                    $account = Account::query()->find($account_id);
-                    if (!$account) return ResponseController::accountNotExists();
-                    $arr = ["id" => $account_id];
-                    if (in_array($parse_mode, [5, 10])) {
-                        if ($account["account_type"] !== "access_token") return ResponseController::accountTypeWrong($account_id);
-                        $arr["access_token"] = $account["access_token"];
-                    } else {
-                        if ($account["account_type"] !== "cookie") return ResponseController::accountTypeWrong($account_id);
-                        $arr["cookie"] = $account["cookie"];
-                    }
-                    $json["cookie"][]   = $arr;
-                    $json["fsidlist"][] = $request["fs_ids"][0];
+            $json["fsidlist"]       = [];
+            $request["account_ids"] = explode(",", $request["account_ids"]);
+            foreach ($request["account_ids"] as $account_id) {
+                $account = Account::query()->find($account_id);
+                if (!$account) return ResponseController::accountNotExists();
+                $arr = ["id" => $account_id];
+                if (in_array($parse_mode, [5, 10])) {
+                    if ($account["account_type"] !== "access_token") return ResponseController::accountTypeWrong($account_id);
+                    $arr["access_token"] = $account["access_token"];
+                } else if ($parse_mode === 11) {
+                    if ($account["account_type"] !== "") return ResponseController::accountTypeWrong($account_id);
+                    $arr["cookie"] = $account["cookie"];
+                    $arr["cid"]    = $account["cid"];
+                } else {
+                    if ($account["account_type"] !== "cookie") return ResponseController::accountTypeWrong($account_id);
+                    $arr["cookie"] = $account["cookie"];
                 }
-            } else {
-                for ($i = 0; $i < count($request["fs_ids"]); $i++) {
-                    $cookie     = self::getRandomCookie();
-                    $cookieData = $cookie->getData(true);
-                    if ($cookieData["code"] !== 200) return $cookie;
-                    $arr = ["id" => $cookieData["data"]["id"]];
-                    if ($cookieData["data"]["account_type"] === "access_token") {
-                        $arr["access_token"] = $cookieData["data"]["access_token"];
-                    } else {
-                        $arr["cookie"] = $cookieData["data"]["cookie"];
-                    }
-                    $json["cookie"][] = $arr;
+                $json["cookie"][]   = $arr;
+                $json["fsidlist"][] = $request["fs_ids"][0];
+            }
+        } else {
+            for ($i = 0; $i < count($request["fs_ids"]); $i++) {
+                $cookie     = self::getRandomCookie($parse_mode === 11 ? ["超级会员", "普通会员", "普通用户"] : ["超级会员"]);
+                $cookieData = $cookie->getData(true);
+                if ($cookieData["code"] !== 200) return $cookie;
+                $arr = ["id" => $cookieData["data"]["id"]];
+                if ($cookieData["data"]["account_type"] === "access_token") {
+                    $arr["access_token"] = $cookieData["data"]["access_token"];
+                } else if ($cookieData["data"]["account_type"] === "enterprise") {
+                    $arr["cookie"] = $cookieData["data"]["cookie"];
+                    $arr["cid"]    = $cookieData["data"]["cid"];
+                } else {
+                    $arr["cookie"] = $cookieData["data"]["cookie"];
                 }
+                $json["cookie"][] = $arr;
             }
         }
 
@@ -682,7 +689,7 @@ class ParseController extends Controller
         if ($key === "") $key = "download";
         $server = config("94list.proxy_server");
 
-        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited, $server, $key) {
+        $data = array_map(function ($responseDatum) use ($ua, $parse_mode, $request, $user_id, $token, $token_id, &$banned, &$limited, $server, $key, $json) {
             $url = $responseDatum["url"];
             $res = [
                 "url"      => $url,
@@ -696,7 +703,8 @@ class ParseController extends Controller
                 $res["url"] = $server . "?data=" . self::xorEncrypt($json, $key);
             }
 
-            $ck_id   = $responseDatum["cookie_id"] ?? 0;
+            $ck_id = $responseDatum["cookie_id"] ?? 0;
+            if ($parse_mode === 11) $ck_id = $json["cookie"][0]["id"];
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
@@ -710,6 +718,16 @@ class ParseController extends Controller
                     ]);
 
                     $limited[] = $ck_id;
+                } else if (str_contains($url, "风控")) {
+                    $res["url"] = "账号已风控";
+
+                    $account->update([
+                        "last_use_at" => date("Y-m-d H:i:s"),
+                        "switch"      => 0,
+                        "reason"      => $url,
+                    ]);
+
+                    $banned[] = $ck_id;
                 } else {
                     $account->update(["last_use_at" => date("Y-m-d H:i:s")]);
 
