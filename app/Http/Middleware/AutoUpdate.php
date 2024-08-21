@@ -65,6 +65,14 @@ class AutoUpdate
                    ]);
         }
 
+        // 1.3.34 迁移 增加企业cid
+        if (!Schema::hasColumn("accounts", "cid")) {
+            Schema::table("accounts", function (Blueprint $table) {
+                $table->enum("account_type", ["cookie", "access_token", "enterprise"])->change();
+                $table->unsignedBigInteger("cid")->nullable()->after("refresh_token");
+            });
+        }
+
         return $next($request);
     }
 }

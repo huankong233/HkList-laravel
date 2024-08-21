@@ -42,7 +42,7 @@ class AccountController extends Controller
         $http = new Client([
             "headers" => [
                 "User-Agent" => config("94list.fake_user_agent"),
-                "cookie"     => $type === 1 ? $cookie : ""
+                "cookie"     => $type === 2 ? "" : $cookie
             ]
         ]);
 
@@ -86,7 +86,7 @@ class AccountController extends Controller
         $http = new Client([
             "headers" => [
                 "User-Agent" => config("94list.fake_user_agent"),
-                "Cookie"     => $type === 1 ? $cookie : ""
+                "Cookie"     => $type === 2 ? "" : $cookie
             ]
         ]);
 
@@ -105,6 +105,27 @@ class AccountController extends Controller
 
     public static function _getAccountItems($type, $cookie)
     {
+        if ($type === 3) {
+            $http = new Client([
+                "headers" => [
+                    "User-Agent" => config("94list.fake_user_agent"),
+                    "Cookie"     => $cookie
+                ]
+            ]);
+
+            try {
+                $res      = $http->get("https://pan.baidu.com/mid_enterprise_v2/api/enterprise/organization/allorganizationinfo", ["query" => ["clienttype" => 0, "app_id" => 24029990]]);
+                $response = JSON::decode($res->getBody()->getContents());
+            } catch (RequestException $e) {
+                $response = $e->hasResponse() ? JSON::decode($e->getResponse()->getBody()->getContents()) : null;
+            } catch (GuzzleException $e) {
+                return ResponseController::networkError("获取SVIP到期时间");
+            }
+
+            if (isset($response["errmsg"]) && $response["errmsg"] === "Invalid Bduss") return ResponseController::accountExpired();
+            $cid = $response["data"][0]["cid"];
+        }
+
         $accountInfoRes  = self::_getAccountInfo($type, $cookie);
         $accountInfoData = $accountInfoRes->getData(true);
         if ($accountInfoData["code"] !== 200) return $accountInfoRes;
@@ -137,6 +158,7 @@ class AccountController extends Controller
         return ResponseController::success([
             "uk"          => $accountInfoData["data"]["uk"],
             "baidu_name"  => $accountInfoData["data"]["baidu_name"],
+            "cid"         => $cid ?? null,
             "cookie"      => $cookie,
             "vip_type"    => $vip_type,
             "switch"      => $switch ?? 1,
@@ -148,7 +170,7 @@ class AccountController extends Controller
     public function addAccount(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "type"   => ["required", Rule::in([1, 2])],
+            "type"   => ["required", Rule::in([1, 2, 3])],
             "cookie" => "required|string"
         ]);
 
@@ -165,13 +187,6 @@ class AccountController extends Controller
                 $cookieData = $cookie->getData(true);
                 if ($cookieData["code"] !== 200) return $cookie;
                 $cookie = $cookieData["data"]["access_token"];
-            } else {
-                $cookieData = [
-                    "data" => [
-                        "access_token"  => null,
-                        "refresh_token" => null
-                    ]
-                ];
             }
 
             $accountItemsRes  = self::_getAccountItems($request["type"], $cookie);
@@ -186,6 +201,8 @@ class AccountController extends Controller
                     $accountItemsData["data"]["refresh_token"] = $cookieData["data"]["refresh_token"];
                     $accountItemsData["data"]["expired_at"]    = now()->addSeconds($cookieData["data"]["expires_in"]);
                     $accountItemsData["data"]["cookie"]        = null;
+                } else if ($request["type"] === 3) {
+                    $accountItemsData["data"]["account_type"] = "enterprise";
                 }
                 Account::query()->create($accountItemsData["data"]);
             } else {
