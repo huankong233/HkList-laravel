@@ -373,4 +373,9 @@ class ResponseController extends Controller
     {
         return self::response(10067, 500, "自带账户禁止删除");
     }
+
+    public static function accountIsNotEnterprise()
+    {
+        return self::response(10068, 500, "获取账户信息失败或账户非企业用户");
+    }
 }

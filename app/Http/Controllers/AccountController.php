@@ -123,6 +123,7 @@ class AccountController extends Controller
             }
 
             if (isset($response["errmsg"]) && $response["errmsg"] === "Invalid Bduss") return ResponseController::accountExpired();
+            if (!isset($response["data"][0]["cid"])) return ResponseController::accountIsNotEnterprise();
             $cid = $response["data"][0]["cid"];
         }
 
