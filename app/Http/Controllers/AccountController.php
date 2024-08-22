@@ -220,7 +220,7 @@ class AccountController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "baidu_name"    => "required|string",
-            "account_type"  => ["required", Rule::in(["cookie", "access_token"])],
+            "account_type"  => ["required", Rule::in(["cookie", "access_token", "enterprise"])],
             "access_token"  => "nullable|string",
             "refresh_token" => "nullable|string",
             "cookie"        => "nullable|string",

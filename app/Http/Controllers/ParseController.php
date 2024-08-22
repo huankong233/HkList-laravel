@@ -757,13 +757,15 @@ class ParseController extends Controller
                         "account_id" => $ck_id
                     ]);
 
-                    if (str_contains($url, "http") && isset($responseDatum["urls"])) $res["urls"] = array_map(function ($item) use ($server, $key, $ua) {
-                        if ($server !== "") {
-                            $json = JSON::encode(["url" => $item, "ua" => $ua]);
-                            $item = $server . "?data=" . self::xorEncrypt($json, $key);
-                        }
-                        return $item;
-                    }, $responseDatum["urls"]);
+                    if (str_contains($url, "http") && isset($responseDatum["urls"])) {
+                        $res["urls"] = array_map(function ($item) use ($server, $key, $ua) {
+                            if ($server !== "") {
+                                $json = JSON::encode(["url" => $item, "ua" => $ua]);
+                                $item = $server . "?data=" . self::xorEncrypt($json, $key);
+                            }
+                            return $item;
+                        }, $responseDatum["urls"]);
+                    }
                 }
             } else if (str_contains($url, "风控") || str_contains($url, "invalid")) {
                 $account->update([
