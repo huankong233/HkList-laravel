@@ -619,7 +619,7 @@ class ParseController extends Controller
                     if ($account["account_type"] !== "access_token") return ResponseController::accountTypeWrong($account_id);
                     $arr["access_token"] = $account["access_token"];
                 } else if ($parse_mode === 11) {
-                    if ($account["account_type"] !== "") return ResponseController::accountTypeWrong($account_id);
+                    if ($account["account_type"] !== "enterprise") return ResponseController::accountTypeWrong($account_id);
                     $arr["cookie"] = $account["cookie"];
                     $arr["cid"]    = $account["cid"];
                 } else {
