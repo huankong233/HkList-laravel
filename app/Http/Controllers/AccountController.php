@@ -381,7 +381,7 @@ class AccountController extends Controller
         $http = new Client([
             "headers" => [
                 "User-Agent" => config("94list.fake_user_agent"),
-                "cookie" => $account["account_type"] === "cookie" ? $account["cookie"] : ""
+                "cookie" => $account["account_type"] === "cookie" || $account["account_type"] === "enterprise" ? $account["cookie"] : ""
             ]
         ]);
 
@@ -392,7 +392,7 @@ class AccountController extends Controller
                     "channel" => "Windows%5f10%2e0%2e19045%5fUniyunguanjia%5fnetdisk%5f00000000000000000000000000000002",
                     "version" => "4.32.1",
                     "devuid" => "",
-                    "access_token" => $account["account_type"] === "cookie" ? "" : $account["access_token"]
+                    "access_token" => $account["account_type"] === "cookie" || $account["account_type"] === "enterprise" ? "" : $account["access_token"]
                 ]
             ]);
             $response = JSON::decode($res->getBody()->getContents());

@@ -4,6 +4,7 @@ use App\Http\Middleware\AutoUpdate;
 use App\Http\Middleware\IpFilter;
 use App\Http\Middleware\NeedInstall;
 use App\Http\Middleware\NeedPassword;
+use App\Http\Middleware\ParamCheck;
 use App\Http\Middleware\RoleFilter;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
                           'NeedInstall'  => NeedInstall::class,
                           'NeedPassword' => NeedPassword::class,
                           'AutoUpdate'   => AutoUpdate::class,
+                          'ParamCheck'   => ParamCheck::class
                       ]);
 
                       $middleware->web(remove: [
@@ -34,6 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
                       $middleware->use([
                           StartSession::class
                       ]);
+
+                      $middleware->trustProxies("*");
                   })
                   ->withExceptions(function (Exceptions $exceptions) {
                       //
