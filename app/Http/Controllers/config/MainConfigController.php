@@ -25,7 +25,6 @@ class MainConfigController extends Controller
     public function updateConfig(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "sleep"               => "required|numeric",
             "max_once"            => "required|numeric",
             "password"            => "string",
             "announce"            => "string",
@@ -56,7 +55,6 @@ class MainConfigController extends Controller
 
         $update = [];
 
-        $update["_94LIST_SLEEP"]               = $request["sleep"];
         $update["_94LIST_MAX_ONCE"]            = $request["max_once"];
         $update["_94LIST_PASSWORD"]            = '"' . $request["password"] . '"';
         $update["_94LIST_ANNOUNCE"]            = '"' . htmlspecialchars(str_replace("\n", "[NextLine]", $request["announce"]), ENT_QUOTES) . '"';

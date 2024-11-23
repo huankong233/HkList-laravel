@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use XdbSearcher;
 
 class ParseController extends Controller
 {
@@ -29,7 +30,7 @@ class ParseController extends Controller
 
         $parse_mode = $config["parse_mode"];
         $account_type = ["超级会员"];
-        if ($parse_mode === 11) {
+        if ($parse_mode === 11 || $parse_mode === 13) {
             $account_type = ["超级会员", "普通会员", "普通用户"];
         } else if ($parse_mode === 12) {
             $account_type = ["普通用户"];
@@ -54,67 +55,6 @@ class ParseController extends Controller
             "button_link" => $config["button_link"],
             "show_login_button" => $config["show_login_button"]
         ]);
-    }
-
-    public function _getProvinceFromIP($ip): string|null|false
-    {
-        if ($ip === "0.0.0.0") return "上海市";
-
-        $http = new Client([
-            "headers" => [
-                "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"
-            ]
-        ]);
-
-        try {
-            $res = $http->get("https://api.qjqq.cn/api/district", ["query" => ["ip" => $ip]]);
-            $response = JSON::decode($res->getBody()->getContents());
-
-            if (isset($response["code"]) && $response["code"] === 200 && isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
-                if (config("94list.limit_cn")) {
-                    if ($response["data"]["country"] !== "中国") {
-                        return false;
-                    }
-                }
-
-                return $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
-            }
-        } catch (Exception $e) {
-        }
-
-        try {
-            $res = $http->get("https://www.ip.cn/api/index", ["query" => ["ip" => $ip, "type" => 1]]);
-            $response = JSON::decode($res->getBody()->getContents());
-
-            if (isset($response["rs"]) && $response["rs"] !== 1 && isset($response["address"])) {
-                if (config("94list.limit_cn")) {
-                    if (str_contains($response["address"], "中国")) {
-                        return false;
-                    }
-                }
-
-                return $response["address"] !== "" ? $response["address"] : null;
-            }
-        } catch (Exception $e) {
-        }
-
-        try {
-            $res = $http->get("https://qifu.baidu.com/ip/geo/v1/district", ["query" => ["ip" => $ip]]);
-            $response = JSON::decode($res->getBody()->getContents());
-
-            if (isset($response["code"]) && $response["code"] === "Success" && isset($response["data"]["country"]) && isset($response["data"]["prov"])) {
-                if (config("94list.limit_cn")) {
-                    if ($response["data"]["country"] !== "中国") {
-                        return false;
-                    }
-                }
-
-                return $response["data"]["prov"] !== "" ? $response["data"]["prov"] : null;
-            }
-        } catch (Exception $e) {
-        }
-
-        return null;
     }
 
     // 省份标准名称映射表
@@ -155,17 +95,28 @@ class ParseController extends Controller
         "台湾" => "台湾省"
     ];
 
+    private static ?XdbSearcher $ip2region = null;
+
     public function getProvinceFromIP($ip)
     {
-        $prov = self::_getProvinceFromIP($ip);
-        if ($prov === null || $prov === false) return $prov;
+        if (!self::$ip2region) self::$ip2region = new XdbSearcher();
 
-        // 去除多余的空白字符
-        $name = trim($prov);
+        try {
+            $result = self::$ip2region->search($ip);
+            if (!$result) {
+                return "上海市";
+            } else {
+                if (config("94list.limit_cn") && !str_contains($result, "中国")) return false;
+                $arr = explode("|", $result);
+                $prov = $arr[2];
+            }
+        } catch (Exception $exception) {
+            return "上海市";
+        }
 
         // 匹配并返回标准省份名称
         foreach (self::provinces as $key => $standardName) {
-            if (str_contains($name, $key)) return $standardName;
+            if (str_contains($prov, $key)) return $standardName;
         }
 
         // 无匹配
@@ -642,7 +593,7 @@ class ParseController extends Controller
         } else {
             for ($i = 0; $i < count($request["fs_ids"]); $i++) {
                 $account_type = ["超级会员"];
-                if ($parse_mode === 11) {
+                if ($parse_mode === 11 || $parse_mode === 13) {
                     $account_type = ["超级会员", "普通会员", "普通用户"];
                 } else if ($parse_mode === 12) {
                     $account_type = ["普通用户"];
@@ -663,7 +614,9 @@ class ParseController extends Controller
             }
         }
 
-        $start = microtime(true);
+        if ($parse_mode === 13) {
+            $json["download_ticket"] = config("94list.download_ticket");
+        }
 
         try {
             $http = new Client();
@@ -726,7 +679,7 @@ class ParseController extends Controller
             $account = Account::query()->find($ck_id);
 
             if (isset($responseDatum["msg"]) && $responseDatum["msg"] === "获取成功") {
-                if (str_contains($url, "qdall01")) {
+                if (str_contains($url, "tsl=1")) {
                     $res["url"] = "账号被限速";
 
                     $account->update([

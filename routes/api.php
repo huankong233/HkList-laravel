@@ -14,8 +14,8 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post("/install", [InstallController::class, "install"]);
-
-Route::middleware(["NeedInstall", "AutoUpdate"])->group(function () {
+//"ParamCheck"
+Route::middleware(["NeedInstall", "AutoUpdate", ])->group(function () {
     Route::prefix("/parse")->middleware("IpFilter")->group(function () {
         Route::get("/config", [ParseController::class, "getConfig"]);
         Route::get("/limit", [ParseController::class, "checkLimit"]);
